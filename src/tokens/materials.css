@@ -1,0 +1,54 @@
+/**
+ * @oxobz/ui — Material Presets
+ * Extracted from Geist CSS: _nextstatic/chunks/2dd69db0a79ce415.css
+ *
+ * 8 material presets combining background, shadow, and border-radius
+ */
+
+.material-base {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border);
+    border-radius: var(--ds-radius);
+}
+
+.material-small {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border-small);
+    border-radius: var(--ds-radius);
+}
+
+.material-medium {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border-medium);
+    border-radius: var(--ds-radius-lg);
+}
+
+.material-large {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border-large);
+    border-radius: var(--ds-radius-lg);
+}
+
+.material-tooltip {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-tooltip);
+    border-radius: var(--ds-radius);
+}
+
+.material-menu {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-menu);
+    border-radius: var(--ds-radius-lg);
+}
+
+.material-modal {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-modal);
+    border-radius: var(--ds-radius-lg);
+}
+
+.material-fullscreen {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-fullscreen);
+    border-radius: var(--ds-radius-xl);
+}

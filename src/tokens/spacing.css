@@ -1,0 +1,72 @@
+/**
+ * @oxobz/ui — Spacing Tokens
+ * Extracted 100% from Geist production CSS: 76a5400c61fb370f.css
+ */
+
+:root {
+    /* === Geist Space Scale (production exact) === */
+    --oxobz-space: 4px;
+    --oxobz-space-2x: 8px;
+    --oxobz-space-3x: 12px;
+    --oxobz-space-4x: 16px;
+    --oxobz-space-6x: 24px;
+    --oxobz-space-8x: 32px;
+    --oxobz-space-10x: 40px;
+    --oxobz-space-16x: 64px;
+    --oxobz-space-24x: 96px;
+    --oxobz-space-32x: 128px;
+    --oxobz-space-48x: 192px;
+    --oxobz-space-64x: 256px;
+
+    /* === Geist Named Sizes === */
+    --oxobz-space-small: 32px;
+    --oxobz-space-medium: 40px;
+    --oxobz-space-large: 48px;
+
+    /* === Geist Gap (composite) === */
+    --oxobz-space-gap: 24px;
+    --oxobz-space-gap-half: 12px;
+    --oxobz-space-gap-quarter: var(--oxobz-space-2x);
+    --oxobz-gap: var(--oxobz-space-gap);
+    --oxobz-gap-half: var(--oxobz-space-gap-half);
+    --oxobz-gap-quarter: var(--oxobz-space-gap-quarter);
+    --oxobz-gap-double: var(--oxobz-space-large);
+    --oxobz-gap-section: var(--oxobz-space-small);
+
+    /* === Geist Radius === */
+    --oxobz-radius: 6px;
+    --oxobz-marketing-radius: 8px;
+
+    /* === DS Spacing Aliases === */
+    --ds-gap-quarter: 4px;
+    --ds-gap-half: 8px;
+    --ds-gap-three-quarter: 12px;
+    --ds-gap: 16px;
+    --ds-gap-double: 32px;
+
+    --ds-section-gap: 24px;
+    --ds-section-gap-half: 48px;
+    --ds-section-gap-double: 64px;
+
+    --ds-space-1: 4px;
+    --ds-space-2: 8px;
+    --ds-space-3: 12px;
+    --ds-space-4: 16px;
+    --ds-space-5: 20px;
+    --ds-space-6: 24px;
+    --ds-space-8: 32px;
+    --ds-space-12: 48px;
+    --ds-space-16: 64px;
+    --ds-space-20: 80px;
+    --ds-space-32: 128px;
+    --ds-space-64: 256px;
+
+    /* === DS Border Radius Scale === */
+    --ds-radius-xs: 2px;
+    --ds-radius-sm: 4px;
+    --ds-radius: 6px;
+    --ds-radius-md: 8px;
+    --ds-radius-lg: 12px;
+    --ds-radius-xl: 16px;
+    --ds-radius-full: 9999px;
+}

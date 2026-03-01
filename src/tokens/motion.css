@@ -1,0 +1,15 @@
+/**
+ * @oxobz/ui — Motion Tokens
+ * Extracted from Geist CSS production
+ */
+
+:root {
+    /* Popover animations */
+    --ds-motion-popover-timing: cubic-bezier(0.16, 1, 0.3, 1);
+    --ds-motion-popover-duration: 200ms;
+
+    /* Overlay animations */
+    --ds-motion-overlay-timing: cubic-bezier(0.16, 1, 0.3, 1);
+    --ds-motion-overlay-duration: 300ms;
+    --ds-motion-overlay-scale: 0.95;
+}

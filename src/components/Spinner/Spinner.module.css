@@ -1,0 +1,58 @@
+/* ================================================================
+ *  Spinner — CSS Module
+ *
+ *  100% consistent with production Geist spinner:
+ *    _nextstatic/chunks/8cfa8a674deaaab6.css  (line 2)
+ *    _nextstatic/component-inspect-element/spinner.html
+ *
+ *  Production class:  .spinner-module__gyz83a__line
+ *  Production keyframes: @keyframes spinner-module__gyz83a__spin
+ * ================================================================ */
+
+/* ---- Container (data-oxobz-spinner wrapper) ----
+ *  .spinner class for CSS module binding. No extra styles needed;
+ *  sized via inline width/height.
+ */
+.spinner {
+    display: inline-block;
+}
+
+/* ---- Inner container (holds all the bars) ---- */
+.inner {
+    position: relative;
+    left: 50%;
+    top: 50%;
+}
+
+/* ---- Individual bar / line ----
+ *  Production: .spinner-module__gyz83a__line
+ *  Tailwind equivalents converted to vanilla CSS:
+ *    absolute  → position: absolute
+ *    left-[-10%] → left: -10%
+ *    top-[-3.9%] → top: -3.9%
+ *    bg-current → background-color: currentColor
+ *    h-[8%] / w-[24%] → handled via inline or default
+ */
+.line {
+    position: absolute;
+    left: -10%;
+    top: -3.9%;
+    background-color: currentColor;
+
+    /* Production: animation from .spinner-module__gyz83a__line */
+    animation: spin var(--animation-duration, 1.2s) linear infinite;
+    animation-delay: var(--animation-delay, 0);
+    background: var(--spinner-color, var(--ds-gray-700));
+    border-radius: var(--oxobz-radius);
+}
+
+/* ---- Keyframes (exact from production) ---- */
+@keyframes spin {
+    0% {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.15;
+    }
+}

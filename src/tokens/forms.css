@@ -1,0 +1,37 @@
+/**
+ * @oxobz/ui — Form Size Tokens
+ * Extracted 100% from Geist production CSS: 76a5400c61fb370f.css
+ *
+ * These --oxobz-form-* variables are used by Button, Input, Select,
+ * Combobox, and other form-level components.
+ */
+
+:root {
+    /* === Geist Form — Default (medium) === */
+    --oxobz-form-font: .875rem;
+    --oxobz-form-line-height: 1.25rem;
+    --oxobz-form-height: var(--oxobz-space-medium);
+
+    /* === Geist Form — Small === */
+    --oxobz-form-small-font: .875rem;
+    --oxobz-form-small-line-height: .875rem;
+    --oxobz-form-small-height: var(--oxobz-space-small);
+
+    /* === Geist Form — Large === */
+    --oxobz-form-large-font: 1rem;
+    --oxobz-form-large-line-height: 1.5rem;
+    --oxobz-form-large-height: var(--oxobz-space-large);
+
+    /* === DS Form Aliases (convenience) === */
+    --ds-form-small-height: 32px;
+    --ds-form-small-padding-x: 12px;
+    --ds-form-small-font-size: 14px;
+
+    --ds-form-medium-height: 40px;
+    --ds-form-medium-padding-x: 12px;
+    --ds-form-medium-font-size: 14px;
+
+    --ds-form-large-height: 48px;
+    --ds-form-large-padding-x: 16px;
+    --ds-form-large-font-size: 16px;
+}

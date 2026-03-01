@@ -1,0 +1,289 @@
+/**
+ * @oxobz/ui — Typography Tokens
+ * Extracted from Geist CSS: _nextstatic/chunks/2dd69db0a79ce415.css
+ *
+ * 29 text utility classes matching Geist production exactly
+ * Usage: className="text-heading-48" or via CSS Modules
+ */
+
+/* ==============================
+ * Headings (font-weight: 600, Sans)
+ * ============================== */
+
+.text-heading-72 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 72px;
+    line-height: 72px;
+    letter-spacing: -4.32px;
+    font-weight: 600;
+}
+
+.text-heading-64 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 64px;
+    line-height: 64px;
+    letter-spacing: -3.84px;
+    font-weight: 600;
+}
+
+.text-heading-56 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 56px;
+    line-height: 56px;
+    letter-spacing: -3.36px;
+    font-weight: 600;
+}
+
+.text-heading-48 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 48px;
+    line-height: 56px;
+    letter-spacing: -2.88px;
+    font-weight: 600;
+}
+
+.text-heading-40 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: -2.4px;
+    font-weight: 600;
+}
+
+.text-heading-32 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: -1.28px;
+    font-weight: 600;
+}
+
+.text-heading-24 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: -0.96px;
+    font-weight: 600;
+}
+
+.text-heading-20 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 20px;
+    line-height: 26px;
+    letter-spacing: -0.4px;
+    font-weight: 600;
+}
+
+.text-heading-16 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.32px;
+    font-weight: 600;
+}
+
+.text-heading-14 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: -0.28px;
+    font-weight: 600;
+}
+
+/* ==============================
+ * Buttons (font-weight: 500, Sans)
+ * ============================== */
+
+.text-button-16 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 500;
+}
+
+.text-button-14 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 500;
+}
+
+.text-button-12 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0;
+    font-weight: 500;
+}
+
+/* ==============================
+ * Labels (font-weight: 400)
+ * ============================== */
+
+.text-label-20 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 20px;
+    line-height: 32px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-18 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 18px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-16 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-14 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-14-mono {
+    font-family: var(--font-mono, var(--font-mono-fallback)), ui-monospace, monospace;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-13 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    line-height: 16px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-13-mono {
+    font-family: var(--font-mono, var(--font-mono-fallback)), ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-12 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-label-12-mono {
+    font-family: var(--font-mono, var(--font-mono-fallback)), ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+/* ==============================
+ * Copy (font-weight: 400)
+ * ============================== */
+
+.text-copy-24 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 24px;
+    line-height: 36px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-copy-20 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 20px;
+    line-height: 36px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-copy-18 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-copy-16 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-copy-14 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-copy-13 {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.text-copy-13-mono {
+    font-family: var(--font-mono, var(--font-mono-fallback)), ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+/* ==============================
+ * Modifiers
+ * ============================== */
+
+.text-heading-72>strong,
+.text-heading-64>strong,
+.text-heading-56>strong,
+.text-heading-48>strong,
+.text-heading-40>strong,
+.text-heading-32>strong,
+.text-heading-24>strong,
+.text-heading-20>strong,
+.text-heading-16>strong,
+.text-heading-14>strong {
+    font-weight: 500;
+    color: hsl(var(--ds-gray-900-value));
+}
+
+.text-label-20>strong,
+.text-label-18>strong,
+.text-label-16>strong,
+.text-label-14>strong,
+.text-label-13>strong,
+.text-label-12>strong,
+.text-copy-24>strong,
+.text-copy-20>strong,
+.text-copy-18>strong,
+.text-copy-16>strong,
+.text-copy-14>strong,
+.text-copy-13>strong {
+    font-weight: 500;
+    color: hsl(var(--ds-gray-1000-value));
+}

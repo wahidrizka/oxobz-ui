@@ -1,0 +1,274 @@
+/* Book Component — CSS Module
+ * Source: 8cfa8a674deaaab6.css (line 5)
+ * 100% production-exact
+ */
+
+.perspective {
+    --book-default-width: 196;
+    --book-color: var(--ds-gray-200);
+    --book-text-color: var(--ds-gray-1000);
+    --book-depth: 29cqw;
+    --book-border-radius: 6px 4px 4px 6px;
+    --hover-rotate: -20deg;
+    --hover-scale: 1.066;
+    --hover-translate-x: -8px;
+    --aspect-ratio: 49 / 60;
+    --bg-shadow: linear-gradient(90deg,
+            #fff0 0%,
+            #fff0 12%,
+            #ffffff40 29.25%,
+            #fff0 50.5%,
+            #fff0 75.25%,
+            #ffffff40 91%,
+            #fff0 100%),
+        linear-gradient(90deg,
+            #00000008 0%,
+            #0000001a 12%,
+            #0000 30%,
+            #00000005 50%,
+            #0003 73.5%,
+            #00000080 75.25%,
+            #00000026 85.25%,
+            #0000 100%);
+    perspective: 900px;
+    width: fit-content;
+    display: inline-block;
+}
+
+@media (hover: hover) {
+    .perspective:hover .rotateWrapper {
+        transform: rotateY(var(--hover-rotate)) scale(var(--hover-scale)) translateX(var(--hover-translate-x));
+    }
+}
+
+.rotateWrapper {
+    aspect-ratio: var(--aspect-ratio);
+    width: fit-content;
+    transform-style: preserve-3d;
+    min-width: calc(var(--book-width) * 1px);
+    transition: transform 0.25s ease-out;
+    position: relative;
+    transform: rotate(0);
+    container-type: inline-size;
+}
+
+.rotateWrapper> :first-child {
+    min-width: calc(var(--book-width) * 1px);
+    position: absolute;
+}
+
+.rotateWrapper .pages {
+    background: linear-gradient(90deg, #eaeaea 0%, #0000 70%),
+        linear-gradient(#fff, #fafafa);
+}
+
+.rotateWrapper .pages.textured {
+    background: repeating-linear-gradient(90deg,
+            #fff,
+            #efefef 1px,
+            #fff 3px,
+            #9a9a9a 1px);
+}
+
+.rotateWrapper .pages {
+    height: calc(100% - 6px);
+    width: calc(var(--book-depth) - 2px);
+    transform: translateX(calc(var(--book-width) * 1px - var(--book-depth) / 2 - 3px)) rotateY(90deg) translateX(calc(var(--book-depth) / 2));
+    position: absolute;
+    top: 3px;
+}
+
+.rotateWrapper .back {
+    width: calc(var(--book-width) * 1px);
+    border-radius: var(--book-border-radius);
+    height: 100%;
+    transform: translateZ(calc(-1 * var(--book-depth)));
+    position: absolute;
+    left: 0;
+}
+
+/* ---- STRIPE variant ---- */
+
+.rotateWrapper.stripe .content {
+    gap: calc((24px / var(--book-default-width)) * var(--book-width));
+}
+
+.rotateWrapper.stripe .content .title {
+    letter-spacing: -0.02em;
+    font-size: 10.5cqw;
+    line-height: 1.25em;
+}
+
+.rotateWrapper.stripe .back {
+    background-color: var(--ds-gray-200);
+}
+
+.rotateWrapper.stripe .stripe {
+    background: var(--book-color);
+    flex: 1;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0);
+}
+
+.rotateWrapper.stripe .stripe .illustration {
+    -o-object-fit: cover;
+    object-fit: cover;
+}
+
+.rotateWrapper.stripe .stripe .bind {
+    background: var(--bg-shadow);
+    mix-blend-mode: overlay;
+    position: absolute;
+}
+
+/* ---- SIMPLE variant ---- */
+
+.rotateWrapper.simple.color .book {
+    background: var(--book-color);
+}
+
+.rotateWrapper.simple.color .bind {
+    mix-blend-mode: overlay;
+    opacity: 1;
+}
+
+:global(.dark-theme) .rotateWrapper.simple:not(.color) .book::after {
+    box-shadow: inset 0 1px 2px #ffffff1a;
+}
+
+.rotateWrapper.simple .back {
+    background: var(--book-color);
+}
+
+.rotateWrapper.simple .body {
+    width: 100%;
+    height: 100%;
+}
+
+.rotateWrapper.simple .content {
+    gap: calc((16px / var(--book-default-width)) * var(--book-width));
+}
+
+.rotateWrapper.simple .content .title {
+    letter-spacing: -0.02em;
+    text-shadow: 0px 0.025em 0.5px color-mix(in srgb, var(--book-color) 80%, white 20%),
+        -0.02em -0.02em 0.5px color-mix(in srgb, var(--book-color) 80%, black 20%);
+    font-size: 12cqw;
+    line-height: 1.25em;
+}
+
+/* ---- BOOK base ---- */
+
+.book {
+    width: calc(var(--book-width) * 1px);
+    border-radius: var(--book-border-radius);
+    background: var(--ds-background-200);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0);
+    box-shadow: 0 1px 1px #00000005, 0 4px 8px -4px #0000001a,
+        0 16px 24px -8px #00000008;
+}
+
+.book .texture {
+    border-radius: var(--book-border-radius);
+    mix-blend-mode: hard-light;
+    opacity: 0.5;
+    pointer-events: none;
+    filter: brightness(1.1);
+    background-image: url(https://assets.vercel.com/image/upload/v1720554484/front/design/book-texture.avif);
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: absolute;
+    inset: 0;
+}
+
+:global(.dark-theme) .book .texture {
+    opacity: 1;
+    filter: brightness();
+}
+
+:global(.dark-theme) .book {
+    background: linear-gradient(#ffffff1a 0%, #fff0 50% 100%), #1f1f1f;
+    box-shadow: 0 1.8px 3.6px #0000000d, 0 10.8px 21.6px #00000014,
+        inset 0 -0.9px #0000001a, inset 0 1.8px 1.8px #ffffff1a,
+        inset 3.6px 0 3.6px #0000001a;
+}
+
+.book::after {
+    content: '';
+    border: 1px solid var(--ds-gray-alpha-400);
+    border-radius: inherit;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 1px 2px #ffffff4d;
+}
+
+:global(.dark-theme) .book::after {
+    border: none;
+}
+
+.book .bind {
+    width: 8.2%;
+    height: 100%;
+}
+
+.book .content {
+    width: 100%;
+    padding: 6.1%;
+    container-type: inline-size;
+}
+
+.book .content .title {
+    text-wrap: balance;
+    color: var(--book-text-color);
+}
+
+/* ---- body bind ---- */
+
+.body .bind {
+    background: var(--bg-shadow);
+    opacity: 0.2;
+    min-width: 8.2%;
+}
+
+/* ---- Responsive book-width ---- */
+
+@media screen and (max-width: 400px) {
+    .perspective {
+        --book-width: var(--xs-book-width, var(--sm-book-width));
+    }
+}
+
+@media screen and (min-width: 401px) and (max-width: 600px) {
+    .perspective {
+        --book-width: var(--sm-book-width);
+    }
+}
+
+@media screen and (min-width: 601px) and (max-width: 768px) {
+    .perspective {
+        --book-width: var(--smd-book-width,
+                var(--md-book-width, var(--sm-book-width)));
+    }
+}
+
+@media screen and (min-width: 769px) and (max-width: 960px) {
+    .perspective {
+        --book-width: var(--md-book-width,
+                var(--smd-book-width, var(--sm-book-width)));
+    }
+}
+
+@media screen and (min-width: 961px) {
+    .perspective {
+        --book-width: var(--lg-book-width,
+                var(--md-book-width, var(--smd-book-width, var(--sm-book-width))));
+    }
+}

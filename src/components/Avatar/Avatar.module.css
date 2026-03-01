@@ -1,0 +1,218 @@
+/**
+ * Avatar — CSS Module
+ * Production source: d2f6d4dcdb88e56d.css
+ * Module: avatar-module__rHmbGW — 100% production-exact
+ *
+ * All CSS variables are now defined in tokens/colors.css:
+ *   --ds-background-100 : light=#fff, dark=near-black
+ *   --ds-gray-alpha-400: light=rgba(0,0,0,0.08), dark=rgba(255,255,255,0.14)
+ *   --ds-gray-100/200/400/1000 : from color scale
+ *   --accents-6        : light=#444, dark=#999
+ */
+
+.avatar {
+    width: var(--size);
+    height: var(--size);
+    border: 1px solid var(--ds-background-100);
+    vertical-align: top;
+    box-sizing: border-box;
+    border-radius: 100%;
+    flex-shrink: 0;
+    line-height: 0;
+    transition: border .2s, background .2s;
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    -webkit-mask-image: -webkit-radial-gradient(circle, #fff, #000);
+    mask-image: radial-gradient(circle, #fff, #000);
+}
+
+/* Inner ring overlay */
+.avatar::after {
+    content: "";
+    border: 1px solid var(--ds-gray-alpha-400);
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+}
+
+/* Non-circular mode (data-mask=false) */
+.avatar[data-mask="false"] {
+    border: none;
+    border-radius: 4px;
+}
+
+.avatar[data-mask="false"]::after,
+.avatar[data-mask="false"]::before {
+    display: none;
+}
+
+/* Loading shimmer — shown when data-resolved=false */
+.avatar:not([data-resolved="true"])::before {
+    content: "";
+    background: linear-gradient(90deg,
+            var(--ds-gray-100),
+            var(--ds-gray-200),
+            var(--ds-gray-100)) 0 0 / 50% 100%;
+    animation: 1.5s ease-in-out infinite reverse loading;
+    position: absolute;
+    inset: 0 -200% 0 0;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* image-module__ssnYEW__intrinsic — from chunk 8cfa8a674deaaab6.css */
+.intrinsic {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Fallback initials */
+.avatar span {
+    color: #fff;
+    opacity: .5;
+    background-color: var(--accents-6);
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-weight: 500;
+    display: flex;
+}
+
+@keyframes loading {
+    to {
+        transform: translate(-50%);
+    }
+}
+
+/* ============================================
+ * Group — from group-module__Dj5yHG
+ * ============================================ */
+
+.group {
+    align-items: center;
+    display: flex;
+}
+
+.groupAvatar {
+    align-items: center;
+    display: inline-flex;
+}
+
+.groupAvatar:nth-child(n+2) {
+    margin-left: -10px;
+}
+
+/* "+N" note (non-avatar label) */
+.note:not(.groupAvatar) {
+    color: var(--ds-gray-1000);
+    justify-content: flex-end;
+    margin-right: auto;
+    padding-left: 5px;
+    font-size: 14px;
+    display: inline-flex;
+}
+
+/* "+N" note (over last avatar) */
+.note.groupAvatar {
+    position: relative;
+}
+
+.noteText {
+    background: var(--ds-gray-100);
+    border: 1px solid var(--ds-gray-400);
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    width: calc(100% - 2px);
+    height: calc(100% - 2px);
+    display: flex;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    transform: scale(1.01);
+    /* text-module__eElGjq__wrapper — maps inline --text-* vars to CSS properties */
+    color: var(--text-color);
+    font-size: var(--text-size);
+    line-height: var(--text-line-height);
+    font-weight: var(--text-weight);
+    letter-spacing: var(--text-letter-spacing);
+}
+
+/* noteText dark-theme override — inspect element shows dark-theme class on noteText
+ * producing a dark circle with white text (dark-theme gray-100 = near-black,
+ * gray-400 = dark border, gray-1000 = near-white text) */
+.noteText:global(.dark-theme) {
+    background: hsla(0, 0%, 10%, 1);
+    border-color: hsla(0, 0%, 18%, 1);
+    color: hsla(0, 0%, 93%, 1);
+}
+
+/* ============================================
+ * AvatarWithIcon — from icon-module__yqmEeW
+ * ============================================ */
+
+.iconWrapper {
+    width: var(--size);
+    height: var(--size);
+    position: relative;
+}
+
+.icon {
+    aspect-ratio: 1;
+    display: flex;
+    position: absolute;
+}
+
+.icon[data-background="true"] {
+    background-color: #fff;
+    border: 1px solid #fff;
+    border-radius: 100%;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    overflow: hidden;
+}
+
+:global(.dark-theme) .icon[data-background="true"] {
+    background-color: #000;
+    border-color: #000;
+}
+
+/* Git-type — github */
+.icon[data-background="true"][data-git-type="github"] {
+    background-color: #fff;
+}
+
+:global(.dark-theme) .icon[data-background="true"][data-git-type="github"] {
+    background-color: #000;
+}
+
+.icon[data-background="true"][data-git-type="github"] svg {
+    transform: scale(1.15);
+}
+
+/* Git-type — bitbucket */
+.icon[data-background="true"][data-git-type="bitbucket"] {
+    background-color: #0052cc;
+}
+
+.icon[data-background="true"][data-git-type="bitbucket"] svg {
+    color: #fff;
+    transform: scale(.65);
+}
+
+/* Git-type — gitlab */
+.icon[data-background="true"][data-git-type="gitlab"] {
+    background-color: #6b4fbb;
+}
+
+.icon[data-background="true"][data-git-type="gitlab"] svg {
+    transform: scale(.75);
+}

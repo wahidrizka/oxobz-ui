@@ -1,0 +1,82 @@
+/**
+ * @oxobz/ui — Shadow Tokens
+ * Extracted 100% from Geist production CSS: 1c419a75d7e589ae.css
+ *
+ * Light = :root (from prod light-theme block)
+ * Dark  = .dark-theme (from prod dark-theme block)
+ */
+
+:root {
+    /* DS Shadow primitives */
+    --ds-shadow-background-border: 0 0 0 1px var(--ds-background-200);
+    --ds-shadow-border-base: 0 0 0 1px #00000014;
+    --ds-shadow-border-inset: inset 0 0 0 1px #00000014;
+    --ds-shadow-small: 0px 2px 2px #0000000a;
+    --ds-shadow-medium: 0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a;
+    --ds-shadow-large: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
+
+    /* DS Composite shadows */
+    --ds-shadow-border: var(--ds-shadow-border-base), var(--ds-shadow-background-border);
+    --ds-shadow-border-small: var(--ds-shadow-border-base), var(--ds-shadow-small), var(--ds-shadow-background-border);
+    --ds-shadow-border-medium: var(--ds-shadow-border-base), var(--ds-shadow-medium), var(--ds-shadow-background-border);
+    --ds-shadow-border-large: var(--ds-shadow-border-base), var(--ds-shadow-large), var(--ds-shadow-background-border);
+    --ds-shadow-tooltip: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 4px 8px #0000000a, var(--ds-shadow-background-border);
+    --ds-shadow-menu: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 4px 8px -4px #0000000a, 0px 16px 24px -8px #0000000f, var(--ds-shadow-background-border);
+    --ds-shadow-modal: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, var(--ds-shadow-background-border);
+    --ds-shadow-fullscreen: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, var(--ds-shadow-background-border);
+
+    /* Legacy shadow aliases (from prod light-theme) */
+    --dropdown-box-shadow: 0 4px 4px 0 #00000005;
+    --dropdown-triangle-stroke: #fff;
+    --shadow-extra-small: 0px 4px 8px #0000001f;
+    --shadow-smallest: 0px 2px 4px #0000001a;
+    --shadow-small: 0 5px 10px #0000001f;
+    --shadow-medium: 0 8px 30px #0000001f;
+    --shadow-large: 0 30px 60px #0000001f;
+    --shadow-hover: 0 30px 60px #0000001f;
+    --shadow-sticky: 0 12px 10px -10px #0000001f;
+
+    /* Geist legacy alias (used by Button active state) */
+    --oxobz-shadow-small: var(--shadow-small);
+
+    /* Overlay */
+    --ds-overlay-backdrop-opacity: 0.8;
+}
+
+/* Dark theme shadow overrides */
+.dark-theme {
+    --ds-shadow-border-base: 0 0 0 1px #ffffff25;
+    --ds-shadow-border-inset: inset 0 0 0 1px #ffffff1a;
+    --ds-shadow-small: 0px 1px 2px #00000029;
+    --ds-shadow-medium: 0px 2px 2px #00000052, 0px 8px 8px -8px #00000029;
+    --ds-shadow-large: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
+
+    /* DS Composite shadow overrides (dark) */
+    --ds-shadow-background-border: 0 0 0 1px var(--ds-background-200);
+    --ds-shadow-border: var(--ds-shadow-border-base), var(--ds-shadow-background-border);
+    --ds-shadow-border-small: var(--ds-shadow-border-base), var(--ds-shadow-small), var(--ds-shadow-background-border);
+    --ds-shadow-border-medium: var(--ds-shadow-border-base), var(--ds-shadow-medium), var(--ds-shadow-background-border);
+    --ds-shadow-border-large: var(--ds-shadow-border-base), var(--ds-shadow-large), var(--ds-shadow-background-border);
+    --ds-shadow-tooltip: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 4px 8px #0000000a, var(--ds-shadow-background-border);
+    --ds-shadow-menu: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 4px 8px -4px #0000000a, 0px 16px 24px -8px #0000000f, var(--ds-shadow-background-border);
+    --ds-shadow-modal: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, var(--ds-shadow-background-border);
+    --ds-shadow-fullscreen: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, var(--ds-shadow-background-border);
+
+    /* Legacy shadow overrides (dark) */
+    --dropdown-box-shadow: 0 0 0 1px var(--accents-2);
+    --dropdown-triangle-stroke: #333;
+    --shadow-extra-small: 0 0 0 1px var(--accents-2);
+    --shadow-smallest: 0 0 0 1px var(--accents-2);
+    --shadow-small: 0 0 0 1px var(--accents-2);
+    --shadow-medium: 0 0 0 1px var(--accents-2);
+    --shadow-large: 0 0 0 1px var(--accents-2);
+    --shadow-hover: 0 0 0 1px var(--ds-gray-1000);
+    --shadow-sticky: 0 0 0 1px var(--accents-2);
+
+    /* Geist legacy alias (used by Button active state) */
+    --oxobz-shadow-small: var(--shadow-small);
+
+    /* Header */
+    --header-border-bottom: 0 1px 0 0 #ffffff1a;
+    --header-import-flow-background: #111c;
+}
