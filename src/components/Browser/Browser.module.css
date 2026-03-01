@@ -1,0 +1,185 @@
+/* ========================================
+ *  Browser — CSS Modules
+ *
+ *  Translated 1:1 from Geist production Tailwind
+ *  Source: _nextstatic/component-inspect-element/browser.html
+ * ======================================== */
+
+/* Container query wrapper */
+.containerQuery {
+    container-type: inline-size;
+}
+
+/* Outer shell — material-small + rounded-md + overflow-hidden + bg-background-200 */
+.browser {
+    background-color: var(--ds-background-200);
+    box-shadow: var(--ds-shadow-border-small);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Header bar — px-4 py-2 flex justify-between gap-4 bg-background-100 */
+.header {
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    background-color: var(--ds-background-100);
+}
+
+/* Left section — flex items-center flex-1 justify-start gap-4 min-w-0 */
+.headerLeft {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    justify-content: flex-start;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* Center section — flex items-center flex-1 justify-center gap-4 min-w-0 */
+.headerCenter {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* Right section — flex items-center flex-1 justify-end gap-4 min-w-0 */
+.headerRight {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    justify-content: flex-end;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* Traffic lights container — flex items-center gap-2 */
+.trafficLights {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Individual dots — w-3 h-3 rounded-full */
+.dotRed {
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background-color: #FE5F57;
+}
+
+.dotYellow {
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background-color: #FEBB2E;
+}
+
+.dotGreen {
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background-color: #26C941;
+}
+
+/* Nav icons container — flex items-center gap-4 */
+.navIcons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Address bar — bg-background-200 border border-gray-400 w-full rounded-full */
+.addressBar {
+    background-color: var(--ds-background-200);
+    border: 1px solid var(--ds-gray-400);
+    width: 100%;
+    border-radius: 9999px;
+    padding: 4px 4px 4px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Address text — text-copy-13 text-gray-1000 truncate flex-1 min-w-0 text-center */
+.addressText {
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    color: var(--ds-gray-1000);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+}
+
+/* Content area — children slot */
+.content {
+    padding: 24px;
+}
+
+/* Copy button wrapper — keep icon relative */
+.copyButtonIcon {
+    position: relative;
+}
+
+.copyIconStateHidden {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease-out;
+    transform: scale(0);
+    opacity: 0;
+}
+
+.copyIconStateVisible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease-out;
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Responsive: md breakpoint (≥601px) */
+@media (min-width: 601px) {
+    .header {
+        padding: 10px 20px;
+        gap: 24px;
+    }
+
+    .headerLeft {
+        max-width: 140px;
+    }
+
+    .headerRight {
+        max-width: 140px;
+    }
+
+    .browser {
+        border-radius: 1.5cqw;
+    }
+}
+
+/* Responsive: lg breakpoint (≥961px) */
+@media (min-width: 961px) {
+    .addressBar {
+        max-width: 20rem;
+    }
+}
+
+/* Hide right section below lg */
+@media (max-width: 960px) {
+    .headerRight {
+        display: none;
+    }
+}

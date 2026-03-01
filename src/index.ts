@@ -25,6 +25,9 @@ export type { TextProps } from './components/Text';
 export { Book } from './components/Book';
 export type { BookProps } from './components/Book';
 
+export { Browser } from './components/Browser';
+export type { BrowserProps } from './components/Browser';
+
 export { Button, ButtonLink } from './components/Button';
 export type { ButtonProps, ButtonLinkProps, ButtonVariant, ButtonSize, ButtonShape } from './components/Button';
 
