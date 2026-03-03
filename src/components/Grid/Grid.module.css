@@ -1,0 +1,729 @@
+/* ========================================
+ *  Grid — CSS Modules
+ *
+ *  Translated 1:1 from Geist production CSS
+ *  Source: _nextstatic/chunks/8cfa8a674deaaab6.css
+ * ======================================== */
+
+/* ---- Content wrapper ---- */
+.gridSystemContentWrapper {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+}
+
+/* ---- Lazy content placeholder ---- */
+.gridSystemLazyContent {
+    contain: layout;
+    overflow: visible;
+}
+
+/* ---- Grid System root ---- */
+.gridSystem {
+    --light-dashed-png: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAACXBIWXMAAAsTAAALEwEAmpwYAAAANklEQVQokWN8/fr1fwY0ICoqyoguhk0dE7oAKYARZiI223ABmB6KbKZI8yggEQzReGYcsIwBALk3HxGhdtdwAAAAAElFTkSuQmCC);
+    --dark-dashed-png: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAACXBIWXMAAAsTAAALEwEAmpwYAAAANklEQVQokWOUl5f/z4AGHj58yIguhk0dE7oAKYARZiI223ABmB6KbKZI8yggEQzReGYcsIwBAA1NFYEXiwqfAAAAAElFTkSuQmCC);
+    --max-width: 1080px;
+    --min-width: 368px;
+    --guide-width: 1px;
+    --horizontal-margin: 2rem;
+    --grid-system-width: 100vw;
+    --guide-color: var(--ds-gray-400);
+    --cross-color: var(--ds-gray-600);
+    max-width: var(--max-width);
+    min-width: var(--min-width);
+    margin-top: var(--guide-width);
+    margin-left: var(--guide-width);
+    flex-direction: column;
+    display: flex;
+    position: relative;
+}
+
+:global(.dark-theme) .gridSystem {
+    --guide-color: var(--ds-gray-200);
+}
+
+/* ---- Grid System ::before (outer border) ---- */
+.gridSystem::before {
+    inset: 0;
+    left: calc(-1 * var(--guide-width));
+    top: calc(-1 * var(--guide-width));
+    content: "";
+    border: var(--guide-width) solid var(--guide-color);
+    pointer-events: none;
+    position: absolute;
+}
+
+/* ---- Grid System [data-grid] border ---- */
+.gridSystem [data-grid] {
+    border-bottom: var(--guide-width) solid var(--guide-color);
+}
+
+/* ---- Debug mode ---- */
+.systemDebug {
+    --debug-color-rgb: 255, 204, 109;
+    --debug-guide-color: rgba(var(--debug-color-rgb), 0.7);
+    --debug-block-color: rgba(var(--debug-color-rgb), 0.1);
+    --debug-hidden-guide-color: rgba(var(--debug-color-rgb), 0.1);
+    --guide-color: var(--debug-guide-color) !important;
+}
+
+.systemDebug .block {
+    background-color: var(--debug-block-color);
+}
+
+.systemDebug .guide[style*="border-right:none"] {
+    border-right: var(--guide-width) dashed var(--debug-hidden-guide-color) !important;
+}
+
+.systemDebug .guide[style*="border-bottom:none"] {
+    border-bottom: var(--guide-width) dashed var(--debug-hidden-guide-color) !important;
+}
+
+/* ---- Debug overlay ---- */
+.systemDebugOverlay::before {
+    border: var(--guide-color) 1px dashed;
+    background: #000;
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+    display: flex;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+/* ---- Dashed system ---- */
+.systemDashed::before,
+.systemDashed [data-grid] {
+    -o-border-image: var(--light-dashed-png) 1 round;
+    border-image: var(--light-dashed-png) 1 round;
+}
+
+:global(.dark-theme) .systemDashed::before {
+    -o-border-image: var(--dark-dashed-png) 1 round;
+    border-image: var(--dark-dashed-png) 1 round;
+}
+
+:global(.dark-theme) .systemDashed [data-grid] {
+    -o-border-image: var(--dark-dashed-png) 1 round;
+    border-image: var(--dark-dashed-png) 1 round;
+}
+
+/* ---- Container query wrapper ---- */
+.unstable_gridSystemWrapper {
+    width: 100%;
+    display: inherit;
+    justify-content: inherit;
+    align-items: inherit;
+    container-type: inline-size;
+}
+
+.unstable_gridSystemWrapper .gridSystem {
+    --horizontal-margin: 0px;
+    --grid-system-width: calc(100cqw);
+}
+
+/* ---- Grid section ---- */
+.grid {
+    --width: clamp(
+        calc(var(--min-width) - var(--guide-width)),
+        calc(var(--grid-system-width) - var(--guide-width) - (var(--horizontal-margin) * 2)),
+        calc(var(--max-width) - var(--guide-width))
+    );
+    width: var(--width);
+    height: var(--height);
+    --column-width: calc(var(--width) / var(--grid-columns));
+    --row-height: calc(var(--height) / var(--grid-rows));
+    grid-template-columns: repeat(var(--grid-columns), var(--column-width));
+    grid-template-rows: repeat(var(--grid-rows), var(--row-height));
+    display: grid;
+    position: relative;
+}
+
+/* ---- Cross marker ---- */
+.cross {
+    pointer-events: none;
+    grid-column-start: var(--cross-column);
+    grid-row-start: var(--cross-row);
+    z-index: 2;
+    --cross-size: 21px;
+    --cross-half-size: calc((var(--cross-size) / 2) + var(--guide-width) - 0.5px);
+    width: fit-content;
+    height: fit-content;
+    inset: calc(var(--cross-half-size) * -1);
+    position: absolute;
+}
+
+.crossLine {
+    border: var(--guide-width) solid var(--cross-color);
+    border-width: 0;
+    position: absolute;
+}
+
+/* ---- Guide lines ---- */
+.line {
+    pointer-events: none;
+    width: calc(200vw - var(--line-left));
+    grid-column-start: var(--line-column);
+    grid-row-start: var(--line-row);
+    border: 0px solid var(--guide-color);
+    border-bottom-width: var(--guide-width);
+    top: var(--line-top);
+    position: absolute;
+    left: -100vw;
+}
+
+.line.lineVertical {
+    left: var(--line-left);
+    border-bottom: none;
+    border-left-width: var(--guide-width);
+    height: calc(100% - var(--line-top));
+    width: 0;
+    margin-left: -1px;
+}
+
+/* ---- Guides container ---- */
+.guides {
+    pointer-events: none;
+    z-index: 1;
+    display: contents;
+}
+
+/* ---- Individual guide ---- */
+.guide {
+    grid-column-start: var(--x);
+    grid-row-start: var(--y);
+    border: var(--guide-width) solid var(--guide-color);
+    border-top: none;
+    border-left: none;
+    grid-row-end: span 1;
+    grid-column-end: span 1;
+    position: absolute;
+    inset: 0;
+}
+
+/* ---- Dashed guide ---- */
+.dashedGuide {
+    border: var(--guide-width) dashed var(--guide-color);
+    -o-border-image: var(--light-dashed-png) 2 round;
+    border-image: var(--light-dashed-png) 2 round;
+    border-top: none;
+    border-left: none;
+}
+
+:global(.dark-theme) .dashedGuide {
+    -o-border-image: var(--dark-dashed-png) 2 round;
+    border-image: var(--dark-dashed-png) 2 round;
+}
+
+/* ---- Block (cell) ---- */
+.block {
+    z-index: 2;
+    margin-bottom: var(--guide-width);
+    margin-right: var(--guide-width);
+    grid-row: var(--grid-row);
+    grid-column: var(--grid-column);
+    display: var(--block-display);
+    padding: var(--cell-padding);
+    overflow: hidden;
+}
+
+.block > div {
+    height: 100%;
+}
+
+/* ---- Page background ---- */
+.page {
+    background: var(--ds-background-200);
+}
+
+/* ---- Divider ---- */
+.divider + .divider {
+    display: none;
+}
+
+/* ---- Heading ---- */
+.heading {
+    --container-width: calc(var(--row-height) * var(--cell-columns) - (var(--cell-padding) * 2));
+    --container-height: calc(var(--row-height) * var(--cell-rows) - (var(--cell-padding) * 2));
+    --scale-factor: calc(var(--cell-rows) * var(--scaled-size-adjustment));
+    --computed-font-size: calc((var(--container-width) / var(--normalized-character-count)) * var(--scale-factor));
+    --font-size: clamp(24px, var(--computed-font-size), 72px);
+    --kerning-percent: -0.06;
+    text-wrap: balance;
+    line-height: 110% !important;
+    font-size: var(--font-size) !important;
+    letter-spacing: calc(var(--font-size) * var(--kerning-percent)) !important;
+    font-weight: 600 !important;
+}
+
+/* ---- Fade cell ---- */
+.fadeCellRoot {
+    position: relative;
+}
+
+.fadeCellContentWrapper {
+    background: var(--background);
+    position: absolute;
+}
+
+.fadeCellContent {
+    padding: var(--cell-padding);
+    position: relative;
+}
+
+.fadeCellContent::after {
+    content: "";
+    position: absolute;
+}
+
+/* Cell align variants */
+.cellAlignTop .fadeCellContentWrapper {
+    width: 100%;
+    top: 0;
+    height: unset !important;
+}
+
+.cellAlignTop .fadeCellContent {
+    padding-bottom: calc(0.5 * var(--cell-padding));
+}
+
+.cellAlignTop .fadeCellContent::after {
+    left: 0;
+    right: 0;
+    bottom: calc(-1 * var(--cell-padding));
+    background: linear-gradient(var(--background) 0%, #0000 100%);
+    height: var(--cell-padding);
+}
+
+.cellAlignBottom .fadeCellContentWrapper {
+    width: 100%;
+    bottom: 0;
+    height: unset !important;
+}
+
+.cellAlignBottom .fadeCellContent {
+    padding-top: calc(0.5 * var(--cell-padding));
+}
+
+.cellAlignBottom .fadeCellContent::after {
+    left: 0;
+    right: 0;
+    top: calc(-1 * var(--cell-padding));
+    background: linear-gradient(#0000 0%, var(--background) 100%);
+    height: var(--cell-padding);
+}
+
+.cellAlignLeft .fadeCellContentWrapper {
+    width: max-content;
+    left: 0;
+}
+
+.cellAlignLeft .fadeCellContent {
+    height: 100%;
+    padding-right: calc(0.5 * var(--cell-padding));
+}
+
+.cellAlignLeft .fadeCellContent::after {
+    height: 100%;
+    width: var(--cell-padding);
+    top: 0;
+    right: calc(-1 * var(--cell-padding));
+    background: linear-gradient(90deg, var(--background) 0%, #0000 100%);
+}
+
+.cellAlignRight .fadeCellContentWrapper {
+    width: max-content;
+    right: 0;
+}
+
+.cellAlignRight .fadeCellContent {
+    text-align: left;
+    height: 100%;
+    padding-left: calc(0.5 * var(--cell-padding));
+}
+
+.cellAlignRight .fadeCellContent::after {
+    height: 100%;
+    width: var(--cell-padding);
+    top: 0;
+    left: calc(-1 * var(--cell-padding));
+    background: linear-gradient(90deg, #0000 0%, var(--background) 100%);
+}
+
+
+/* ================================================================
+ *  RESPONSIVE: @media breakpoints
+ * ================================================================ */
+
+/* xs: ≤400px */
+@media screen and (max-width: 400px) {
+    .gridSystem {
+        --horizontal-margin: 1rem;
+    }
+
+    .grid {
+        --height: var(--xs-height, var(--sm-height));
+        --grid-rows: var(--xs-grid-rows, var(--sm-grid-rows));
+        --grid-columns: var(--xs-grid-columns, var(--sm-grid-columns));
+        --cell-padding: 24px;
+        --grid-divider-gap: calc(72px - var(--cell-padding));
+    }
+
+    .block {
+        --grid-row: var(--xs-grid-row, var(--sm-grid-row));
+        --grid-column: var(--xs-grid-column, var(--sm-grid-column));
+        --block-display: var(--xs-block-display, var(--sm-block-display));
+        --cell-rows: var(--xs-cell-rows, var(--sm-cell-rows));
+        --cell-columns: var(--xs-cell-columns, var(--sm-cell-columns));
+    }
+
+    .cross {
+        --cross-size: 11px;
+        --cross-row: var(--xs-cross-row, var(--sm-cross-row));
+        --cross-column: var(--xs-cross-column, var(--sm-cross-column));
+    }
+
+    .smGuide,
+    .smdGuide,
+    .mdGuide,
+    .lgGuide {
+        display: none;
+    }
+
+    .systemDebugOverlay::before {
+        content: "xs";
+        animation: 2s ease-out forwards xsDisappear;
+    }
+
+    .heading {
+        --font-size: clamp(12px, var(--computed-font-size), 32px);
+    }
+}
+
+/* sm: 401–600px */
+@media screen and (min-width: 401px) and (max-width: 600px) {
+    .gridSystem {
+        --horizontal-margin: 1rem;
+    }
+
+    .grid {
+        --height: var(--sm-height);
+        --grid-rows: var(--sm-grid-rows);
+        --grid-columns: var(--sm-grid-columns);
+        --cell-padding: 24px;
+        --grid-divider-gap: calc(72px - var(--cell-padding));
+    }
+
+    .block {
+        --grid-row: var(--sm-grid-row);
+        --grid-column: var(--sm-grid-column);
+        --cell-rows: var(--sm-cell-rows);
+        --cell-columns: var(--sm-cell-columns);
+        --block-display: var(--sm-block-display);
+    }
+
+    .cross {
+        --cross-size: 11px;
+        --cross-row: var(--sm-cross-row);
+        --cross-column: var(--sm-cross-column);
+    }
+
+    .xsGuide,
+    .smdGuide,
+    .mdGuide,
+    .lgGuide {
+        display: none;
+    }
+
+    .systemDebugOverlay::before {
+        content: "sm";
+        animation: 2s ease-out forwards smDisappear;
+    }
+
+    .heading {
+        --kerning-percent: -0.02;
+        --font-size: clamp(16px, var(--computed-font-size), 48px);
+        line-height: 130%;
+    }
+}
+
+/* smd: 601–768px */
+@media screen and (min-width: 601px) and (max-width: 768px) {
+    .grid {
+        --height: var(--smd-height, var(--md-height, var(--sm-height)));
+        --grid-rows: var(--smd-grid-rows, var(--md-grid-rows, var(--sm-grid-rows)));
+        --grid-columns: var(--smd-grid-columns, var(--md-grid-columns, var(--sm-grid-columns)));
+        --cell-padding: 40px;
+        --grid-divider-gap: calc(120px - var(--cell-padding));
+    }
+
+    .block {
+        --grid-row: var(--smd-grid-row, var(--md-grid-row, var(--sm-grid-row)));
+        --grid-column: var(--smd-grid-column, var(--md-grid-column, var(--sm-grid-column)));
+        --cell-rows: var(--smd-cell-rows, var(--md-cell-rows, var(--sm-cell-rows)));
+        --cell-columns: var(--smd-cell-columns, var(--md-cell-columns, var(--sm-cell-columns)));
+        --block-display: var(--smd-block-display);
+    }
+
+    .cross {
+        --cross-size: 15px;
+        --cross-row: var(--smd-cross-row, var(--md-cross-row, var(--sm-cross-row)));
+        --cross-column: var(--smd-cross-column, var(--md-cross-column, var(--sm-cross-column)));
+    }
+
+    .xsGuide,
+    .smGuide,
+    .mdGuide,
+    .lgGuide {
+        display: none;
+    }
+
+    .systemDebugOverlay::before {
+        content: "smd";
+        animation: 2s ease-out forwards smdDisappear;
+    }
+
+    .heading {
+        --font-size: clamp(24px, var(--computed-font-size), 64px);
+        line-height: 120%;
+    }
+}
+
+/* md: 769–960px */
+@media screen and (min-width: 769px) and (max-width: 960px) {
+    .grid {
+        --height: var(--md-height, var(--smd-height, var(--sm-height)));
+        --grid-rows: var(--md-grid-rows, var(--smd-grid-rows, var(--sm-grid-rows)));
+        --grid-columns: var(--md-grid-columns, var(--smd-grid-columns, var(--sm-grid-columns)));
+        --cell-padding: 40px;
+        --grid-divider-gap: calc(140px - var(--cell-padding));
+    }
+
+    .block {
+        --grid-row: var(--md-grid-row, var(--smd-grid-row, var(--sm-grid-row)));
+        --grid-column: var(--md-grid-column, var(--smd-grid-column, var(--sm-grid-column)));
+        --cell-rows: var(--md-cell-rows, var(--smd-cell-rows, var(--sm-cell-rows)));
+        --cell-columns: var(--md-cell-columns, var(--smd-cell-columns, var(--sm-cell-columns)));
+        --block-display: var(--md-block-display, var(--smd-block-display));
+    }
+
+    .cross {
+        --cross-size: 15px;
+        --cross-row: var(--md-cross-row, var(--smd-cross-row, var(--sm-cross-row)));
+        --cross-column: var(--md-cross-column, var(--smd-cross-column, var(--sm-cross-column)));
+    }
+
+    .xsGuide,
+    .smGuide,
+    .smdGuide,
+    .lgGuide {
+        display: none;
+    }
+
+    .systemDebugOverlay::before {
+        content: "md";
+        animation: 2s ease-out forwards mdDisappear;
+    }
+
+    .heading {
+        --font-size: clamp(24px, var(--computed-font-size), 64px);
+        line-height: 120%;
+    }
+}
+
+/* lg: ≥961px */
+@media screen and (min-width: 961px) {
+    .grid {
+        --height: var(--lg-height, var(--md-height, var(--smd-height, var(--sm-height))));
+        --grid-rows: var(--lg-grid-rows, var(--md-grid-rows, var(--smd-grid-rows, var(--sm-grid-rows))));
+        --grid-columns: var(--lg-grid-columns, var(--md-grid-columns, var(--smd-grid-columns, var(--sm-grid-columns))));
+        --cell-padding: 48px;
+        --grid-divider-gap: calc(140px - var(--cell-padding));
+    }
+
+    .block {
+        --grid-row: var(--lg-grid-row, var(--md-grid-row, var(--smd-grid-row, var(--sm-grid-row))));
+        --grid-column: var(--lg-grid-column, var(--md-grid-column, var(--smd-grid-column, var(--sm-grid-column))));
+        --cell-rows: var(--lg-cell-rows, var(--md-cell-rows, var(--smd-cell-rows, var(--sm-cell-rows))));
+        --cell-columns: var(--lg-cell-columns, var(--md-cell-columns, var(--smd-cell-columns, var(--sm-cell-columns))));
+        --block-display: var(--smd-block-display);
+    }
+
+    .cross {
+        --cross-row: var(--lg-cross-row, var(--md-cross-row, var(--smd-cross-row, var(--sm-cross-row))));
+        --cross-column: var(--lg-cross-column, var(--md-cross-column, var(--smd-cross-column, var(--sm-cross-column))));
+    }
+
+    .xsGuide,
+    .smGuide,
+    .smdGuide,
+    .mdGuide {
+        display: none;
+    }
+
+    .systemDebugOverlay::before {
+        content: "lg";
+        animation: 2s ease-out forwards lgDisappear;
+    }
+}
+
+
+/* ================================================================
+ *  RESPONSIVE: @container queries (useContainer)
+ * ================================================================ */
+
+/* xs container: ≤400px */
+@container (max-width: 400px) {
+    .useContainer {
+        --height: var(--xs-height, var(--sm-height));
+        --grid-rows: var(--xs-grid-rows, var(--sm-grid-rows));
+        --grid-columns: var(--xs-grid-columns, var(--sm-grid-columns));
+        --cell-padding: 24px;
+        --grid-divider-gap: calc(72px - var(--cell-padding));
+    }
+
+    .useContainer .block {
+        --grid-row: var(--xs-grid-row, var(--sm-grid-row));
+        --grid-column: var(--xs-grid-column, var(--sm-grid-column));
+        --block-display: var(--xs-block-display, var(--sm-block-display));
+        --cell-rows: var(--xs-cell-rows, var(--sm-cell-rows));
+        --cell-columns: var(--xs-cell-columns, var(--sm-cell-columns));
+    }
+
+    .useContainer .xsGuide { display: block; }
+    .useContainer .smGuide,
+    .useContainer .smdGuide,
+    .useContainer .mdGuide,
+    .useContainer .lgGuide { display: none; }
+}
+
+/* sm container: 401–600px */
+@container (min-width: 401px) and (max-width: 600px) {
+    .useContainer {
+        --height: var(--sm-height);
+        --grid-rows: var(--sm-grid-rows);
+        --grid-columns: var(--sm-grid-columns);
+        --cell-padding: 24px;
+        --grid-divider-gap: calc(72px - var(--cell-padding));
+    }
+
+    .useContainer .block {
+        --grid-row: var(--sm-grid-row);
+        --grid-column: var(--sm-grid-column);
+        --cell-rows: var(--sm-cell-rows);
+        --cell-columns: var(--sm-cell-columns);
+        --block-display: var(--sm-block-display);
+    }
+
+    .useContainer .smGuide { display: block; }
+    .useContainer .xsGuide,
+    .useContainer .smdGuide,
+    .useContainer .mdGuide,
+    .useContainer .lgGuide { display: none; }
+}
+
+/* smd container: 601–768px */
+@container (min-width: 601px) and (max-width: 768px) {
+    .useContainer {
+        --height: var(--smd-height, var(--md-height, var(--sm-height)));
+        --grid-rows: var(--smd-grid-rows, var(--md-grid-rows, var(--sm-grid-rows)));
+        --grid-columns: var(--smd-grid-columns, var(--md-grid-columns, var(--sm-grid-columns)));
+        --cell-padding: 40px;
+        --grid-divider-gap: calc(120px - var(--cell-padding));
+    }
+
+    .useContainer .block {
+        --grid-row: var(--smd-grid-row, var(--md-grid-row, var(--sm-grid-row)));
+        --grid-column: var(--smd-grid-column, var(--md-grid-column, var(--sm-grid-column)));
+        --cell-rows: var(--smd-cell-rows, var(--md-cell-rows, var(--sm-cell-rows)));
+        --cell-columns: var(--smd-cell-columns, var(--md-cell-columns, var(--sm-cell-columns)));
+        --block-display: var(--smd-block-display);
+    }
+
+    .useContainer .smdGuide { display: block; }
+    .useContainer .xsGuide,
+    .useContainer .smGuide,
+    .useContainer .mdGuide,
+    .useContainer .lgGuide { display: none; }
+}
+
+/* md container: 769–960px */
+@container (min-width: 769px) and (max-width: 960px) {
+    .useContainer {
+        --height: var(--md-height, var(--smd-height, var(--sm-height)));
+        --grid-rows: var(--md-grid-rows, var(--smd-grid-rows, var(--sm-grid-rows)));
+        --grid-columns: var(--md-grid-columns, var(--smd-grid-columns, var(--sm-grid-columns)));
+        --cell-padding: 40px;
+        --grid-divider-gap: calc(140px - var(--cell-padding));
+    }
+
+    .useContainer .block {
+        --grid-row: var(--md-grid-row, var(--smd-grid-row, var(--sm-grid-row)));
+        --grid-column: var(--md-grid-column, var(--smd-grid-column, var(--sm-grid-column)));
+        --cell-rows: var(--md-cell-rows, var(--smd-cell-rows, var(--sm-cell-rows)));
+        --cell-columns: var(--md-cell-columns, var(--smd-cell-columns, var(--sm-cell-columns)));
+        --block-display: var(--md-block-display, var(--smd-block-display));
+    }
+
+    .useContainer .mdGuide { display: block; }
+    .useContainer .xsGuide,
+    .useContainer .smGuide,
+    .useContainer .smdGuide,
+    .useContainer .lgGuide { display: none; }
+}
+
+/* lg container: ≥961px */
+@container (min-width: 961px) {
+    .useContainer {
+        --height: var(--lg-height, var(--md-height, var(--smd-height, var(--sm-height))));
+        --grid-rows: var(--lg-grid-rows, var(--md-grid-rows, var(--smd-grid-rows, var(--sm-grid-rows))));
+        --grid-columns: var(--lg-grid-columns, var(--md-grid-columns, var(--smd-grid-columns, var(--sm-grid-columns))));
+        --cell-padding: 48px;
+        --grid-divider-gap: calc(140px - var(--cell-padding));
+    }
+
+    .useContainer .block {
+        --grid-row: var(--lg-grid-row, var(--md-grid-row, var(--smd-grid-row, var(--sm-grid-row))));
+        --grid-column: var(--lg-grid-column, var(--md-grid-column, var(--smd-grid-column, var(--sm-grid-column))));
+        --cell-rows: var(--lg-cell-rows, var(--md-cell-rows, var(--smd-cell-rows, var(--sm-cell-rows))));
+        --cell-columns: var(--lg-cell-columns, var(--md-cell-columns, var(--smd-cell-columns, var(--sm-cell-columns))));
+        --block-display: var(--smd-block-display);
+    }
+
+    .useContainer .lgGuide { display: block; }
+    .useContainer .xsGuide,
+    .useContainer .smGuide,
+    .useContainer .smdGuide,
+    .useContainer .mdGuide { display: none; }
+}
+
+
+/* ================================================================
+ *  KEYFRAMES
+ * ================================================================ */
+
+@keyframes xsDisappear {
+    90% { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes smDisappear {
+    90% { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes smdDisappear {
+    90% { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes mdDisappear {
+    90% { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes lgDisappear {
+    90% { opacity: 1; }
+    to { opacity: 0; }
+}

@@ -28,6 +28,9 @@ export type { BookProps } from './components/Book';
 export { Browser } from './components/Browser';
 export type { BrowserProps } from './components/Browser';
 
+export { Grid, GridSystem, GridCell } from './components/Grid';
+export type { GridSystemProps, GridProps, GridCellProps } from './components/Grid';
+
 export { Button, ButtonLink } from './components/Button';
 export type { ButtonProps, ButtonLinkProps, ButtonVariant, ButtonSize, ButtonShape } from './components/Button';
 
