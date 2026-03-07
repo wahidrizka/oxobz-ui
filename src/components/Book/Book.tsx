@@ -1,24 +1,9 @@
 import React, { forwardRef, CSSProperties } from 'react';
+import { LogoVercel } from '@oxobz/icons';
 import { Stack } from '../Stack';
 import { Text } from '../Text';
 import styles from './Book.module.css';
 
-/**
- * Default logo for stripe variant — Vercel triangle.
- * Extracted from production inspect element.
- */
-const VercelTriangleLogo = () => (
-    <svg
-        data-testid="oxobz-icon"
-        height="16"
-        strokeLinejoin="round"
-        viewBox="0 0 16 16"
-        width="16"
-        style={{ color: 'currentcolor' }}
-    >
-        <path fillRule="evenodd" clipRule="evenodd" d="M8 1L16 15H0L8 1Z" fill="currentColor" />
-    </svg>
-);
 
 export interface BookProps extends React.HTMLAttributes<HTMLDivElement> {
     /**
@@ -219,7 +204,7 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                                 )}
 
                                 {variant === 'stripe' && (
-                                    logo !== undefined ? logo : <VercelTriangleLogo />
+                                    logo !== undefined ? logo : <LogoVercel size={16} />
                                 )}
                             </Stack>
                         </Stack>

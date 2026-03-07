@@ -44,6 +44,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/prismjs": "^1.26.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
@@ -56,6 +57,8 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@oxobz/icons": "^1.1.0"
+    "@oxobz/icons": "^1.1.0",
+    "prism-react-renderer": "^2.4.1",
+    "prismjs": "^1.30.0"
   }
 }

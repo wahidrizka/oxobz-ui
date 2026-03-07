@@ -43,6 +43,9 @@ export type { LabelProps } from './components/Label';
 export { ChoiceboxGroup } from './components/ChoiceboxGroup';
 export type { ChoiceboxGroupProps, ChoiceboxGroupItemProps } from './components/ChoiceboxGroup';
 
+export { CodeBlock } from './components/CodeBlock';
+export type { CodeBlockProps, SwitcherOption } from './components/CodeBlock';
+
 export { Grid, GridSystem, GridCell } from './components/Grid';
 export type { GridSystemProps, GridProps, GridCellProps } from './components/Grid';
 

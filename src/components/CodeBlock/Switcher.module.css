@@ -1,0 +1,52 @@
+/**
+ * Switcher — language dropdown used inside CodeBlock header
+ *
+ * 1:1 translation from production CSS (switcher-module__yG1vyW)
+ * Source: _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *
+ * Renames: --geist-radius → --oxobz-radius
+ */
+
+/* ── Container ─────────────────────────────────────────── */
+.container {
+    position: relative;
+}
+
+.container:focus-within .visible {
+    box-shadow: var(--ds-focus-ring);
+}
+
+@media (hover: hover) {
+    .container:hover .visible {
+        background: var(--ds-gray-200);
+    }
+}
+
+/* ── Visible display ───────────────────────────────────── */
+.visible {
+    border-radius: var(--oxobz-radius);
+    background: var(--ds-background-200);
+    cursor: pointer;
+    height: 100%;
+    color: var(--ds-gray-900);
+    font-size: 13px;
+    line-height: 1;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+    border: none;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+}
+
+/* ── Native select (overlaid transparent) ──────────────── */
+.select {
+    opacity: 0;
+    cursor: pointer;
+    background-color: var(--ds-gray-100);
+    outline: none;
+    position: absolute;
+    inset: 0;
+}
