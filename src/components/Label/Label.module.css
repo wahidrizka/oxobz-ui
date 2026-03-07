@@ -1,0 +1,24 @@
+/**
+ * Label — form field label component
+ *
+ * 1:1 translation from production CSS (label-module__CX73KW)
+ * Source: _nextstatic/chunks/d2f6d4dcdb88e56d.css  L23
+ *
+ * Rename: --geist-space-2x → --oxobz-space-2x
+ */
+
+.label {
+    color: var(--ds-gray-900);
+    margin-bottom: var(--oxobz-space-2x);
+    max-width: 100%;
+    font-size: 13px;
+    display: block;
+}
+
+.input {
+    cursor: text;
+}
+
+.capitalize {
+    text-transform: capitalize;
+}

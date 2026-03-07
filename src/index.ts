@@ -37,6 +37,9 @@ export type { RadioProps } from './components/Radio';
 export { RadioGroup } from './components/Radio';
 export type { RadioGroupProps, RadioGroupItemProps } from './components/Radio';
 
+export { Label } from './components/Label';
+export type { LabelProps } from './components/Label';
+
 export { Grid, GridSystem, GridCell } from './components/Grid';
 export type { GridSystemProps, GridProps, GridCellProps } from './components/Grid';
 
