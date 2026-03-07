@@ -28,6 +28,9 @@ export type { BookProps } from './components/Book';
 export { Browser } from './components/Browser';
 export type { BrowserProps } from './components/Browser';
 
+export { Checkbox } from './components/Checkbox';
+export type { CheckboxProps } from './components/Checkbox';
+
 export { Grid, GridSystem, GridCell } from './components/Grid';
 export type { GridSystemProps, GridProps, GridCellProps } from './components/Grid';
 

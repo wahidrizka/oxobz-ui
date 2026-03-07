@@ -1,0 +1,133 @@
+/* ==========================================================================
+ * Checkbox.module.css — exact from production checkbox-module__Em-o0q
+ * Source: _nextstatic/chunks/8cfa8a674deaaab6.css (line 24)
+ * ========================================================================== */
+
+/* ---- Container ---- */
+.container {
+    cursor: pointer;
+    align-items: flex-start;
+    font-size: 13px;
+    display: inline-flex;
+}
+
+.fullWidth {
+    width: 100%;
+}
+
+/* ---- Disabled ---- */
+.disabled {
+    cursor: not-allowed;
+    color: var(--ds-gray-500);
+}
+
+/* ---- Check wrapper ---- */
+.check {
+    align-items: center;
+    margin: -2px;
+    padding: 2px;
+    display: flex;
+    position: relative;
+}
+
+/* ---- Text label ---- */
+.text {
+    margin-left: var(--oxobz-gap-quarter);
+}
+
+.fullWidth .text {
+    flex: 1;
+}
+
+/* ---- Icon (the checkbox square) ---- */
+.icon {
+    --checkbox-color: var(--ds-gray-700);
+    background: var(--ds-background-100);
+    border-radius: 4px;
+    justify-content: center;
+    align-items: center;
+    width: 1rem;
+    height: 1rem;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    position: relative;
+    transform: rotate(0.000001deg);
+    border: 1px solid var(--checkbox-color) !important;
+}
+
+.icon svg {
+    flex-shrink: 0;
+}
+
+.icon svg line {
+    transition: stroke 0.2s;
+}
+
+.icon svg path {
+    visibility: hidden;
+}
+
+/* When NOT indeterminate, hide the dash line */
+.icon:not(.indeterminate) svg line {
+    visibility: hidden;
+}
+
+/* ---- Inverted variant ---- */
+.icon.inverted {
+    --checkbox-color: var(--ds-gray-1000);
+    background: var(--checkbox-color);
+}
+
+.icon.inverted svg path {
+    visibility: visible;
+}
+
+/* ---- Checked states (via adjacent sibling of .input) ---- */
+.input:checked+.icon:not(.indeterminate):not(.inverted) {
+    --checkbox-color: var(--ds-gray-1000);
+    background: var(--checkbox-color);
+}
+
+.input:checked+.icon:not(.indeterminate):not(.inverted) svg path {
+    visibility: visible;
+}
+
+.input:checked+.icon.inverted {
+    --checkbox-color: var(--ds-gray-900);
+    background: unset;
+}
+
+.input:checked+.icon.inverted svg path {
+    visibility: hidden;
+}
+
+/* ---- Disabled + Checked ---- */
+.input:checked:disabled+.icon {
+    --checkbox-color: var(--ds-gray-600) !important;
+}
+
+/* ---- Disabled (unchecked) ---- */
+.input:disabled+.icon {
+    --checkbox-color: var(--ds-gray-500);
+}
+
+.input:disabled:not(:checked)+.icon {
+    background: var(--ds-gray-100);
+}
+
+/* ---- Hover ---- */
+@media (hover: hover) {
+    .input:not(:disabled):not(:checked):hover+.icon {
+        border-color: var(--ds-gray-900);
+        background-color: var(--ds-gray-200);
+    }
+}
+
+/* ---- Focus ---- */
+.input:focus-visible+.icon {
+    box-shadow: var(--ds-focus-ring);
+}
+
+.input:focus-visible:not(:checked):not(:disabled)+.icon {
+    background-color: var(--ds-gray-200);
+}
