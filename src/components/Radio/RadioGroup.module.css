@@ -1,0 +1,102 @@
+/**
+ * RadioGroup — compound component wrapper + item styling
+ *
+ * 1:1 translation from production CSS (radio-group-module__neb8na)
+ * Source: _nextstatic/chunks/b4b9d0dd5348b0c3.css  L33
+ *
+ * Rename: --geist-gap-quarter → --oxobz-gap-quarter
+ */
+
+/* ── Item (label wrapper per radio item) ───────────────── */
+.item {
+    --radio-color: var(--ds-gray-700);
+    align-items: center;
+    font-size: 13px;
+    display: inline-flex;
+}
+
+/* ── Radio check container ─────────────────────────────── */
+.radio-check {
+    cursor: pointer;
+    align-items: center;
+    margin: -2px;
+    padding: 2px;
+    display: flex;
+}
+
+/* ── Radio icon ────────────────────────────────────────── */
+.radio-icon {
+    border: 1px solid var(--radio-color);
+    background: var(--ds-background-100);
+    border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+}
+
+.radio-icon::after {
+    content: "";
+    background: var(--radio-color);
+    border-radius: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    transition: transform 0.15s;
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+/* ── Text label ────────────────────────────────────────── */
+.text:not(.no-margin-left) {
+    margin-left: var(--oxobz-gap-quarter);
+}
+
+.text.full-width {
+    width: 100%;
+}
+
+/* ── Disabled state ────────────────────────────────────── */
+.item.disabled {
+    cursor: not-allowed;
+    color: var(--ds-gray-500);
+    --radio-color: var(--ds-gray-500);
+}
+
+.item.disabled .radio-check {
+    cursor: not-allowed;
+}
+
+/* ── Hover (non‑disabled) ──────────────────────────────── */
+@media (hover: hover) {
+    .item:not(.disabled):hover .radio-input:not(:checked):not(:active)+.radio-icon {
+        background: var(--ds-gray-200);
+        --radio-color: var(--ds-gray-900);
+    }
+
+    .item:not(.disabled):hover .text {
+        cursor: pointer;
+    }
+}
+
+/* ── Active / Checked ──────────────────────────────────── */
+.item:not(.disabled) .radio-input:active+.radio-icon {
+    --radio-color: var(--ds-gray-600);
+}
+
+.item:not(.disabled) .radio-input:checked+.radio-icon {
+    --radio-color: var(--ds-gray-1000);
+}
+
+/* ── Checked icon dot visible ──────────────────────────── */
+.radio-input:checked+.radio-icon::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* ── Focus ring suppressed: managed by parent ──────────── */
+.radio-input:focus-visible+.radio-icon,
+.radio-input[data-focus-visible-added]+.radio-icon {
+    box-shadow: var(--ds-focus-ring);
+}

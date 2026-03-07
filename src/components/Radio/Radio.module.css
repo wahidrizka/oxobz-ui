@@ -1,0 +1,78 @@
+/**
+ * Radio — standalone radio indicator
+ *
+ * 1:1 translation from production CSS (radio-module__3k_T0a)
+ * Source: _nextstatic/chunks/1c419a75d7e589ae.css  L19
+ *
+ * Rename: --geist-* → --oxobz-*
+ */
+
+/* ── Container ─────────────────────────────────────────── */
+.check {
+    cursor: pointer;
+    --radio-color: var(--ds-gray-700);
+    align-items: center;
+    margin: -2px;
+    padding: 2px;
+    display: flex;
+}
+
+.check.disabled {
+    cursor: not-allowed;
+    color: var(--ds-gray-500);
+    --radio-color: var(--ds-gray-500);
+}
+
+/* ── Hover (non‑disabled) ──────────────────────────────── */
+@media (hover: hover) {
+    .check:not(.disabled):hover .input:not(:checked):not(:active)+.icon {
+        background: var(--ds-gray-200);
+        --radio-color: var(--ds-gray-900);
+    }
+}
+
+/* ── Active / Checked ──────────────────────────────────── */
+.check:not(.disabled) .input:active+.icon {
+    --radio-color: var(--ds-gray-600);
+}
+
+.check:not(.disabled) .input:checked+.icon {
+    --radio-color: var(--ds-gray-1000);
+}
+
+/* ── Icon (radio circle) ──────────────────────────────── */
+.icon {
+    border: 1px solid var(--radio-color);
+    background: var(--ds-background-100);
+    border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+}
+
+/* Dot — pseudo‑element */
+.icon::after {
+    content: "";
+    background: var(--radio-color);
+    border-radius: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    transition: transform 0.15s;
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+/* ── Focus ring ────────────────────────────────────────── */
+.input:focus-visible+.icon,
+.input[data-focus-visible-added]+.icon {
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* ── Dot visible when checked ──────────────────────────── */
+.input:checked+.icon::after {
+    transform: translate(-50%, -50%) scale(1);
+}
