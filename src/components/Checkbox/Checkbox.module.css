@@ -68,36 +68,36 @@
 }
 
 /* When NOT indeterminate, hide the dash line */
-.icon:not(.indeterminate) svg line {
+.icon:not(:global(.indeterminate)) svg line {
     visibility: hidden;
 }
 
 /* ---- Inverted variant ---- */
-.icon.inverted {
+.icon:global(.inverted) {
     --checkbox-color: var(--ds-gray-1000);
     background: var(--checkbox-color);
 }
 
-.icon.inverted svg path {
+.icon:global(.inverted) svg path {
     visibility: visible;
 }
 
 /* ---- Checked states (via adjacent sibling of .input) ---- */
-.input:checked+.icon:not(.indeterminate):not(.inverted) {
+.input:checked+.icon:not(:global(.indeterminate)):not(:global(.inverted)) {
     --checkbox-color: var(--ds-gray-1000);
     background: var(--checkbox-color);
 }
 
-.input:checked+.icon:not(.indeterminate):not(.inverted) svg path {
+.input:checked+.icon:not(:global(.indeterminate)):not(:global(.inverted)) svg path {
     visibility: visible;
 }
 
-.input:checked+.icon.inverted {
+.input:checked+.icon:global(.inverted) {
     --checkbox-color: var(--ds-gray-900);
     background: unset;
 }
 
-.input:checked+.icon.inverted svg path {
+.input:checked+.icon:global(.inverted) svg path {
     visibility: hidden;
 }
 
