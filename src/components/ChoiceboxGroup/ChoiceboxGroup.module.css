@@ -1,0 +1,187 @@
+/**
+ * ChoiceboxGroup — large-form radio / checkbox selector
+ *
+ * 1:1 translation from production CSS (choicebox-group-module__kLcSnq)
+ * Source: _nextstatic/chunks/76a5400c61fb370f.css  L3740-3897
+ *        _nextstatic/chunks/1c419a75d7e589ae.css  L20
+ *
+ * No --geist-* tokens found in this module — no renames needed.
+ */
+
+/* ── Group reset ──────────────────────────────────────── */
+.choicebox-group {
+    width: 100%;
+}
+
+.choicebox-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: 100%;
+}
+
+/* ── Choicebox item (each <label>) ────────────────────── */
+.choicebox {
+    border: 1px solid var(--ds-gray-400);
+    cursor: pointer;
+    border-radius: 6px;
+    list-style: none;
+    transition: background 0.15s, border 0.15s;
+}
+
+/* ── Focus ring (bubbles from inner input) ────────────── */
+:is(.choicebox:has(:focus-visible),
+    .choicebox:has([data-focus-visible-added])) {
+    box-shadow: var(--ds-focus-ring);
+    outline: none;
+}
+
+:is(.choicebox:has(:focus-visible) input,
+    .choicebox:has([data-focus-visible-added]) input) {
+    outline: none;
+}
+
+/* ── Title & Description ──────────────────────────────── */
+.choicebox .title,
+.choicebox .description {
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.choicebox .title {
+    font-weight: 500;
+}
+
+.choicebox .description {
+    color: var(--ds-gray-900);
+    font-weight: 400;
+}
+
+.choicebox .description:empty {
+    display: none;
+}
+
+/* ── Option row ───────────────────────────────────────── */
+.choicebox .option {
+    height: 100%;
+    border-radius: 6px;
+    padding: 12px;
+    transition: background 0.15s, border 0.15s;
+}
+
+.choicebox .option:has(+.content:not(:empty)) {
+    border-radius: 6px 6px 0 0;
+}
+
+/* ── Custom content slot ──────────────────────────────── */
+.choicebox .content:not(:empty) {
+    border-top: 1px solid #0000;
+    border-top-color: inherit;
+}
+
+/* ── Hover (non-disabled) ─────────────────────────────── */
+@media (hover: hover) {
+    .choicebox:not(.disabled):hover {
+        background: var(--ds-gray-100);
+        border-color: var(--ds-gray-500);
+    }
+
+    .choicebox:not(.disabled):hover .checkbox input:not(:disabled):not(:checked):hover+span.icon {
+        border-color: var(--ds-gray-700);
+        background-color: var(--ds-background-200);
+    }
+}
+
+.choicebox:not(.disabled):hover span.radio {
+    --radio-color: var(--ds-gray-700);
+}
+
+@media (hover: hover) {
+    .choicebox:not(.disabled):hover .input:active+span.icon {
+        --checkbox-color: var(--ds-blue-400);
+    }
+
+    .choicebox:not(.disabled):hover .input:checked+.icon:not(:global(.indeterminate)):not(:global(.inverted)) {
+        --checkbox-color: var(--ds-blue-900);
+    }
+
+    .choicebox:not(.disabled):hover span.icon {
+        --checkbox-color: var(--ds-gray-500);
+    }
+}
+
+/* ── Active (non-disabled) ────────────────────────────── */
+.choicebox:not(.disabled):active .option {
+    background: var(--ds-gray-100);
+}
+
+.choicebox:not(.disabled):active {
+    border-color: var(--ds-gray-600);
+}
+
+/* ── Checked (non-disabled) ───────────────────────────── */
+.choicebox:not(.disabled).checked .option {
+    background: var(--ds-blue-100);
+}
+
+@media (hover: hover) {
+    .choicebox:not(.disabled).checked .option:hover {
+        background: var(--ds-blue-200);
+    }
+}
+
+.choicebox:not(.disabled).checked .title,
+.choicebox:not(.disabled).checked .description {
+    color: var(--ds-blue-900);
+}
+
+.choicebox:not(.disabled).checked {
+    border: 1px solid var(--ds-blue-600);
+}
+
+/* ── Checkbox overrides inside choicebox ───────────────── */
+.choicebox:not(.disabled) .checkbox input:active+span.icon {
+    --checkbox-color: var(--ds-blue-400);
+}
+
+.choicebox:not(.disabled) .checkbox input:checked+.icon:not(:global(.indeterminate)):not(:global(.inverted)) {
+    --checkbox-color: var(--ds-blue-900);
+}
+
+.choicebox:not(.disabled) .checkbox input:focus-visible+span.icon {
+    box-shadow: none;
+}
+
+.choicebox:not(.disabled) .checkbox span.icon {
+    --checkbox-color: var(--ds-gray-500);
+}
+
+/* ── Radio overrides inside choicebox ─────────────────── */
+.choicebox:not(.disabled) span.radio {
+    --radio-color: var(--ds-gray-500);
+}
+
+@media (hover: hover) {
+    .choicebox:not(.disabled) span.radio:hover input:not(:checked):not(:active)+.icon {
+        --radio-color: var(--ds-blue-900);
+    }
+}
+
+.choicebox:not(.disabled) span.radio input.input:active+span.icon,
+.choicebox:not(.disabled) span.radio input.input:checked+span.icon {
+    --radio-color: var(--ds-blue-900);
+}
+
+.choicebox:not(.disabled) span.radio input.input:focus-visible+span.icon {
+    box-shadow: none;
+}
+
+/* ── Disabled ─────────────────────────────────────────── */
+.choicebox.disabled {
+    cursor: not-allowed;
+}
+
+.choicebox.disabled .title,
+.choicebox.disabled .description {
+    color: var(--ds-gray-500);
+}
