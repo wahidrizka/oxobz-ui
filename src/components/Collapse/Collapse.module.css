@@ -1,0 +1,117 @@
+/**
+ * Collapse — CSS Module
+ * 1:1 translation from production: 76a5400c61fb370f.css lines 3899-3997
+ *
+ * Variable mapping:
+ *   --geist-gap       → --oxobz-gap       (spacing.css L30)
+ *   --geist-gap-half  → --oxobz-gap-half  (spacing.css L31)
+ *   --geist-radius    → --oxobz-radius    (spacing.css L37)
+ *   --geist-background→ --oxobz-background(colors.css L137)
+ *   --geist-secondary → --oxobz-secondary (colors.css L144)
+ *   --geist-space     → --oxobz-space     (spacing.css L8)
+ *   --accents-2       → --accents-2       (same, colors.css L128)
+ *   --shadow-small    → --shadow-small    (same, shadows.css L33)
+ *   --ds-gray-1000    → --ds-gray-1000    (same, colors.css L203)
+ *   --ds-blue-700     → --ds-blue-700     (same, colors.css L211)
+ */
+
+.collapseGroup {
+    border-top: 1px solid var(--accents-2);
+}
+
+.collapse {
+    text-align: left;
+    border-top: 1px solid var(--accents-2);
+    border-bottom: 1px solid var(--accents-2);
+}
+
+.collapse.context {
+    border-top: none;
+}
+
+.collapse.card {
+    padding: var(--oxobz-gap);
+    box-shadow: var(--shadow-small);
+    border-radius: var(--oxobz-radius);
+    border: none;
+}
+
+.button {
+    color: var(--ds-gray-1000);
+    cursor: pointer;
+    outline-color: var(--ds-blue-700);
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+}
+
+.button>span {
+    padding: var(--oxobz-gap) 0;
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+}
+
+.button>span.small,
+.button>span.xs {
+    padding: var(--oxobz-gap-half) 0;
+}
+
+.button:focus.focus-visible {
+    border-radius: var(--oxobz-radius);
+    box-shadow: 0 0 0 2px var(--oxobz-background), 0 0 0 4px var(--accents-3);
+}
+
+.subtitle {
+    color: var(--oxobz-secondary);
+    letter-spacing: normal;
+    font-size: 1rem;
+    font-weight: 400;
+    display: block;
+}
+
+.collapseContent {
+    will-change: height;
+    font-size: 16px;
+    line-height: 26px;
+    transition: height 0.2s;
+    overflow-y: hidden;
+}
+
+.collapseContent>div {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.title {
+    justify-content: space-between;
+    width: 100%;
+    display: flex;
+}
+
+.alignChevronLeft {
+    justify-content: flex-start;
+    gap: var(--oxobz-space);
+    width: unset;
+}
+
+.icon {
+    color: var(--ds-gray-1000);
+    transition: transform 0.2s;
+    display: flex;
+}
+
+.icon.small {
+    width: 9px;
+}
+
+.icon.open {
+    transform: rotate(90deg);
+}
+
+@media screen and (max-height: 780px) {
+    .collapseContent {
+        max-height: 65vh;
+    }
+}

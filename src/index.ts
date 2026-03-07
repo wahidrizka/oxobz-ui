@@ -55,5 +55,8 @@ export type { ButtonProps, ButtonLinkProps, ButtonVariant, ButtonSize, ButtonSha
 export { Spinner } from './components/Spinner';
 export type { SpinnerProps } from './components/Spinner';
 
+export { CollapseGroup, CollapseItem } from './components/Collapse';
+export type { CollapseGroupProps, CollapseItemProps } from './components/Collapse';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'
