@@ -12,9 +12,12 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./styles": "./src/tokens/index.css"
+    "./styles": "./dist/styles.css"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css",
+    "**/prism-setup.*"
+  ],
   "files": [
     "dist"
   ],

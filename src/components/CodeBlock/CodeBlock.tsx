@@ -23,18 +23,20 @@ import switcherStyles from './Switcher.module.css';
 /* prism-setup sets globalThis.Prism — MUST come before prismjs imports */
 import './prism-setup';
 
-/* Additional languages loaded from prismjs */
-import 'prismjs/components/prism-lua';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-markup-templating'; /* required by PHP */
-import 'prismjs/components/prism-php';
-import 'prismjs/components/prism-ruby';
-import 'prismjs/components/prism-scss';
-import 'prismjs/components/prism-diff';
-import 'prismjs/components/prism-docker';
-import 'prismjs/components/prism-toml';
+/* Additional languages loaded from prismjs.
+   Explicit .js extension is required: prismjs has no exports map, so
+   extensionless subpaths fail to resolve for Node ESM consumers. */
+import 'prismjs/components/prism-lua.js';
+import 'prismjs/components/prism-bash.js';
+import 'prismjs/components/prism-java.js';
+import 'prismjs/components/prism-sql.js';
+import 'prismjs/components/prism-markup-templating.js'; /* required by PHP */
+import 'prismjs/components/prism-php.js';
+import 'prismjs/components/prism-ruby.js';
+import 'prismjs/components/prism-scss.js';
+import 'prismjs/components/prism-diff.js';
+import 'prismjs/components/prism-docker.js';
+import 'prismjs/components/prism-toml.js';
 
 /* ------------------------------------------------------------------ */
 /*  Empty theme — all colors come from our CSS module, not inline      */

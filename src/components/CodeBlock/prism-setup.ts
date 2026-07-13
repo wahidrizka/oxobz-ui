@@ -11,4 +11,8 @@
 
 import { Prism } from 'prism-react-renderer';
 
-(typeof globalThis !== 'undefined' ? globalThis : window).Prism = Prism;
+// This module is side-effect only, so it MUST stay listed in package.json
+// "sideEffects" ("**/prism-setup.*") — otherwise Vite's build (and consumer
+// bundlers) treeshake it away and prismjs language components crash on the
+// missing `Prism` global.
+(globalThis as typeof globalThis & { Prism: typeof Prism }).Prism = Prism;
