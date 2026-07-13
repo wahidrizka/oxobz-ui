@@ -89,6 +89,13 @@ describe('Browser', () => {
             expect(copyBtn).toBeDefined();
             expect(copyBtn.tagName.toLowerCase()).toBe('button');
         });
+
+        it('copy button distyle via CSS Module class, bukan inline style', () => {
+            render(<Browser address="vercel.com" />);
+            const copyBtn = screen.getByLabelText('Copy');
+            expect(copyBtn.className).toMatch(/copyButton/);
+            expect(copyBtn.getAttribute('style')).toBeNull();
+        });
     });
 
     // ---- Header sections ----

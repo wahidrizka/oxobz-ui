@@ -209,17 +209,25 @@ describe('ThemeProvider', () => {
         expect(localStorage.getItem(DEFAULT_STORAGE_KEY)).toBeNull();
     });
 
-    it('characterization: initial read ignores custom storageKey (always reads default key)', () => {
-        // getStoredTheme() reads the hardcoded default key, not the storageKey
-        // prop — a stored value under a custom key is not restored on init.
+    it('round-trips theme through a custom storageKey (write via setTheme, read on init)', () => {
         mockMatchMedia(false);
-        localStorage.setItem('my-app-theme', 'dark');
+        const { unmount } = render(
+            <ThemeProvider defaultTheme="light" storageKey="my-app-theme">
+                <ThemeConsumer />
+            </ThemeProvider>,
+        );
+        fireEvent.click(screen.getByText('set-dark'));
+        expect(localStorage.getItem('my-app-theme')).toBe('dark');
+        unmount();
+
+        // A fresh mount with the same custom storageKey restores the value.
         render(
             <ThemeProvider storageKey="my-app-theme">
                 <ThemeConsumer />
             </ThemeProvider>,
         );
-        expect(screen.getByTestId('theme')).toHaveTextContent('system');
+        expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+        expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     });
 
     // ── System theme ──

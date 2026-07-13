@@ -178,6 +178,33 @@ describe('Book', () => {
             const el = container.firstChild as HTMLElement;
             expect(el.className).toMatch(/my-custom-class/);
         });
+
+        it('class list bersih tanpa spasi berlebih saat className tidak diberikan (cn)', () => {
+            const { container } = render(<Book title="Test" />);
+            const el = container.firstChild as HTMLElement;
+            expect(el.className).toBe(el.className.trim());
+            expect(el.className).not.toMatch(/\s{2,}/);
+        });
+
+        it('pages class list bersih tanpa entri kosong saat textured=false (cn)', () => {
+            const { container } = render(<Book title="Test" />);
+            const pages = container.querySelector('[class*="pages"]') as HTMLElement;
+            expect(pages.className).toBe(pages.className.trim());
+            expect(pages.className).not.toMatch(/\s{2,}/);
+        });
+    });
+
+    // ---- Root attributes (production fidelity) ----
+    describe('atribut root', () => {
+        it('root TIDAK punya marker data-oxobz-book / data-version (sesuai produksi)', () => {
+            // Production snapshot (book.html): the root perspective element has
+            // no data- attributes at all — data-version="v1" only appears on
+            // inner Stack/Text elements rendered by those components.
+            const { container } = render(<Book title="Test" />);
+            const el = container.firstChild as HTMLElement;
+            expect(el.hasAttribute('data-oxobz-book')).toBe(false);
+            expect(el.hasAttribute('data-version')).toBe(false);
+        });
     });
 
     // ---- Logo ----

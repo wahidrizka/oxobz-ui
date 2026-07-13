@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { createRef } from 'react';
-import { Avatar, AvatarGroup, AvatarWithIcon } from './Avatar';
+import { Avatar, AvatarGroup, AvatarWithIcon, GitHubAvatar } from './Avatar';
 
 /* ------------------------------------------------------------------ */
 /*  Avatar                                                             */
@@ -246,5 +246,43 @@ describe('AvatarWithIcon', () => {
     it('applies custom className to wrapper', () => {
         const { container } = render(<AvatarWithIcon className="custom-wrapper" />);
         expect(container.querySelector('.custom-wrapper')).not.toBeNull();
+    });
+});
+
+/* ------------------------------------------------------------------ */
+/*  GitHubAvatar                                                       */
+/* ------------------------------------------------------------------ */
+
+describe('GitHubAvatar', () => {
+    it('builds avatar src from username at 2x size', () => {
+        const { container } = render(<GitHubAvatar size={32} username="rauchg" />);
+        const img = container.querySelector('img');
+        expect(img?.getAttribute('src')).toBe('https://avatars.githubusercontent.com/rauchg?s=64');
+    });
+
+    it('renders icon div with data-git-type="github" and background', () => {
+        const { container } = render(<GitHubAvatar size={32} username="rauchg" />);
+        const iconDiv = container.querySelector('[data-git-type="github"]');
+        expect(iconDiv).not.toBeNull();
+        expect(iconDiv?.getAttribute('data-background')).toBe('true');
+    });
+
+    it('icon svg has no Tailwind class — color comes from currentColor', () => {
+        // Production markup carries the docs-site Tailwind class text-[#000000];
+        // this project has no Tailwind, so the class is intentionally omitted.
+        const { container } = render(<GitHubAvatar size={32} username="rauchg" />);
+        const svg = container.querySelector('[data-git-type="github"] svg');
+        expect(svg).not.toBeNull();
+        expect(svg?.classList.contains('text-[#000000]')).toBe(false);
+        expect((svg as SVGElement).style.color).toBe('currentcolor');
+    });
+
+    it('icon svg matches production dimensions (16px attrs, 14px inline style)', () => {
+        const { container } = render(<GitHubAvatar size={32} username="rauchg" />);
+        const svg = container.querySelector('[data-git-type="github"] svg') as SVGElement;
+        expect(svg.getAttribute('width')).toBe('16');
+        expect(svg.getAttribute('height')).toBe('16');
+        expect(svg.style.width).toBe('14px');
+        expect(svg.style.height).toBe('14px');
     });
 });

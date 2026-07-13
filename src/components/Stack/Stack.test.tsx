@@ -95,14 +95,32 @@ describe('Stack', () => {
         expect(getStack(container).style.getPropertyValue('--stack-gap')).toBe('1rem');
     });
 
-    it('appends px when padding is a number', () => {
+    it('appends px when padding is a number and applies padding class', () => {
         const { container } = render(<Stack padding={8}>padding</Stack>);
-        expect(getStack(container).style.getPropertyValue('--stack-padding')).toBe('8px');
+        const el = getStack(container);
+        expect(el.style.getPropertyValue('--stack-padding')).toBe('8px');
+        // .padding is the class that consumes var(--stack-padding) — without it
+        // the custom property has no visual effect
+        expect(el.classList.contains('padding')).toBe(true);
     });
 
-    it('passes padding string through as-is', () => {
+    it('passes padding string through as-is and applies padding class', () => {
         const { container } = render(<Stack padding="2rem 1rem">padding</Stack>);
-        expect(getStack(container).style.getPropertyValue('--stack-padding')).toBe('2rem 1rem');
+        const el = getStack(container);
+        expect(el.style.getPropertyValue('--stack-padding')).toBe('2rem 1rem');
+        expect(el.classList.contains('padding')).toBe(true);
+    });
+
+    it('does not apply padding class by default (matches production snapshot)', () => {
+        const { container } = render(<Stack>no padding</Stack>);
+        expect(getStack(container).classList.contains('padding')).toBe(false);
+    });
+
+    it('does not apply padding class when padding is 0', () => {
+        const { container } = render(<Stack padding={0}>zero padding</Stack>);
+        const el = getStack(container);
+        expect(el.style.getPropertyValue('--stack-padding')).toBe('0px');
+        expect(el.classList.contains('padding')).toBe(false);
     });
 
     // ── Style merging ──

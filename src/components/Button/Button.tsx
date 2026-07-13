@@ -114,7 +114,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             styles.base,
             styles.reset,
             styles.button,
-            styles.reset,
             // Themed
             isThemed ? styles.themed : undefined,
             ...variantClasses,
@@ -251,7 +250,6 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
             styles.base,
             styles.reset,
             styles.button,
-            styles.reset,
             isThemed ? styles.themed : undefined,
             ...variantClasses,
             variant === 'secondary' ? styles.secondary : undefined,

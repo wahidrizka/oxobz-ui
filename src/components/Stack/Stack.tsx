@@ -46,20 +46,26 @@ export const Stack = forwardRef<HTMLDivElement, StackProps>(
         },
         ref,
     ) => {
+        const stackPadding = typeof padding === 'number' ? `${padding}px` : padding;
+
         const stackStyle: CSSProperties = {
             ...style,
             '--stack-flex': flex,
             '--stack-direction': direction,
             '--stack-align': align,
             '--stack-justify': justify,
-            '--stack-padding': typeof padding === 'number' ? `${padding}px` : padding,
+            '--stack-padding': stackPadding,
             '--stack-gap': typeof gap === 'number' ? `${gap}px` : gap,
         } as CSSProperties;
+
+        // `.padding` consumes var(--stack-padding); production snapshots never
+        // render it on default (0px) stacks, so apply it only when padding is set.
+        const hasPadding = stackPadding !== '0px';
 
         return (
             <Tag
                 ref={ref}
-                className={cn(styles.stack, debug && styles.debug, className)}
+                className={cn(styles.stack, hasPadding && styles.padding, debug && styles.debug, className)}
                 data-version="v1"
                 style={stackStyle}
                 {...props}

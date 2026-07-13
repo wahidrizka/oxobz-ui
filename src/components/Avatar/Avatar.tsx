@@ -181,6 +181,9 @@ export function AvatarGroup({
         // noteCount = total members not shown normally (includes the one in the note)
         const noteCount = members.length - normalCount;
 
+        // Members without an explicit src fall back to Vercel's public avatar
+        // service — intentional production (Geist) behavior, kept as-is.
+        // Note: this is an external runtime dependency on vercel.com.
         return (
             <div className={cn(styles.group, className)} {...props}>
                 {normal.map((m, i) => (
@@ -267,7 +270,9 @@ export function AvatarWithIcon({
     ...props
 }: AvatarWithIconProps) {
     // Inspect element: AvatarWithIcon without src still renders with
-    // src="https://vercel.com/api/www/avatar?s=64" (default avatar, blue pattern)
+    // src="https://vercel.com/api/www/avatar?s=64" (default avatar, blue pattern).
+    // Falling back to Vercel's public avatar service is intentional production
+    // (Geist) behavior — an external runtime dependency on vercel.com.
     const defaultSrc = `https://vercel.com/api/www/avatar?s=${size * 2}`;
     const avatarSrc = src ?? defaultSrc;
 
@@ -336,13 +341,19 @@ export interface GitAvatarProps extends Omit<AvatarWithIconProps, 'icon' | 'icon
  * - src: https://avatars.githubusercontent.com/{username}?s={size*2}
  * - aria-label: "" (empty — from inspect element)
  * - icon: GitHub SVG built-in
+ *
+ * Note: production markup carries a Tailwind class `text-[#000000]` on the
+ * svg (an artifact of Vercel's docs site). This project has no Tailwind, so
+ * the class is dead here and intentionally omitted — the icon color is
+ * already handled by fill="currentColor" + the inline `color: currentcolor`
+ * that LogoGithub sets by default.
  */
 export function GitHubAvatar({ username, size = 32, ...props }: GitAvatarProps) {
     return (
         <AvatarWithIcon
             src={`https://avatars.githubusercontent.com/${username}?s=${size * 2}`}
             size={size}
-            icon={<LogoGithub size={14} className="text-[#000000]" style={{ width: 14, height: 14 }} />}
+            icon={<LogoGithub style={{ width: 14, height: 14 }} />}
             iconBackground
             gitType="github"
             {...props}

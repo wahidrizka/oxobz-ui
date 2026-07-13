@@ -24,13 +24,13 @@ beforeEach(() => {
     writeTextMock.mockClear();
 });
 
-/** Root wrapper has data-geist-code-block="" (the inner <code> has "true") */
+/** Root wrapper has data-oxobz-code-block="" (the inner <code> has "true") */
 const getRoot = (container: HTMLElement) =>
-    container.querySelector('div[data-geist-code-block=""]');
+    container.querySelector('div[data-oxobz-code-block=""]');
 
-/** Every rendered code line carries data-geist-code-block-line="true" */
+/** Every rendered code line carries data-oxobz-code-block-line="true" */
 const getLines = (container: HTMLElement) =>
-    container.querySelectorAll('[data-geist-code-block-line="true"]');
+    container.querySelectorAll('[data-oxobz-code-block-line="true"]');
 
 describe('CodeBlock', () => {
     // ── Basic rendering ──
@@ -42,7 +42,7 @@ describe('CodeBlock', () => {
         expect(pre?.textContent).toContain('hello world');
     });
 
-    it('root wrapper has data-geist-code-block="" and wrapper/relative classes', () => {
+    it('root wrapper has data-oxobz-code-block="" and wrapper/relative classes', () => {
         const { container } = render(<CodeBlock>{'x'}</CodeBlock>);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
@@ -50,11 +50,11 @@ describe('CodeBlock', () => {
         expect(root?.className).toContain('wrapper');
     });
 
-    it('renders <code> with code class and data-geist-code-block="true"', () => {
+    it('renders <code> with code class and data-oxobz-code-block="true"', () => {
         const { container } = render(<CodeBlock>{'x'}</CodeBlock>);
         const code = container.querySelector('code');
         expect(code?.className).toContain('code');
-        expect(code).toHaveAttribute('data-geist-code-block', 'true');
+        expect(code).toHaveAttribute('data-oxobz-code-block', 'true');
     });
 
     it('each line div has class "line" and the line data attribute', () => {
@@ -353,14 +353,14 @@ describe('CodeBlock', () => {
         );
         const root = screen.getByTestId('code-block');
         expect(root).toHaveAttribute('aria-label', 'Example code');
-        expect(root).toHaveAttribute('data-geist-code-block', '');
+        expect(root).toHaveAttribute('data-oxobz-code-block', '');
     });
 
     it('forwards ref to the root wrapper div', () => {
         const ref = createRef<HTMLDivElement>();
         render(<CodeBlock ref={ref}>{'x'}</CodeBlock>);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-geist-code-block', '');
+        expect(ref.current).toHaveAttribute('data-oxobz-code-block', '');
     });
 
     it('has displayName "CodeBlock"', () => {

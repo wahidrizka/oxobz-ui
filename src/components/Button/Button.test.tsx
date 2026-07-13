@@ -322,4 +322,11 @@ describe('Button', () => {
         expect(el?.className).toContain('button');
         expect(el?.className).toContain('invert');
     });
+
+    it('does not duplicate the reset class', () => {
+        render(<Button>reset once</Button>);
+        const el = screen.getByText('reset once').closest('[data-oxobz-button]');
+        const resetOccurrences = el?.className.match(/reset/g) ?? [];
+        expect(resetOccurrences).toHaveLength(1);
+    });
 });

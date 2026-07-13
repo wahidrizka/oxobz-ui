@@ -2,6 +2,7 @@ import React, { forwardRef, CSSProperties } from 'react';
 import { LogoVercel } from '@oxobz/icons';
 import { Stack } from '../Stack';
 import { Text } from '../Text';
+import { cn } from '../../utils/cn';
 import styles from './Book.module.css';
 
 
@@ -128,18 +129,16 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
         };
 
         // Rotate-wrapper class names
-        const wrapperClasses = [
+        const wrapperClasses = cn(
             styles.rotateWrapper,
             styles[variant],
-            hasColor ? styles.color : '',
-        ]
-            .filter(Boolean)
-            .join(' ');
+            hasColor && styles.color,
+        );
 
         return (
             <div
                 ref={ref}
-                className={[styles.perspective, className].filter(Boolean).join(' ')}
+                className={cn(styles.perspective, className)}
                 style={perspectiveStyle}
                 {...props}
             >
@@ -222,9 +221,7 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                     {/* Pages spine */}
                     <div
                         aria-hidden="true"
-                        className={[styles.pages, textured ? styles.textured : '']
-                            .filter(Boolean)
-                            .join(' ')}
+                        className={cn(styles.pages, textured && styles.textured)}
                     />
 
                     {/* Back cover */}

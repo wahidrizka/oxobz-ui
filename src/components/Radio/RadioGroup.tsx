@@ -48,11 +48,11 @@ export interface RadioGroupItemProps
 /**
  * A single radio item inside a RadioGroup.
  *
- * Production DOM:
+ * Rendered DOM (Geist production structure, geist→oxobz prefix rename):
  * ```html
- * <label class="item" data-geist-radio-item="">
+ * <label class="item" data-oxobz-radio-item="">
  *   <span class="radio-check">​
- *     <input class="radio-input geist-sr-only" type="radio" />
+ *     <input class="radio-input oxobz-sr-only" type="radio" />
  *     <span class="radio-icon" aria-hidden="true" />
  *   </span>
  *   <span class="text">Label</span>
@@ -118,15 +118,23 @@ RadioGroupItem.displayName = 'RadioGroup.Item';
 /*  RadioGroup Props                                                   */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Props for RadioGroup.
+ *
+ * RadioGroup is a controlled-only component: to make it interactive you must
+ * provide both `value` (the currently selected option) and `onChange` (called
+ * with the newly selected value). There is no `defaultValue` prop and no
+ * uncontrolled mode — without `value` + `onChange`, selection will not update.
+ */
 export interface RadioGroupProps
     extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
     /** Accessible label for the radio group (rendered as sr-only text) */
     label?: string;
 
-    /** Currently selected value (controlled) */
+    /** Currently selected value (controlled; required for interactivity) */
     value?: string;
 
-    /** Callback when value changes */
+    /** Called with the newly selected value (required for interactivity) */
     onChange?: (value: string) => void;
 
     /** Disables all radio items in the group */
@@ -149,11 +157,13 @@ export interface RadioGroupProps
 /**
  * Compound component providing radio group context.
  *
- * Production DOM:
+ * Controlled-only: pass `value` and `onChange` to make the group interactive.
+ *
+ * Rendered DOM (Geist production structure, geist→oxobz prefix rename):
  * ```html
- * <div data-geist-radio-group="" data-version="v1" role="radiogroup"
+ * <div data-oxobz-radio-group="" data-version="v1" role="radiogroup"
  *      aria-labelledby="radio-XXX">
- *     <span class="geist-sr-only" id="radio-XXX">Label</span>
+ *     <span class="oxobz-sr-only" id="radio-XXX">Label</span>
  *     {children}
  * </div>
  * ```

@@ -19,10 +19,12 @@ export interface RadioProps
 /**
  * Standalone radio input — used outside of RadioGroup.
  *
- * DOM structure matches Geist production:
+ * DOM structure mirrors Geist production (geist→oxobz prefix rename).
+ * Note: the production standalone radio carries no `data-*` marker attribute
+ * (only RadioGroup and its items do), so none is rendered here either.
  * ```html
  * <span class="check">
- *   <input class="input geist-sr-only" type="radio" />
+ *   <input class="input oxobz-sr-only" type="radio" />
  *   <span class="icon" aria-hidden="true" />
  * </span>
  * ```

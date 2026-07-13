@@ -260,6 +260,32 @@ describe('ChoiceboxGroup — label & showLabel', () => {
         expect(screen.getByRole('radiogroup')).not.toHaveAttribute('aria-label');
     });
 
+    it('with showLabel, aria-labelledby points to the rendered label element', () => {
+        render(
+            <ChoiceboxGroup label="Select a plan" showLabel>
+                {twoItems}
+            </ChoiceboxGroup>,
+        );
+        const group = screen.getByRole('radiogroup');
+        const labelledBy = group.getAttribute('aria-labelledby');
+        expect(labelledBy).toBeTruthy();
+        const labelEl = document.getElementById(labelledBy as string);
+        expect(labelEl).not.toBeNull();
+        expect(labelEl?.tagName).toBe('LABEL');
+        expect(labelEl).toHaveTextContent('Select a plan');
+    });
+
+    it('with showLabel, the group gets its accessible name from the label', () => {
+        render(
+            <ChoiceboxGroup label="Select a plan" showLabel>
+                {twoItems}
+            </ChoiceboxGroup>,
+        );
+        expect(
+            screen.getByRole('radiogroup', { name: 'Select a plan' }),
+        ).toBeInTheDocument();
+    });
+
     it('showLabel without label renders no visible label element', () => {
         const { container } = render(
             <ChoiceboxGroup showLabel>{twoItems}</ChoiceboxGroup>,

@@ -177,7 +177,7 @@ function CopyButton({ text, floating }: CopyButtonProps) {
  * Production DOM structure:
  * ```html
  * <div aria-label="..." class="relative wrapper [hasFileName]"
- *      data-geist-code-block="">
+ *      data-oxobz-code-block="">
  *   <!-- With filename: header with copy button -->
  *   <div class="header">
  *     <div class="fileName">
@@ -193,8 +193,8 @@ function CopyButton({ text, floating }: CopyButtonProps) {
  *   <button class="copyButton copyFloatingButton">...</button>
  *   <!-- Code content -->
  *   <pre class="prism-code language-jsx pre">
- *     <code class="code" data-geist-code-block="true">
- *       <div class="line" data-geist-code-block-line="true" ...>
+ *     <code class="code" data-oxobz-code-block="true">
+ *       <div class="line" data-oxobz-code-block-line="true" ...>
  *         <button class="lineNumber">1</button>
  *         <div class="token-line">
  *           <span class="token keyword">...</span>
@@ -243,7 +243,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                     !showLineNumbers && styles.hideLineNumbers,
                     className,
                 )}
-                data-geist-code-block=""
+                data-oxobz-code-block=""
             >
                 {/* Header (with filename) */}
                 {hasFileName && (
@@ -280,7 +280,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                 >
                     {({ className: preClassName, tokens, getLineProps, getTokenProps }) => (
                         <pre className={cn(preClassName, styles.pre)}>
-                            <code className={styles.code} data-geist-code-block="true">
+                            <code className={styles.code} data-oxobz-code-block="true">
                                 {tokens.map((line, i) => {
                                     const lineNum = i + 1;
                                     const isHighlighted = highlightSet.has(lineNum);
@@ -296,7 +296,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                                             style={{
                                                 fontFeatureSettings: '"liga" 0',
                                             }}
-                                            data-geist-code-block-line="true"
+                                            data-oxobz-code-block-line="true"
                                             data-highlighted={
                                                 isHighlighted ? 'true' : undefined
                                             }

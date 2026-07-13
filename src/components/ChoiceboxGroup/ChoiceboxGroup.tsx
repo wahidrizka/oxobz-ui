@@ -349,7 +349,14 @@ function ChoiceboxGroupRoot({
                 role={isMulti ? 'group' : 'radiogroup'}
             >
                 {showLabel && label && (
-                    <Label htmlFor={labelId} data-version="v1">
+                    /*
+                     * a11y fix: the group's aria-labelledby must reference a real
+                     * element, so the label carries id={labelId}. Production Geist
+                     * renders only for={labelId} (dangling reference) — we keep the
+                     * for= attribute for fidelity and add the id to make the
+                     * accessible name resolve.
+                     */
+                    <Label id={labelId} htmlFor={labelId} data-version="v1">
                         {label}
                     </Label>
                 )}

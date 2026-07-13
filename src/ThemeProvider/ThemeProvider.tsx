@@ -25,9 +25,9 @@ function getSystemTheme(): ResolvedTheme {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function getStoredTheme(): Theme {
+function getStoredTheme(storageKey: string): Theme {
     if (typeof window === 'undefined') return 'system';
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
     return 'system';
 }
@@ -51,7 +51,7 @@ export function ThemeProvider({
     storageKey = STORAGE_KEY,
 }: ThemeProviderProps) {
     const [theme, setThemeState] = useState<Theme>(() => {
-        return defaultTheme ?? getStoredTheme();
+        return defaultTheme ?? getStoredTheme(storageKey);
     });
 
     const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {

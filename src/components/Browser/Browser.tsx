@@ -59,17 +59,7 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                                         type="button"
                                         aria-label="Copy"
                                         onClick={handleCopy}
-                                        style={{
-                                            background: 'transparent',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '4px',
-                                            borderRadius: '9999px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: 'var(--ds-gray-1000)',
-                                        }}
+                                        className={styles.copyButton}
                                     >
                                         <div className={styles.copyButtonIcon}>
                                             <div className={copied ? styles.copyIconStateVisible : styles.copyIconStateHidden}>

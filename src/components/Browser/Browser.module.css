@@ -125,6 +125,19 @@
     padding: 24px;
 }
 
+/* Copy button — static styles (moved from inline, identical value-per-value) */
+.copyButton {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ds-gray-1000);
+}
+
 /* Copy button wrapper — keep icon relative */
 .copyButtonIcon {
     position: relative;
