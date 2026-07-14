@@ -37,6 +37,15 @@ function resolveTheme(theme: Theme): ResolvedTheme {
     return theme;
 }
 
+function applyResolvedTheme(resolved: ResolvedTheme): void {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', resolved);
+    // Design tokens switch on the .dark-theme class (matching Geist
+    // production CSS) — the data-theme attribute alone does not restyle
+    // components.
+    root.classList.toggle('dark-theme', resolved === 'dark');
+}
+
 export interface ThemeProviderProps {
     children: ReactNode;
     /** Initial theme. Defaults to stored preference or 'system'. */
@@ -70,7 +79,7 @@ export function ThemeProvider({
     useEffect(() => {
         const resolved = resolveTheme(theme);
         setResolvedTheme(resolved);
-        document.documentElement.setAttribute('data-theme', resolved);
+        applyResolvedTheme(resolved);
     }, [theme]);
 
     // Listen for system theme changes
@@ -81,7 +90,7 @@ export function ThemeProvider({
         const listener = (e: MediaQueryListEvent) => {
             const resolved = e.matches ? 'dark' : 'light';
             setResolvedTheme(resolved);
-            document.documentElement.setAttribute('data-theme', resolved);
+            applyResolvedTheme(resolved);
         };
 
         mediaQuery.addEventListener('change', listener);

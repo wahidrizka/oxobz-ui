@@ -66,12 +66,14 @@ describe('ThemeProvider', () => {
     beforeEach(() => {
         localStorage.clear();
         document.documentElement.removeAttribute('data-theme');
+        document.documentElement.classList.remove('dark-theme');
     });
 
     afterEach(() => {
         vi.unstubAllGlobals();
         localStorage.clear();
         document.documentElement.removeAttribute('data-theme');
+        document.documentElement.classList.remove('dark-theme');
     });
 
     // ── Rendering ──
@@ -119,6 +121,31 @@ describe('ThemeProvider', () => {
         );
         expect(screen.getByTestId('theme')).toHaveTextContent('light');
         expect(screen.getByTestId('resolved')).toHaveTextContent('light');
+        expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    });
+
+    it('adds the dark-theme class on documentElement when resolved dark (design tokens hook)', () => {
+        mockMatchMedia(false);
+        render(
+            <ThemeProvider defaultTheme="dark">
+                <ThemeConsumer />
+            </ThemeProvider>,
+        );
+        expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+    });
+
+    it('removes the dark-theme class when switching back to light', () => {
+        mockMatchMedia(false);
+        render(
+            <ThemeProvider defaultTheme="dark">
+                <ThemeConsumer />
+            </ThemeProvider>,
+        );
+        expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+        act(() => {
+            screen.getByText('set-light').click();
+        });
+        expect(document.documentElement.classList.contains('dark-theme')).toBe(false);
         expect(document.documentElement).toHaveAttribute('data-theme', 'light');
     });
 
