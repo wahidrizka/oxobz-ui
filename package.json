@@ -42,7 +42,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wahidrizka/oxobz-ui"
+    "url": "git+https://github.com/wahidrizka/oxobz-ui.git"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
