@@ -1,0 +1,239 @@
+/**
+ * Select — CSS Module (native <select> wrapper with chevron)
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Modules: select-module__nrtrfG (control) + error-module__ZeCa4G (error text)
+ * - _nextstatic/component-inspect-element/select.html
+ *   Current production DOM uses Tailwind arbitrary-value classes; where the
+ *   snapshot and the (older) chunk modules disagree, the snapshot values win:
+ *   prefixed select padding-left 40px (was 36px), suffix color gray-700 (was
+ *   gray-900), prefix/suffix transition-colors 150ms ease-in (was color .15s
+ *   ease), small size has no fixed line-height (was form line-height),
+ *   disabled select adds -webkit-text-fill-color + explicit gray shadow,
+ *   placeholder option gray-800 (was gray-700 on the select), error text
+ *   13px/20px — 16px/24px large (was form font sizes).
+ *
+ * The docs-era `secondary` and `xsmall` variants of select-module are not part
+ * of the official Select API and are intentionally not implemented.
+ *
+ * No .dark-theme override exists in production — all colors are semantic
+ * --ds-* / theme tokens that flip with the theme automatically.
+ */
+
+/* ---- Container (select-module __container) ---- */
+.container {
+    /* Production defaults from .container:not(.geist-themed) */
+    --themed-fg: var(--oxobz-foreground);
+    --themed-bg: var(--oxobz-background);
+
+    color: var(--themed-fg);
+    align-items: center;
+    display: flex;
+    position: relative;
+}
+
+/* Error theming (production: .geist-themed.geist-error on the container) */
+.container.error {
+    --themed-fg: var(--oxobz-error);
+    --themed-bg: var(--oxobz-background);
+    --themed-border: var(--themed-fg);
+}
+
+/* ---- Select control (select-module __select) ---- */
+.select {
+    cursor: pointer;
+    font: inherit;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    appearance: none;
+    font-size: var(--oxobz-form-font);
+    height: var(--oxobz-form-height);
+    line-height: var(--oxobz-form-line-height);
+    text-rendering: initial;
+    box-shadow: 0 0 0 1px var(--themed-border, var(--ds-gray-alpha-400));
+    background: var(--ds-background-100);
+    width: 100%;
+    color: var(--ds-gray-1000);
+    padding: 0 12px;
+    padding-right: 36px;
+    border: none;
+    border-radius: 6px;
+    transition: box-shadow 0.2s, color 0.2s;
+    overflow: hidden;
+}
+
+.select option {
+    color: var(--ds-gray-1000);
+}
+
+/* Placeholder option (snapshot: option.text-gray-800) */
+.select option.placeholder {
+    color: var(--ds-gray-800);
+}
+
+/* ---- Hover (production gates hover styles on hover-capable input) ---- */
+@media (hover: hover) {
+    .container:not(.disabled):hover .select:not([aria-invalid='true']) {
+        --themed-border: var(--ds-gray-alpha-500);
+    }
+
+    .container:not(.disabled):hover .prefix,
+    .container:not(.disabled):hover .suffix {
+        color: var(--oxobz-foreground);
+    }
+}
+
+/* ---- Focus ---- */
+.container:not(.disabled) .select:focus {
+    box-shadow: var(--ds-focus-border);
+    outline: none;
+}
+
+.select:focus-visible {
+    outline: none;
+    box-shadow: var(--ds-focus-ring) !important;
+}
+
+.select:-moz-focusring {
+    color: transparent;
+    text-shadow: 0 0 0 var(--oxobz-foreground);
+}
+
+/* ---- Error / invalid ---- */
+.container:not(.disabled) .select[aria-invalid='true'] {
+    box-shadow:
+        0 0 0 1px var(--themed-border),
+        0px 0px 0px 4px hsla(var(--ds-red-900-value), 0.16);
+    outline: none;
+}
+
+/* ---- Prefix & suffix decorations ---- */
+.suffix,
+.prefix {
+    pointer-events: none;
+    /* Snapshot: transition-colors duration-150 ease-in (Tailwind v4) */
+    transition-property: color, background-color, border-color,
+        text-decoration-color, fill, stroke;
+    transition-timing-function: ease-in;
+    transition-duration: 0.15s;
+    display: inline-flex;
+    position: absolute;
+}
+
+.prefix {
+    color: var(--ds-gray-900);
+    left: 12px;
+}
+
+.suffix {
+    color: var(--ds-gray-700);
+    right: 12px;
+}
+
+/* Snapshot: prefixed select gets pl-10 (40px; chunk had 36px) */
+.prefix + .select {
+    padding-left: 40px;
+}
+
+/* Default chevron size (snapshot: size-(--ds-control-decoration-size);
+   the token is not defined in our tokens yet — production resolves to 16px) */
+.controlIcon {
+    width: var(--ds-control-decoration-size, 16px);
+    height: var(--ds-control-decoration-size, 16px);
+}
+
+/* ---- Disabled ---- */
+.select:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+    background: var(--ds-gray-100);
+    color: var(--ds-gray-700);
+    /* Snapshot extras */
+    -webkit-text-fill-color: var(--accents-3);
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+}
+
+.disabled .suffix,
+.disabled .prefix {
+    cursor: not-allowed;
+    background: var(--ds-gray-100);
+    color: var(--ds-gray-700);
+}
+
+/* Snapshot: disabled wrapper also carries the not-allowed surface */
+.container.disabled {
+    cursor: not-allowed;
+    border-radius: 6px;
+    background: var(--ds-gray-100);
+    color: var(--ds-gray-700);
+}
+
+/* ---- Sizes ---- */
+.small {
+    font-size: var(--oxobz-form-small-font);
+    height: var(--oxobz-form-small-height);
+    /* Snapshot: small has no leading-* class (base sets the medium value) */
+    line-height: normal;
+}
+
+.large {
+    font-size: var(--oxobz-form-large-font);
+    height: var(--oxobz-form-large-height);
+    line-height: var(--oxobz-form-large-line-height);
+    border-radius: 8px;
+}
+
+/* Mobile: 1rem font prevents iOS zoom (chunk: 600px; snapshot max-sm) */
+@media (max-width: 600px) {
+    .select {
+        font-size: 1rem;
+    }
+}
+
+/* ---- Label text ----
+   Snapshot: block text-[13px] max-w-full text-gray-900 mb-2 cursor-text capitalize */
+.labelText {
+    display: block;
+    font-size: 13px;
+    max-width: 100%;
+    color: var(--ds-gray-900);
+    margin-bottom: 8px;
+    cursor: text;
+    text-transform: capitalize;
+}
+
+/* ---- Error message (error-module __error) ----
+   Snapshot: text-[var(--ds-red-900)] flex items-start text-[13px] leading-5
+   (large: text-base leading-6) */
+.errorMessage {
+    letter-spacing: 0;
+    color: var(--ds-red-900);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+    align-items: flex-start;
+    display: flex;
+}
+
+.errorMessage.errorLarge {
+    font-size: 16px;
+    line-height: 24px;
+}
+
+/* Snapshot: flex items-center mr-2 mt-0.5 (large: mt-1) */
+.errorIcon {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-top: 2px;
+}
+
+.errorMessage.errorLarge .errorIcon {
+    margin-top: 4px;
+}
+
+/* Snapshot: break-words */
+.errorText {
+    overflow-wrap: break-word;
+}

@@ -1,0 +1,145 @@
+/**
+ * Switch — CSS Module (segmented control, radio semantics)
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Modules: switch-module__idkRsq (root) + switch-control-module__WvDOda (control)
+ * - _nextstatic/component-inspect-element/switch.html
+ *   Current production DOM uses Tailwind arbitrary-value classes; where the
+ *   snapshot and the (older) chunk modules disagree, the snapshot values win:
+ *   checked radius 4px (6px large, was 2px/4px), icon padding medium 8px 8px
+ *   (was 6px 12px), transition-colors 150ms (was color .15s only).
+ *
+ * No .dark-theme override exists in production — all colors are semantic
+ * --ds-* tokens that flip with the theme automatically.
+ */
+
+/* ---- Root (switch-module __switch) ---- */
+.switch {
+    background: var(--ds-background-100);
+    height: 40px;
+    padding: 4px;
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    border-radius: 6px;
+    display: flex;
+}
+
+.switch.small {
+    height: 32px;
+}
+
+.switch.large {
+    border-radius: 8px;
+    height: 48px;
+}
+
+/* ---- Control container (switch-control-module __container) ---- */
+.container {
+    flex: 1;
+    align-self: stretch;
+    display: flex;
+}
+
+.container[data-disabled='true'] {
+    cursor: not-allowed;
+}
+
+/* ---- Control content (switch-control-module __control) ---- */
+.control {
+    /* Set inline on the content div in production; kept here so consumers
+       can still override the checked pill color contextually. */
+    --switch-checked-color: var(--ds-gray-100);
+
+    color: var(--ds-gray-900);
+    cursor: pointer;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    /* Snapshot: transition-colors duration-150 (Tailwind v4) */
+    transition-property: color, background-color, border-color,
+        text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.15s;
+}
+
+/* ---- Hover (Tailwind v4 hover variant is gated on hover-capable input) ---- */
+@media (hover: hover) {
+    .control:hover {
+        color: var(--ds-gray-1000);
+    }
+}
+
+/* ---- Focus ---- */
+.control:focus-visible {
+    outline: 0;
+    box-shadow: var(--ds-focus-ring);
+}
+
+.input:focus-visible+.control {
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* ---- Checked (peer-checked) ---- */
+.input:checked+.control {
+    color: var(--ds-gray-1000);
+    background: var(--switch-checked-color);
+    border-radius: 4px;
+}
+
+.input:checked+.control.large {
+    border-radius: 6px;
+}
+
+/* ---- Disabled (peer-disabled; after checked so text color wins) ---- */
+.input:disabled+.control {
+    color: var(--ds-gray-800);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.input:disabled+.control>* {
+    cursor: not-allowed;
+}
+
+/* ---- Text label (switch-control-module __text) ---- */
+.text {
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.text.small {
+    padding: 0 12px;
+}
+
+.text.large {
+    padding: 0 16px;
+    font-size: 16px;
+}
+
+/* ---- Icon-only (switch-control-module __icon) ---- */
+.icon {
+    padding: 8px 8px;
+}
+
+.icon.small {
+    padding: 4px 8px;
+}
+
+.icon.large {
+    padding: 12px 12px;
+}
+
+/* Production renders the icon at 16px (small/medium) and 20px (large)
+   via svg attributes; enforced here via CSS for identical output. */
+.icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.icon.large svg {
+    width: 20px;
+    height: 20px;
+}

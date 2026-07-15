@@ -1,0 +1,314 @@
+/**
+ * Tooltip — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: tooltip-module__VEGyfq (container, absolute, relative, backdrop,
+ *   tooltip, faster, delay, wrap, center, tip, triangle, box-align-left,
+ *   box-align-right, fadeIn keyframes)
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   Themed presets .geist-themed.geist-{success,error,warning,violet}-fill →
+ *   translated to the .success/.error/.warning/.violet type classes below
+ *   (colors via the existing --oxobz-* legacy palette tokens).
+ * - _nextstatic/component-inspect-element/tooltip.html
+ *   Trigger snapshot: <span class="inline-flex items-center h-fit"
+ *   data-version="v1" tabindex="0"> — the open popup is not captured (it only
+ *   mounts on hover), so popup structure follows the module class chain.
+ *
+ * Positioning note: production portals the popup to <body> and measures the
+ * trigger rect with JS (inline top/left on the .absolute proxy). We keep the
+ * same element chain (.absolute > .relative > .tooltip) but anchor it inside
+ * the trigger container so placement is pure CSS (absolute + transform).
+ * Every rule marked "oxobz positioning" is ours; everything else is
+ * production-exact.
+ *
+ * No .dark-theme override exists in production for this module — colors
+ * resolve through --ds-* / --oxobz-* / --dropdown-triangle-stroke tokens
+ * which flip with the theme automatically.
+ */
+
+/* ---- Trigger container (tooltip-module __container) ---- */
+.container {
+    align-items: center;
+    display: inline-flex;
+    /* Snapshot: h-fit on the trigger span */
+    height: fit-content;
+    /* oxobz positioning: anchor for the non-portaled popup proxy */
+    position: relative;
+}
+
+/* Production ships the legacy focus-visible polyfill class
+   (.container.focus-visible:focus); we use the native pseudo-class. */
+.container:focus-visible {
+    box-shadow: var(--ds-focus-ring);
+    border-radius: 2px;
+    outline: none;
+}
+
+/* ---- Popup proxy (tooltip-module __absolute / __relative) ---- */
+.absolute {
+    pointer-events: none;
+    position: absolute;
+    /* oxobz positioning: production sets the measured trigger rect inline
+       via JS; anchored inside .container the proxy is simply inset: 0. */
+    inset: 0;
+}
+
+.relative {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ---- Backdrop (tooltip-module __backdrop) ----
+   Kept for production fidelity; not rendered by this implementation
+   (hover/focus tooltips need no click-away layer). */
+.backdrop {
+    z-index: 99998;
+    position: fixed;
+    inset: 0;
+}
+
+/* ---- Tooltip box (tooltip-module __tooltip) ---- */
+.tooltip {
+    /* Default theme vars — production: .tooltip:not(.geist-themed) */
+    --themed-fg: var(--ds-gray-1000);
+    --themed-bg: var(--ds-background-100);
+    --themed-border: var(--themed-bg);
+    --tooltip-stroke: var(--dropdown-triangle-stroke);
+    --tooltip-color: var(--themed-fg);
+    --tooltip-background: var(--themed-bg);
+
+    opacity: 0;
+    z-index: 99999;
+    color: var(--themed-fg);
+    text-transform: initial;
+    background: var(--themed-bg);
+    text-align: left;
+    pointer-events: none;
+    border-radius: 6px;
+    width: fit-content;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.3;
+    animation: 0.1s ease-in 0.4s forwards fadeIn;
+    position: absolute;
+    /* oxobz positioning: production measures at body level so text never
+       shrinks to the trigger width; single line by default, .wrap restores
+       multi-line behaviour. */
+    white-space: nowrap;
+}
+
+/* Re-shown shortly after another tooltip was hidden */
+.tooltip.faster {
+    animation: 0.1s ease-in 0.1s forwards fadeIn;
+}
+
+/* delay={false} — no entry delay */
+.tooltip:not(.delay) {
+    animation-delay: 0s;
+}
+
+.tooltip.wrap {
+    word-wrap: break-word;
+    white-space: pre-line;
+    border-collapse: separate;
+}
+
+.tooltip.center {
+    text-align: center;
+}
+
+/* tip={false} hides the triangle indicator */
+.tooltip:not(.tip):before,
+.tooltip:not(.tip) .triangle {
+    display: none;
+}
+
+/* Invisible hover bridge across the gap between popup and trigger */
+.tooltip:after {
+    z-index: -1;
+    content: "";
+    width: 100%;
+    height: 10px;
+    position: absolute;
+    top: -10px;
+    left: 0;
+}
+
+/* ---- Triangle (tooltip-module __triangle) ---- */
+.triangle {
+    --arrow-bg: var(--themed-bg);
+
+    z-index: -1;
+    height: fit-content;
+    display: flex;
+    position: absolute;
+    /* oxobz positioning: production sizes the arrow inline via JS; a 7px
+       border makes the arrow 14px wide, matching the production
+       `right: calc(10% - 14px)` box-align offset below. */
+    border: 7px solid transparent;
+}
+
+/* ---- Position: left ---- */
+.tooltip.left .triangle {
+    border-left-color: var(--tooltip-background);
+    top: 50%;
+    bottom: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+}
+
+.tooltip.left:after {
+    height: 100%;
+    top: 0;
+    left: 10px;
+}
+
+/* ---- Position: right ---- */
+.tooltip.right:after {
+    height: 100%;
+    margin-left: -10px;
+    top: 0;
+}
+
+.tooltip.right .triangle {
+    border-right-color: var(--tooltip-background);
+    top: 50%;
+    bottom: 50%;
+    right: 100%;
+    transform: translateY(-50%);
+}
+
+/* ---- Position: top ---- */
+.tooltip.top:after {
+    top: 100%;
+}
+
+/* Production merges `.tooltip.top` into this rule (same declarations);
+   on the box itself they are inert — the box position comes from the JS
+   inline styles there and from the oxobz positioning section here. */
+.tooltip.top .triangle {
+    border-top-color: var(--tooltip-background);
+    top: 100%;
+}
+
+.tooltip.top .triangle {
+    transform: translate(-50%) translateY(-0.6px);
+}
+
+.tooltip.top:not(.box-align-right):not(.box-align-left) .triangle {
+    left: 50%;
+}
+
+/* ---- Position: bottom ---- */
+.tooltip.bottom .triangle {
+    border-bottom-color: var(--tooltip-background);
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%);
+}
+
+.tooltip.bottom .triangle:before {
+    content: "";
+    background: 0 0;
+    width: 100%;
+    height: 16px;
+    position: absolute;
+    top: 0;
+}
+
+/* ---- Box align (production shifts the triangle; box shift is JS-side) ---- */
+.tooltip.box-align-left .triangle {
+    left: 10%;
+}
+
+.tooltip.box-align-right:before,
+.tooltip.box-align-right .triangle {
+    left: unset;
+    right: calc(10% - 14px);
+}
+
+/* ==== oxobz positioning ====
+   Production computes these placements in JS (portal at body level with the
+   measured trigger rect). Anchored to the trigger proxy instead, the same
+   result is expressed with absolute offsets + transforms. The 10px offset
+   matches the production 10px :after hover bridge exactly. */
+
+.tooltip.top {
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tooltip.bottom {
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tooltip.left {
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.tooltip.right {
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* boxAlign aligns the popup edge with the trigger edge (top/bottom) */
+.tooltip.top.box-align-left,
+.tooltip.bottom.box-align-left {
+    left: 0;
+    transform: none;
+}
+
+.tooltip.top.box-align-right,
+.tooltip.bottom.box-align-right {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+/* ---- Types ----
+   1c419a75d7e589ae.css: .geist-themed.geist-{type}-fill presets.
+   Declared after .tooltip so the custom-property defaults are overridden. */
+.success {
+    --themed-fg: #fff;
+    --themed-bg: var(--oxobz-success);
+    --themed-border: var(--oxobz-success);
+}
+
+.error {
+    --themed-fg: #fff;
+    --themed-bg: var(--oxobz-error);
+    --themed-border: var(--oxobz-error);
+}
+
+.warning {
+    --themed-fg: #fff;
+    --themed-bg: var(--oxobz-warning);
+    --themed-border: var(--oxobz-warning);
+}
+
+.violet {
+    --themed-fg: #fff;
+    --themed-bg: var(--oxobz-violet);
+    --themed-border: var(--oxobz-violet);
+}
+
+/* ---- Entry animation (tooltip-module fadeIn) ---- */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+        pointer-events: all;
+    }
+}

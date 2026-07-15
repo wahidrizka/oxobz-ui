@@ -58,5 +58,23 @@ export type { SpinnerProps } from './components/Spinner';
 export { CollapseGroup, CollapseItem } from './components/Collapse';
 export type { CollapseGroupProps, CollapseItemProps } from './components/Collapse';
 
+export { Input } from './components/Input';
+export type { InputProps, InputSize } from './components/Input';
+
+export { Textarea } from './components/Textarea';
+export type { TextareaProps, TextareaSize } from './components/Textarea';
+
+export { Select } from './components/Select';
+export type { SelectProps, SelectSize } from './components/Select';
+
+export { Switch, SwitchControl } from './components/Switch';
+export type { SwitchProps, SwitchControlProps, SwitchSize } from './components/Switch';
+
+export { Tooltip } from './components/Tooltip';
+export type { TooltipProps, TooltipPosition, TooltipType, TooltipBoxAlign } from './components/Tooltip';
+
+export { Note } from './components/Note';
+export type { NoteProps, NoteSize, NoteType } from './components/Note';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

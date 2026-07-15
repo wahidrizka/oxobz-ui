@@ -1,0 +1,340 @@
+/* ==========================================================================
+ * Input.module.css
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Modules: input-module__q7zwrG (container / input / prefix / suffix /
+ *   noPrefixStyle / noSuffixStyle / small / large / rounded / error)
+ *   + error-module__ZeCa4G (error / text) for the error message block.
+ * - _nextstatic/component-inspect-element/input.html
+ *   Current production DOM styles the component with Tailwind v4 utilities
+ *   (div[data-geist-input-wrapper] > input + label[data-geist-input-prefix]
+ *   / label[data-geist-input-suffix], error block sibling of the wrapper).
+ *   Where the (older) chunk module and the snapshot disagree, the snapshot
+ *   wins - same precedent as Switch/Textarea:
+ *   - wrapper: overflow hidden + transition-all 150ms (was box-shadow .15s),
+ *     no align-items:center (affixes stretch and center themselves)
+ *   - affix divider lives on the affix (border-r / border-l), not on the
+ *     input (chunk put border-left/right on the input)
+ *   - affix keeps 14px font and no fixed width/height at every size (chunk
+ *     sized large affixes to a 48px square)
+ *   - input padding stays 12px at every size (chunk: var(--geist-gap-half))
+ *   - disabled -webkit-text-fill-color: var(--accents-3) (was gray-700)
+ *   - unstyled prefix: margin-left 1px (ml-px, not in chunk); unstyled
+ *     suffix: no negative margin (chunk had margin-left: -12px)
+ *   - error message: 13px / 20px at every size (error-module scaled it)
+ *
+ * Token translation: --geist-foreground -> --oxobz-foreground,
+ * --geist-form-*-height -> --ds-form-*-height,
+ * --geist-gap-half (12px) -> literal 12px (px-3 in the snapshot),
+ * --geist-gap-quarter (8px) -> --oxobz-gap-quarter (inline style on error),
+ * geist-themed/geist-error --themed-fg -> var(--ds-red-900).
+ * ========================================================================== */
+
+/* ---- Wrapper (div[data-geist-input-wrapper]) ------------------------------
+ * Snapshot: flex max-w-full transition-all duration-150
+ * shadow-[0_0_0_1px_var(--ds-gray-alpha-400)] overflow-hidden font-normal
+ * rounded-md text-sm
+ * ------------------------------------------------------------------------ */
+.container {
+    display: flex;
+    max-width: 100%;
+    overflow: hidden;
+    font-weight: 400;
+    /* text-sm (Tailwind v4): 14px / 20px */
+    font-size: 14px;
+    line-height: 20px;
+    /* rounded-md (Tailwind v4): 6px */
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    /* transition-all duration-150 (Tailwind v4 defaults) */
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.15s;
+}
+
+/* ---- Sizes -----------------------------------------------------------------
+ * small : [&>input]:h-8 text-sm rounded-md
+ * medium: [&>input]:h-(--ds-size-medium) text-sm rounded-md (base, no class)
+ * large : [&>input]:h-(--ds-size-large) [&>input]:text-base rounded-lg
+ *         (wrapper font stays text-sm, so affixes keep 14px)
+ * ------------------------------------------------------------------------ */
+.large {
+    /* rounded-lg (Tailwind v4): 8px */
+    border-radius: 8px;
+}
+
+.small .input {
+    height: var(--ds-form-small-height);
+}
+
+.large .input {
+    height: var(--ds-form-large-height);
+    font-size: 16px;
+    border-radius: 8px;
+}
+
+/* ---- Hover (Tailwind v4 hover variant is gated on hover-capable input) -- */
+@media (hover: hover) {
+    .container:not(.error):hover {
+        box-shadow: 0 0 0 1px var(--ds-gray-alpha-500);
+    }
+
+    /* hover:[&:has(input:disabled)] - hovering a disabled field keeps the
+       resting shadow */
+    .container:not(.error):hover:has(input:disabled) {
+        box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    }
+
+    /* error: hover:shadow-[0_0_0_1px_var(--ds-red-900),0_0_0_4px_var(--ds-red-500)] */
+    .container.error:hover {
+        box-shadow: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-500);
+    }
+}
+
+/* ---- Focus (has-[:focus]:!shadow-..., !important in production) --------- */
+.container:focus-within:not(.error) {
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-600),
+        0px 0px 0px 4px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* dark-theme:has-[:focus]:!shadow-... */
+:global(.dark-theme) .container:focus-within:not(.error) {
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-600),
+        0px 0px 0px 4px rgba(255, 255, 255, 0.24) !important;
+}
+
+/* ---- Error state -----------------------------------------------------------
+ * Snapshot replaces the gray shadows entirely:
+ * shadow-[0_0_0_1px_var(--ds-red-900),0_0_0_4px_var(--ds-red-300)]
+ * has-[:focus]:shadow-[...var(--ds-red-300)] (no !important, no dark override)
+ * ------------------------------------------------------------------------ */
+.container.error,
+.container.error:focus-within {
+    box-shadow: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-300);
+}
+
+/* ---- Rounded (chunk and snapshot agree: 9999px + 12px top margin) ------- */
+.container.rounded {
+    border-radius: 9999px;
+    /* mt-3 in the snapshot, margin-top:12px in the chunk */
+    margin-top: 12px;
+}
+
+.container.rounded .input {
+    border-radius: 9999px;
+}
+
+/* ---- Input element ---------------------------------------------------------
+ * Snapshot: inline-flex appearance-none min-w-0 w-full border-none
+ * bg-background-100 text-[var(--geist-foreground)] order-1 outline-none
+ * focus:outline-none [&>input]:px-3 (from the wrapper)
+ * Chunk extras kept (not contradicted by the snapshot):
+ * -webkit-tap-highlight-color, border-radius 6px, placeholder gray-700,
+ * readOnly background-200.
+ * ------------------------------------------------------------------------ */
+.input {
+    /* Tailwind preflight equivalents (production relies on the global reset) */
+    margin: 0;
+    font: inherit;
+    letter-spacing: inherit;
+
+    display: inline-flex;
+    order: 1;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    height: var(--ds-form-medium-height);
+    padding: 0 12px;
+    border: none;
+    border-radius: 6px;
+    background: var(--ds-background-100);
+    color: var(--oxobz-foreground);
+    -webkit-tap-highlight-color: transparent;
+    outline: none !important;
+}
+
+.input:focus {
+    outline: none;
+}
+
+.input::placeholder {
+    color: var(--ds-gray-700);
+}
+
+.input[readonly] {
+    background: var(--ds-background-200);
+    cursor: not-allowed;
+}
+
+/* Hide the native search decorations (chunk .input[type=search]::-webkit-*) */
+.input[type='search']::-webkit-search-decoration,
+.input[type='search']::-webkit-search-cancel-button,
+.input[type='search']::-webkit-search-results-button,
+.input[type='search']::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+}
+
+/* ---- Disabled ---------------------------------------------------------------
+ * disabled:bg-[var(--ds-gray-100)] disabled:text-[var(--ds-gray-700)]
+ * disabled:[-webkit-text-fill-color:var(--accents-3)] disabled:opacity-100
+ * disabled:cursor-not-allowed disabled:placeholder:text-[var(--accents-3)]
+ * ------------------------------------------------------------------------ */
+.input:disabled {
+    background: var(--ds-gray-100);
+    color: var(--ds-gray-700);
+    -webkit-text-fill-color: var(--accents-3);
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+.input:disabled::placeholder {
+    opacity: 1;
+    color: var(--accents-3);
+    -webkit-text-fill-color: var(--accents-3);
+}
+
+/* Chunk: .geist-error > .input[disabled] - themed error colors win */
+.container.error .input:disabled {
+    background: var(--ds-background-100);
+    color: var(--ds-red-900);
+    -webkit-text-fill-color: var(--ds-red-900);
+}
+
+/* ---- Prefix / suffix --------------------------------------------------------
+ * DOM order is input first, then the affix labels; flex `order` produces the
+ * visual order (prefix 0, input 1, suffix 2). The wrapper styles the affix
+ * positionally: prefix = 2nd child, suffix = last child - so a bare suffix
+ * node (suffixContainer=false) is styled exactly like the wrapped one.
+ * Snapshot (styled): border-r/border-l border-[var(--ds-gray-alpha-400)]
+ * shrink-0 relative text-[var(--ds-gray-700)] px-3 py-0 flex items-center
+ * order-0/order-2 bg-[var(--ds-background-200)]
+ * ------------------------------------------------------------------------ */
+.container.prefix > :nth-child(2) {
+    position: relative;
+    order: 0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 12px;
+    color: var(--ds-gray-700);
+    background: var(--ds-background-200);
+    border-right: 1px solid var(--ds-gray-alpha-400);
+}
+
+.container.suffix > :last-child {
+    position: relative;
+    order: 2;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 12px;
+    color: var(--ds-gray-700);
+    background: var(--ds-background-200);
+    border-left: 1px solid var(--ds-gray-alpha-400);
+}
+
+/* [&>input]:rounded-tl-none [&>input]:rounded-bl-none (and tr/br for suffix) */
+.container.prefix .input {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.container.suffix .input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* [&>:first-child:not([disabled])]:text-[var(--themed-fg)] - only the error
+ * material (geist-themed geist-error) defines --themed-fg (= geist-error),
+ * so the rule only becomes visible on error inputs with an affix. */
+.container.error.prefix > .input:first-child:not(:disabled),
+.container.error.suffix > .input:first-child:not(:disabled) {
+    color: var(--ds-red-900);
+}
+
+/* ---- prefixStyling={false} / suffixStyling={false} --------------------------
+ * Snapshot: [&>:nth-child(2)]:bg-[var(--ds-background-100)]
+ * [&>:nth-child(2)]:border-r-0 [&>:nth-child(2)]:ml-px
+ * [&>:nth-child(2)]:-mr-3 [&:has(input:disabled)>:nth-child(2)]:bg-gray-100
+ * [&:has(input:disabled)>:nth-child(2)]:cursor-not-allowed
+ * (suffix mirror: bg-background-100 border-l-0 + disabled, no margins)
+ * ------------------------------------------------------------------------ */
+.container.prefix.noPrefixStyle > :nth-child(2) {
+    background: var(--ds-background-100);
+    border-right: 0;
+    margin-left: 1px;
+    margin-right: -12px;
+}
+
+.container.prefix.noPrefixStyle:has(input:disabled) > :nth-child(2) {
+    background: var(--ds-gray-100);
+    cursor: not-allowed;
+}
+
+.container.suffix.noSuffixStyle > :last-child {
+    background: var(--ds-background-100);
+    border-left: 0;
+}
+
+.container.suffix.noSuffixStyle:has(input:disabled) > :last-child {
+    background: var(--ds-gray-100);
+    cursor: not-allowed;
+}
+
+/* ---- Affix content (label[data-geist-input-prefix/-suffix]) ----------------
+ * Chunk: [data-geist-input-suffix],[data-geist-input-prefix]
+ * { justify-content:center; display:flex }
+ * Snapshot class: [&>svg]:size-(--ds-control-decoration-size) - the token is
+ * not defined in the reference chunks, so (exactly like production) the rule
+ * is inert and the icon keeps its intrinsic 16px size.
+ * ------------------------------------------------------------------------ */
+.affix {
+    display: flex;
+    justify-content: center;
+}
+
+.affix > svg {
+    width: var(--ds-control-decoration-size);
+    height: var(--ds-control-decoration-size);
+}
+
+/* ---- Label text (div inside label[data-version]) ----------------------------
+ * Snapshot: block text-[13px] max-w-full text-gray-900 mb-2 cursor-text
+ * capitalize
+ * ------------------------------------------------------------------------ */
+.labelText {
+    display: block;
+    max-width: 100%;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--ds-gray-900);
+    cursor: text;
+    text-transform: capitalize;
+}
+
+/* ---- Error message (sibling of the wrapper) ---------------------------------
+ * Snapshot: text-[var(--ds-red-900)] flex items-start text-[13px] leading-5
+ * at every size; inline style margin-top: var(--geist-gap-quarter) stays
+ * inline in the component to match production.
+ * ------------------------------------------------------------------------ */
+.errorMessage {
+    display: flex;
+    align-items: flex-start;
+    color: var(--ds-red-900);
+    font-size: 13px;
+    line-height: 20px;
+}
+
+/* Icon holder: flex items-center mr-2 mt-0.5 */
+.errorIcon {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-top: 2px;
+}
+
+/* break-words */
+.errorText {
+    overflow-wrap: break-word;
+}

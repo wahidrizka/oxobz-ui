@@ -1,0 +1,202 @@
+/* ==========================================================================
+ * Textarea.module.css
+ *
+ * Production sources:
+ * - _nextstatic/chunks/d2f6d4dcdb88e56d.css (line 25)
+ *   Module: textarea-module__lD6d8G (container / textarea / error / small /
+ *   large / rounded / noOutline)
+ * - _nextstatic/component-inspect-element/textarea.html
+ *   Current production DOM styles the component with Tailwind v4 utilities
+ *   (label > div[data-geist-textarea-wrapper] > textarea + error block).
+ *   Where the (older) chunk module and the snapshot disagree, the snapshot
+ *   wins — same precedent as Switch. Chunk values kept: resize:none,
+ *   [rows] height:unset, padding 10px var(--gap-half) (= py-2.5 px-3).
+ *
+ * Token translation: --geist-foreground -> --oxobz-foreground,
+ * --geist-gap-half -> --oxobz-gap-half (12px),
+ * --geist-gap-quarter -> --oxobz-gap-quarter (8px, inline style on error).
+ * ========================================================================== */
+
+/* ---- Wrapper (div[data-geist-textarea-wrapper]) --------------------------
+ * Snapshot: flex max-w-full transition-all duration-150
+ * shadow-[0_0_0_1px_var(--ds-gray-alpha-400)] overflow-hidden font-normal
+ * rounded-md text-sm w-full
+ * ------------------------------------------------------------------------ */
+.wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    font-weight: 400;
+    /* text-sm (Tailwind v4): 14px / 20px */
+    font-size: 14px;
+    line-height: 20px;
+    /* rounded-md (Tailwind v4): 6px */
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    /* transition-all duration-150 (Tailwind v4 defaults) */
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.15s;
+}
+
+/* ---- Sizes ----------------------------------------------------------------
+ * small : [&>input]:h-8 text-sm rounded-md — the input-height selector is
+ *         inert for a textarea, so small renders identically to medium.
+ * medium: [&>input]:h-(--ds-size-medium) text-sm rounded-md (base, no class)
+ * large : [&>input]:h-(--ds-size-large) [&>input]:text-base rounded-lg —
+ *         no text-sm on the wrapper, so font-size/line-height fall back to
+ *         the page default (16px / 1.5 via Tailwind preflight).
+ * ------------------------------------------------------------------------ */
+.small {
+    font-size: 14px;
+    line-height: 20px;
+    border-radius: 6px;
+}
+
+.large {
+    font-size: 16px;
+    line-height: 1.5;
+    /* rounded-lg (Tailwind v4): 8px */
+    border-radius: 8px;
+}
+
+/* ---- Hover (Tailwind v4 hover variant is gated on hover-capable input) -- */
+@media (hover: hover) {
+    .wrapper:not(.error):hover {
+        box-shadow: 0 0 0 1px var(--ds-gray-alpha-500);
+    }
+
+    /* hover:[&:has(input:disabled)] / hover:[&:has(textarea:disabled)] —
+       hovering a disabled field keeps the resting shadow */
+    .wrapper:not(.error):hover:has(input:disabled),
+    .wrapper:not(.error):hover:has(textarea:disabled) {
+        box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    }
+
+    .wrapper.error:hover {
+        box-shadow: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-500);
+    }
+}
+
+/* ---- Focus (has-[:focus]:!shadow-…, !important in production) ----------- */
+.wrapper:not(.error):has(:focus) {
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-600),
+        0px 0px 0px 4px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* dark-theme:has-[:focus]:!shadow-… */
+:global(.dark-theme) .wrapper:not(.error):has(:focus) {
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-600),
+        0px 0px 0px 4px rgba(255, 255, 255, 0.24) !important;
+}
+
+/* ---- Error state ----------------------------------------------------------
+ * Snapshot replaces the gray shadows entirely:
+ * shadow-[0_0_0_1px_var(--ds-red-900),0_0_0_4px_var(--ds-red-300)]
+ * hover:shadow-[…var(--ds-red-500)]
+ * has-[:focus]:shadow-[…var(--ds-red-300)] (no !important, no dark override)
+ * ------------------------------------------------------------------------ */
+.wrapper.error {
+    box-shadow: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-300);
+}
+
+.wrapper.error:has(:focus) {
+    box-shadow: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-300);
+}
+
+/* ---- Textarea element ------------------------------------------------------
+ * Snapshot: py-2.5 px-3 resize-none w-full [&[rows]]:h-[unset] inline-flex
+ * appearance-none webkit-search-reset min-w-0 border-none
+ * bg-[var(--ds-background-100)] text-[var(--geist-foreground)] order-1
+ * outline-none focus:outline-none
+ * Font properties inherit from the wrapper via the Tailwind preflight rule
+ * (textarea { font: inherit; letter-spacing: inherit; }), reproduced here.
+ * ------------------------------------------------------------------------ */
+.textarea {
+    /* Tailwind preflight equivalents (production relies on the global reset) */
+    margin: 0;
+    font: inherit;
+    letter-spacing: inherit;
+    border-radius: 0;
+
+    display: inline-flex;
+    order: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 10px var(--oxobz-gap-half);
+    resize: none;
+    appearance: none;
+    border: none;
+    outline: none;
+    background: var(--ds-background-100);
+    color: var(--oxobz-foreground);
+}
+
+.textarea:focus {
+    outline: none;
+}
+
+/* Chunk: .textarea[rows]{height:unset} — snapshot: [&[rows]]:h-[unset] */
+.textarea[rows] {
+    height: unset;
+}
+
+/* Tailwind v4 preflight placeholder (no explicit class in production) */
+.textarea::placeholder {
+    opacity: 1;
+    color: color-mix(in oklab, currentColor 50%, transparent);
+}
+
+/* ---- Disabled --------------------------------------------------------------
+ * disabled:bg-[var(--ds-gray-100)] disabled:text-[var(--ds-gray-700)]
+ * disabled:[-webkit-text-fill-color:var(--accents-3)] disabled:opacity-100
+ * disabled:cursor-not-allowed disabled:placeholder:text-[var(--accents-3)]
+ * ------------------------------------------------------------------------ */
+.textarea:disabled {
+    background: var(--ds-gray-100);
+    color: var(--ds-gray-700);
+    -webkit-text-fill-color: var(--accents-3);
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+.textarea:disabled::placeholder {
+    color: var(--accents-3);
+}
+
+/* ---- Error message (sibling of the wrapper, inside the label) --------------
+ * Snapshot: text-[var(--ds-red-900)] flex items-start text-[13px] leading-5
+ * (large: text-base leading-6); inline style margin-top: var(--gap-quarter)
+ * stays inline in the component to match production.
+ * ------------------------------------------------------------------------ */
+.errorMessage {
+    display: flex;
+    align-items: flex-start;
+    color: var(--ds-red-900);
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.errorMessageLarge {
+    /* text-base leading-6 */
+    font-size: 16px;
+    line-height: 24px;
+}
+
+/* Icon holder: flex items-center mr-2 mt-0.5 (large: mt-1) */
+.errorIcon {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-top: 2px;
+}
+
+.errorMessageLarge .errorIcon {
+    margin-top: 4px;
+}
+
+/* break-words */
+.errorText {
+    overflow-wrap: break-word;
+}

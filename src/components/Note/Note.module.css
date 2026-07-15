@@ -1,0 +1,283 @@
+/**
+ * Note — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: note-module__Y57kBW — .note, .action, .disabled, .small, .large,
+ *   .content, .hasLabel + the 600px / 450px breakpoints.
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   Global color classes referenced by the production DOM:
+ *   .v3-colors and .v3-colors.geist-<type>(-fill) → folded into .note and
+ *   the per-type classes below. .dark-theme --note-selection overrides kept.
+ * - _nextstatic/component-inspect-element/note.html
+ *   Snapshot-only utility classes translated here: icon wrapper
+ *   ("flex h-4" / "flex h-3.5") and custom label ("whitespace-nowrap
+ *   font-semibold", spans flex + items-center in label mode).
+ *
+ * Var mapping: --geist-gap-half → --oxobz-gap-half,
+ * --geist-form-height → --oxobz-form-height,
+ * --geist-form-large-height → --oxobz-form-large-height,
+ * --geist-form-large-font → --oxobz-form-large-font.
+ */
+
+/* ---- Root (note-module __note + global .v3-colors) ---- */
+.note {
+    /* Color variables (v3-colors defaults — gray / info) */
+    --note-border-color: var(--ds-gray-400);
+    --note-fg: var(--ds-gray-900);
+    --note-bg: transparent;
+    --note-link: var(--ds-blue-700);
+
+    /* Layout (note-module) */
+    padding: 8px var(--oxobz-gap-half);
+    min-height: var(--oxobz-form-height);
+    word-break: break-word;
+    box-sizing: border-box;
+    border-radius: 6px;
+    flex-grow: 1;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+
+    /* Colors (v3-colors — !important as in production) */
+    border: 1px solid var(--note-border-color) !important;
+    background: var(--note-bg) !important;
+    color: var(--note-fg) !important;
+}
+
+.note svg {
+    height: 1lh !important;
+}
+
+/* ---- Text selection (v3-colors) ---- */
+.note ::selection {
+    background: var(--note-selection, var(--note-fg)) !important;
+}
+
+/* ---- Links inside a note (v3-colors) ---- */
+.note a {
+    color: var(--note-link);
+}
+
+.note a:not([class*='highlight']) {
+    font-weight: 500 !important;
+}
+
+.note a:hover:not([class*='highlight']) {
+    text-decoration: underline;
+}
+
+.note a:focus-visible {
+    box-shadow: var(--ds-focus-ring);
+    border-radius: 2px;
+    outline: none;
+}
+
+/* ---- Action slot present (note-module __action) ---- */
+.note.action {
+    border-radius: 10px;
+    padding-right: 8px;
+}
+
+/* ---- Disabled (note-module __disabled) ---- */
+.note.disabled,
+.note.disabled a {
+    color: var(--ds-gray-700) !important;
+}
+
+.note.disabled {
+    border: 1px solid var(--ds-gray-alpha-200) !important;
+    background: transparent !important;
+}
+
+.note.disabled button {
+    pointer-events: none;
+    border: 1px solid var(--ds-gray-alpha-400) !important;
+    background: var(--ds-gray-100) !important;
+    color: var(--ds-gray-700) !important;
+}
+
+.note.disabled svg {
+    color: var(--ds-gray-700) !important;
+}
+
+/* ---- Responsive stack (note-module, production breakpoint 600px) ---- */
+@media screen and (max-width: 600px) {
+    .note {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* ---- Sizes (note-module __small / __large; medium = base) ---- */
+.small {
+    border-radius: 6px;
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
+.small.action {
+    padding-right: 3px;
+}
+
+.large {
+    padding: 11px var(--oxobz-gap-half);
+    min-height: var(--oxobz-form-large-height);
+    font-size: var(--oxobz-form-large-font);
+}
+
+/* ---- Types (v3-colors .geist-<type>) ---- */
+.note.secondary {
+    --note-border-color: var(--ds-gray-alpha-400);
+    --note-fg: var(--ds-gray-alpha-900);
+    --note-bg: transparent;
+    --note-link: var(--ds-gray-1000);
+}
+
+.note.secondary.fill {
+    --note-bg: var(--ds-gray-alpha-200);
+    --note-border-color: transparent;
+}
+
+.note.success {
+    --note-border-color: var(--ds-blue-400);
+    --note-fg: var(--ds-blue-900);
+    --note-bg: transparent;
+    --note-selection: var(--ds-blue-700);
+    --note-link: var(--ds-blue-1000);
+}
+
+.note.success.fill {
+    --note-bg: var(--ds-blue-200);
+    --note-border-color: var(--ds-blue-100);
+}
+
+.note.error {
+    --note-border-color: var(--ds-red-400);
+    --note-fg: var(--ds-red-900);
+    --note-bg: transparent;
+    --note-selection: var(--ds-red-800);
+    --note-link: var(--ds-red-1000);
+}
+
+.note.error.fill {
+    --note-bg: var(--ds-red-200);
+    --note-border-color: var(--ds-red-100);
+}
+
+.note.warning {
+    --note-border-color: var(--ds-amber-400);
+    --note-fg: var(--ds-amber-900);
+    --note-bg: transparent;
+    --note-link: var(--ds-amber-1000);
+}
+
+.note.warning.fill {
+    --note-bg: var(--ds-amber-200);
+    --note-border-color: var(--ds-amber-100);
+}
+
+.note.alert {
+    --note-border-color: var(--ds-red-400);
+    --note-fg: var(--ds-red-900);
+    --note-bg: transparent;
+    --note-selection: var(--ds-red-800);
+    --note-link: var(--ds-red-1000);
+}
+
+.note.alert.fill {
+    --note-bg: var(--ds-red-200);
+    --note-border-color: var(--ds-red-100);
+}
+
+.note.violet {
+    --note-border-color: var(--ds-purple-400);
+    --note-fg: var(--ds-purple-900);
+    --note-bg: transparent;
+    --note-link: var(--ds-purple-1000);
+}
+
+.note.violet.fill {
+    --note-bg: var(--ds-purple-200);
+    --note-border-color: var(--ds-purple-100);
+}
+
+.note.cyan {
+    --note-border-color: var(--ds-teal-400);
+    --note-fg: var(--ds-teal-900);
+    --note-bg: transparent;
+    --note-link: var(--ds-teal-1000);
+}
+
+.note.cyan.fill {
+    --note-bg: var(--ds-teal-200);
+    --note-border-color: var(--ds-teal-100);
+}
+
+/* Types without dedicated color rules in production (base gray applies).
+   Classes kept for DOM parity with geist-<type> in the snapshot. */
+.default,
+.tertiary,
+.lite,
+.ghost,
+.rotate-ccw {
+    /* intentionally empty — base .note colors apply */
+}
+
+/* ---- Dark theme --note-selection overrides (1c419a75d7e589ae.css) ---- */
+:global(.dark-theme) .note.default {
+    --note-selection: var(--ds-gray-500);
+}
+
+:global(.dark-theme) .note.warning {
+    --note-selection: var(--ds-amber-500);
+}
+
+:global(.dark-theme) .note.violet {
+    --note-selection: var(--ds-purple-600);
+}
+
+/* ---- Content (note-module __content / __hasLabel) ---- */
+.content {
+    align-items: flex-start;
+    margin: 0;
+    display: flex;
+}
+
+/* Snapshot (label mode): container sm:items-center, spans flex items-center */
+.content.hasLabel {
+    align-items: center;
+}
+
+.content.hasLabel > span {
+    display: flex;
+    align-items: center;
+}
+
+@media screen and (max-width: 450px) {
+    .content.hasLabel {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ---- Icon wrapper (snapshot: "flex h-4", small "flex h-3.5") ---- */
+.iconContainer {
+    display: flex;
+    height: 16px;
+}
+
+.small .iconContainer {
+    height: 14px;
+}
+
+/* ---- Custom label (snapshot: "whitespace-nowrap font-semibold") ---- */
+.label {
+    white-space: nowrap;
+    font-weight: 600;
+}
