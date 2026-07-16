@@ -121,5 +121,8 @@ export type { StatusDotProps, StatusDotState } from './components/StatusDot';
 export { Gauge } from './components/Gauge';
 export type { GaugeProps, GaugeSize, GaugeArcPriority, GaugeColors } from './components/Gauge';
 
+export { Combobox, ComboboxInput, ComboboxList, ComboboxOption } from './components/Combobox';
+export type { ComboboxProps, ComboboxInputProps, ComboboxListProps, ComboboxOptionProps, ComboboxSize } from './components/Combobox';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

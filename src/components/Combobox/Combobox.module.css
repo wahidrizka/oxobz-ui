@@ -1,0 +1,362 @@
+/**
+ * Combobox — CSS Module
+ *
+ * Sources:
+ * - DOM structure: geistcn snapshot
+ *   `_nextstatic/component-inspect-element/combobox.html`
+ *   (root `div[role=combobox][aria-haspopup=listbox]` > `.container`
+ *   [prefix + input[role=searchbox] + clear button + open button] and the
+ *   sibling option list).
+ * - Styling values: combobox module (`.combobox-module__Thgw9a__*`) in chunk
+ *   `_nextstatic/chunks/1c419a75d7e589ae.css`.
+ * - Icon-button base (reset + size + chevron rotate/bounce): icon-button module
+ *   (`.icon-button-module__IwlI7G__*`) in chunk `b4b9d0dd5348b0c3.css` — the
+ *   snapshot buttons carry `icon-button-module` + `reset-module` classes.
+ *
+ * Geist `--geist-*` tokens translated to their `@oxobz` equivalents (values
+ * verified equal in the chunk root):
+ *   --geist-form-font       -> --oxobz-form-font          (.875rem)
+ *   --geist-form-height     -> --oxobz-form-height        (40px, medium)
+ *   --geist-form-small-*    -> --oxobz-form-small-*        (32px)
+ *   --geist-form-large-*    -> --oxobz-form-large-*        (48px)
+ *   --geist-gap             -> --oxobz-gap                 (24px)
+ *   --geist-gap-half        -> --oxobz-gap-half            (12px)
+ *   --geist-space-2x        -> --oxobz-space-2x            (8px)
+ *   --geist-radius          -> --oxobz-radius              (6px)
+ *   --geist-foreground      -> --oxobz-foreground
+ *
+ * Notes / documented adaptations (not fabricated):
+ * - The input `:focus` box-shadow in the chunk is the concrete pair
+ *   `0 0 0 1px var(--ds-gray-alpha-600), 0 0 0 4px #00000029` with a
+ *   `.dark-theme` override to `#ffffff3d`. That pair is exactly the DS token
+ *   `--ds-focus-border` (which already flips per theme), so we consume the
+ *   token instead of duplicating the `.dark-theme` block.
+ * - The chunk does not position the list (`.list` has no `position`) — in
+ *   production react-aria's popover positions it with inline styles. Faithful
+ *   to the snapshot (the list is an inline sibling of the container) we anchor
+ *   it absolutely under the input; the 4px offset and 300px scroll cap are the
+ *   only values not present in the chunk (the `scroll-margin` on options proves
+ *   the list is a scroll container).
+ * - The clear button offset (`right: 40px`, left of the chevron) is inferred
+ *   from the chunk's `.displaySuffix { right: 40px }`; no open+clearable
+ *   snapshot exists to confirm it exactly.
+ */
+
+/* Root wrapper (snapshot `div[role=combobox]`, class-less in prod) — provides
+   the positioning context for the absolute list. */
+.root {
+    position: relative;
+    display: inline-block;
+}
+
+/* Container (combobox-module __container). */
+.container {
+    width: 100%;
+    font-size: var(--oxobz-form-font);
+    z-index: 0;
+    display: inline-block;
+    position: relative;
+}
+
+/* Sizes (combobox-module __small / __large). */
+.small {
+    font-size: var(--oxobz-form-small-font) !important;
+}
+
+.small .input,
+.small .clearButton {
+    height: var(--oxobz-form-small-height);
+}
+
+.large {
+    font-size: var(--oxobz-form-large-font) !important;
+}
+
+.large .input,
+.large .clearButton {
+    height: var(--oxobz-form-large-height);
+}
+
+/* Icon-button bounce (icon-button-module __bounce). */
+@keyframes bounce {
+    0% {
+        transform: scale(0) rotate(var(--icon-rotation));
+    }
+    50% {
+        transform: scale(1.2) rotate(var(--icon-rotation));
+    }
+    to {
+        transform: scale(1) rotate(var(--icon-rotation));
+    }
+}
+
+/* Icon buttons — base (icon-button-module) + combobox overrides. */
+.iconButton {
+    --icon-rotation: 0deg;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    width: 40px;
+    height: 30px;
+    color: var(--ds-gray-700);
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    transition: color 0.15s;
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+}
+
+@media (hover: hover) {
+    .iconButton:hover:not(:disabled) {
+        color: var(--oxobz-foreground);
+    }
+}
+
+.iconButton:disabled {
+    cursor: not-allowed;
+}
+
+.iconButton[data-open='true'] {
+    --icon-rotation: 180deg;
+}
+
+.iconButton[data-open='true'] .chevron {
+    transform: rotate(var(--icon-rotation));
+}
+
+/* Chevron / clear icons (icon-button-module __chevron / __cross). */
+.chevron {
+    transition: transform 0.15s;
+}
+
+.chevron,
+.cross {
+    animation: 0.15s bounce;
+}
+
+/* Clear button (combobox-module __clearButton). */
+.clearButton {
+    border-radius: 0 var(--oxobz-radius) var(--oxobz-radius) 0;
+    height: var(--oxobz-form-height);
+    padding: 0 var(--oxobz-gap-half);
+    border-left: 0;
+    order: 2;
+    /* Sits just left of the open (chevron) button — see header note. */
+    right: 40px;
+    width: auto;
+    transition: color 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.clearButton:focus-visible {
+    color: var(--ds-gray-1000);
+    border-color: var(--ds-gray-alpha-900);
+    box-shadow: inset 0 0 0 2px var(--ds-blue-700);
+}
+
+/* Search prefix icon (combobox-module __prefix). */
+.prefix {
+    pointer-events: none;
+    left: var(--oxobz-gap-half);
+    z-index: 1;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ds-gray-700) !important;
+}
+
+/* Text input (combobox-module __input). */
+.input {
+    width: 100%;
+    height: var(--oxobz-form-height);
+    background: var(--ds-background-100);
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    font-size: inherit;
+    font-family: var(--font-sans, var(--font-sans-fallback));
+    color: var(--ds-gray-1000);
+    min-height: unset;
+    appearance: none;
+    cursor: text;
+    --padding-x: calc(var(--oxobz-gap) + 16px);
+    padding: 0 var(--padding-x);
+    background-clip: padding-box;
+    border: none;
+    border-radius: 6px;
+    outline: 0;
+    margin: 0;
+    transition: box-shadow 0.2s, outline 0.2s;
+}
+
+.input::placeholder,
+.input.placeholder {
+    color: var(--ds-gray-700);
+}
+
+.input:disabled {
+    color: var(--ds-gray-700);
+    background: var(--ds-gray-100);
+    cursor: not-allowed;
+}
+
+@media (hover: hover) {
+    .input:hover:not(:disabled):not(.errored) {
+        box-shadow: 0 0 0 1px var(--ds-gray-alpha-500);
+    }
+}
+
+/* Focus ring — `--ds-focus-border` is the token form of the chunk's
+   light/dark focus box-shadow pair (see header note). */
+.input:focus {
+    box-shadow: var(--ds-focus-border) !important;
+}
+
+.input:focus ~ .clearButton:focus-visible {
+    border-color: var(--ds-gray-1000);
+}
+
+/* Errored (combobox-module __errored). */
+.input.errored {
+    box-shadow: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-300);
+    color: var(--ds-red-800);
+}
+
+.input.errored ~ .iconButton {
+    color: var(--ds-red-800);
+}
+
+@media (hover: hover) {
+    .input.errored ~ .iconButton:hover {
+        color: var(--ds-red-800);
+    }
+}
+
+.input.errored ~ .iconButton:focus {
+    box-shadow: 0 0 0 1px var(--ds-red-400);
+}
+
+.input.errored ~ .clearButton {
+    color: var(--ds-red-800);
+    border-color: var(--ds-red-800);
+}
+
+.input.errored ~ .clearButton:focus-visible {
+    box-shadow: inset 1px 0 0 var(--ds-red-800);
+}
+
+/* Popover list (combobox-module __list + material shadow). */
+.list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 100%;
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border-large);
+    z-index: 101;
+    border-radius: 12px;
+    outline: 0;
+    /* chunk: margin 0; +4px top offset (see header note). */
+    margin: 4px 0 0;
+    padding: 8px;
+    /* Scroll cap (options declare scroll-margin -> scroll container). */
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.list[data-pristine='false'] {
+    transition: height 0.1s;
+}
+
+.list.hidden {
+    display: none;
+}
+
+.list > ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+/* Option row (combobox-module __option). Height is set inline (snapshot
+   `style="height:36px"`). */
+.option {
+    font-size: var(--oxobz-form-font);
+    padding: 0 var(--oxobz-space-2x);
+    color: var(--ds-gray-1000);
+    cursor: pointer;
+    border-radius: 6px;
+    outline: 0;
+    align-items: center;
+    scroll-margin: 8px 0;
+    display: flex;
+}
+
+/* `.option` sets display:flex, which would beat the `hidden` UA rule — restore
+   it so filtered-out options collapse. */
+.option[hidden] {
+    display: none;
+}
+
+.option[aria-selected='true'] {
+    background-color: var(--ds-gray-alpha-300);
+    color: var(--ds-gray-1000);
+}
+
+.option[data-highlighted='true'] {
+    color: var(--ds-gray-1000);
+}
+
+.option [data-oxobz-combobox-option-prefix] {
+    margin-right: var(--oxobz-gap-half);
+    align-items: center;
+    display: flex;
+}
+
+.option [data-oxobz-combobox-option-suffix] {
+    align-items: center;
+    margin-left: auto;
+    display: flex;
+}
+
+.optionDisabled {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Truncated label (combobox-module __truncate). */
+.truncate {
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Empty state (combobox-module __empty). */
+.empty {
+    color: var(--ds-gray-900);
+    padding: 10px 0 4px;
+    display: block;
+}
+
+/* Mobile (chunk @media max-width:600px). */
+@media (max-width: 600px) {
+    .input {
+        min-height: 40px !important;
+    }
+
+    .input:focus {
+        outline: none;
+    }
+
+    .list {
+        box-shadow: none;
+    }
+}
