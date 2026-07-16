@@ -23,8 +23,11 @@
     display: inline-block;
     position: relative;
     overflow: hidden;
+    /* Production ships only the -webkit-prefixed mask (d2f6d4dcdb88e56d.css:13).
+     * The standard `mask-image` is intentionally omitted to stay 1:1 with the
+     * production chunk — border-radius:100% + overflow:hidden already clip the
+     * circle in every browser, so the mask is a cosmetic edge-fade only. */
     -webkit-mask-image: -webkit-radial-gradient(circle, #fff, #000);
-    mask-image: radial-gradient(circle, #fff, #000);
 }
 
 /* Inner ring overlay */
@@ -67,7 +70,7 @@
     position: relative;
 }
 
-/* image-module__ssnYEW__intrinsic — from chunk 8cfa8a674deaaab6.css */
+/* image-module__ssnYEW__intrinsic — from chunk b4b9d0dd5348b0c3.css */
 .intrinsic {
     max-width: 100%;
     height: auto;

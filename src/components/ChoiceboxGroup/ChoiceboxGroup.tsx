@@ -110,6 +110,11 @@ function CheckboxSvg() {
 const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>(
     ({ title, description, value, disabled: itemDisabled, children, className, ...rest }, ref) => {
         const ctx = useContext(ChoiceboxGroupContext);
+        // Links the checkbox <input id> to its wrapping <label for> — matches
+        // production DOM (`for="checkbox-…"` / `id="checkbox-…"`). Radio mode
+        // nests the input directly and needs no id/for pairing. Called
+        // unconditionally (before the guard) to satisfy the rules of hooks.
+        const checkboxId = `checkbox-${useId()}`;
         if (!ctx) {
             throw new Error('ChoiceboxGroup.Item must be used within a ChoiceboxGroup');
         }
@@ -198,7 +203,13 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
 
                     {/* Radio / Checkbox indicator */}
                     {type === 'radio' ? (
-                        <span className={cn(radioStyles.check, styles.radio)}>
+                        <span
+                            className={cn(
+                                radioStyles.check,
+                                isDisabled && radioStyles.disabled,
+                                styles.radio,
+                            )}
+                        >
                             <input
                                 className={cn(
                                     radioStyles.input,
@@ -225,6 +236,7 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                                 isDisabled && checkboxStyles.disabled,
                             )}
                             data-version="v1"
+                            htmlFor={checkboxId}
                         >
                             <span className={checkboxStyles.check}>
                                 <input
@@ -232,6 +244,7 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                                         'oxobz-sr-only',
                                         checkboxStyles.input,
                                     )}
+                                    id={checkboxId}
                                     type="checkbox"
                                     value={value}
                                     checked={isChecked}
@@ -278,8 +291,14 @@ export interface ChoiceboxGroupProps
     /** 'radio' for single-select, 'checkbox' for multi-select */
     type?: 'radio' | 'checkbox';
 
-    /** Layout direction of items */
+    /** Layout direction of items (drives the list's `--stack-direction`) */
     direction?: 'row' | 'column';
+
+    /**
+     * Extra className applied to the inner list (`<ul>`) element.
+     * Mirrors the official Geist `listClassName` prop.
+     */
+    listClassName?: string;
 
     /** Currently selected value(s) — string for radio, string[] for checkbox */
     value?: string | string[];
@@ -323,6 +342,7 @@ function ChoiceboxGroupRoot({
     direction = 'row',
     disabled,
     label,
+    listClassName,
     onChange,
     required = false,
     showLabel = false,
@@ -361,7 +381,7 @@ function ChoiceboxGroupRoot({
                     </Label>
                 )}
                 <ul
-                    className={stackStyles.stack}
+                    className={cn(stackStyles.stack, listClassName)}
                     data-version="v1"
                     style={{
                         '--stack-flex': 'initial',
@@ -389,4 +409,7 @@ const ChoiceboxGroup = Object.assign(ChoiceboxGroupRoot, {
     Item: ChoiceboxGroupItem,
 });
 
-export { ChoiceboxGroup };
+// `ChoiceboxGroupItem` is exported standalone so it can be imported the way the
+// official docs show (`import { ChoiceboxGroup, ChoiceboxGroupItem }`), while the
+// compound `ChoiceboxGroup.Item` remains available for the snapshot's usage.
+export { ChoiceboxGroup, ChoiceboxGroupItem };

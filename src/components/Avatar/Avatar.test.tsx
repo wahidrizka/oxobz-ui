@@ -79,6 +79,45 @@ describe('Avatar', () => {
         expect(span?.textContent).toBe('W');
     });
 
+    it('builds img src from username at 2x size', () => {
+        const { container } = render(<Avatar username="evilrabbit" size={24} />);
+        const img = container.querySelector('img');
+        expect(img?.getAttribute('src')).toBe(
+            'https://vercel.com/api/www/avatar?s=48&u=evilrabbit',
+        );
+    });
+
+    it('prefers explicit src over username', () => {
+        const { container } = render(
+            <Avatar username="evilrabbit" src="https://example.com/x.jpg" />,
+        );
+        const img = container.querySelector('img');
+        expect(img?.getAttribute('src')).toBe('https://example.com/x.jpg');
+    });
+
+    it('derives aria-label "Avatar for {username}" when only username is given', () => {
+        const { container } = render(<Avatar username="evilrabbit" />);
+        const span = container.querySelector('[data-oxobz-avatar]');
+        expect(span?.getAttribute('aria-label')).toBe('Avatar for evilrabbit');
+    });
+
+    it('renders a 1–2 letter avatar with the initials screen-reader label', () => {
+        render(<Avatar letter="SL" placeholder size={32} />);
+        expect(screen.getByRole('img', { name: 'Avatar with initials: SL' })).not.toBeNull();
+    });
+
+    it('renders letter text as fallback content', () => {
+        const { container } = render(<Avatar letter="EK" placeholder />);
+        const span = container.querySelector('[data-oxobz-avatar] > span');
+        expect(span?.textContent).toBe('EK');
+    });
+
+    it('letter takes precedence over the name-derived initial', () => {
+        const { container } = render(<Avatar name="Wahid" letter="WF" />);
+        const span = container.querySelector('[data-oxobz-avatar] > span');
+        expect(span?.textContent).toBe('WF');
+    });
+
     it('sets --size CSS variable from size prop', () => {
         const { container } = render(<Avatar size={48} />);
         const el = container.querySelector('[data-oxobz-avatar]') as HTMLElement;
@@ -147,6 +186,71 @@ describe('AvatarGroup', () => {
         // limit=2 → normalCount=1, noteCount=total-normalCount=4-1=3
         const noteSpan = container.querySelector('[aria-label*="3 more avatars"]');
         expect(noteSpan).not.toBeNull();
+    });
+
+    it('wraps the trailing member in a note even without a limit', () => {
+        const members = [
+            { username: 'a' },
+            { username: 'b' },
+            { username: 'c' },
+        ];
+        const { container } = render(<AvatarGroup members={members} />);
+        // Geist always reserves the last slot as a note; a single trailing
+        // member yields aria "1 more avatars in this group" and no "+N" bubble.
+        const note = container.querySelector('[aria-label="1 more avatars in this group"]');
+        expect(note).not.toBeNull();
+        expect(container.textContent).not.toContain('+1');
+        // still three avatars rendered in total
+        expect(container.querySelectorAll('[data-oxobz-avatar]').length).toBe(3);
+    });
+
+    it('shows a "+N" bubble only when 2 or more members collapse', () => {
+        const members = [
+            { username: 'a' },
+            { username: 'b' },
+            { username: 'c' },
+            { username: 'd' },
+            { username: 'e' },
+        ];
+        const { container } = render(<AvatarGroup members={members} limit={4} />);
+        expect(container.querySelector('[aria-label="2 more avatars in this group"]')).not.toBeNull();
+        expect(container.textContent).toContain('+2');
+    });
+
+    it('does not set inline margin or z-index by default (snapshot-identical)', () => {
+        const members = [{ username: 'a' }, { username: 'b' }];
+        const { container } = render(<AvatarGroup members={members} />);
+        const group = container.querySelector('div') as HTMLElement;
+        const first = group.children[0] as HTMLElement;
+        expect(first.style.marginLeft).toBe('');
+        expect(first.style.zIndex).toBe('');
+    });
+
+    it('applies a fixed pixel overlap as negative margin-left on stacked slots', () => {
+        const members = [
+            { username: 'a' },
+            { username: 'b' },
+            { username: 'c' },
+        ];
+        const { container } = render(<AvatarGroup members={members} overlap={6} />);
+        const group = container.querySelector('div') as HTMLElement;
+        const slots = group.children;
+        expect((slots[0] as HTMLElement).style.marginLeft).toBe('');
+        expect((slots[1] as HTMLElement).style.marginLeft).toBe('-6px');
+    });
+
+    it('reverse assigns descending z-index so the first slot sits on top', () => {
+        const members = [
+            { username: 'a' },
+            { username: 'b' },
+            { username: 'c' },
+        ];
+        const { container } = render(<AvatarGroup members={members} reverse />);
+        const group = container.querySelector('div') as HTMLElement;
+        const slots = group.children;
+        const firstZ = Number((slots[0] as HTMLElement).style.zIndex);
+        const lastZ = Number((slots[slots.length - 1] as HTMLElement).style.zIndex);
+        expect(firstZ).toBeGreaterThan(lastZ);
     });
 
     it('renders children mode when no members prop', () => {

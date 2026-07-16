@@ -1,15 +1,31 @@
-import React, { forwardRef, CSSProperties } from 'react';
+import React, { forwardRef, useId, CSSProperties } from 'react';
 import { LogoVercel } from '@oxobz/icons';
 import { Stack } from '../Stack';
 import { Text } from '../Text';
 import { cn } from '../../utils/cn';
 import styles from './Book.module.css';
 
+/**
+ * Responsive width map. Each key maps to a breakpoint custom property
+ * consumed by the production media queries:
+ * - `xs`  → `--xs-book-width`  (max-width: 400px)
+ * - `sm`  → `--sm-book-width`  (401px – 600px)
+ * - `smd` → `--smd-book-width` (601px – 768px)
+ * - `md`  → `--md-book-width`  (769px – 960px)
+ * - `lg`  → `--lg-book-width`  (min-width: 961px)
+ */
+export interface BookResponsiveWidth {
+    xs?: number;
+    sm?: number;
+    smd?: number;
+    md?: number;
+    lg?: number;
+}
 
 export interface BookProps extends React.HTMLAttributes<HTMLDivElement> {
     /**
      * Visual variant.
-     * - `stripe`: colored stripe header at top + logo at bottom
+     * - `stripe`: colored stripe header at top + icon at bottom
      * - `simple`: illustration inside content area
      * @default 'stripe'
      */
@@ -19,7 +35,7 @@ export interface BookProps extends React.HTMLAttributes<HTMLDivElement> {
      * Book cover color string (any valid CSS color).
      * Applied as `--book-color`.
      * Stripe variant defaults to `var(--ds-amber-600)`.
-     * Simple variant defaults to no color (white background).
+     * Simple variant defaults to no color (inherits `--ds-gray-200`).
      */
     color?: string;
 
@@ -31,19 +47,11 @@ export interface BookProps extends React.HTMLAttributes<HTMLDivElement> {
     textColor?: string;
 
     /**
-     * Fixed book width in pixels (number only, no unit).
-     * Applied as `--book-width`.
+     * Book width. Either a fixed pixel value (unitless number, applied as
+     * `--book-width`) or a responsive map resolved per breakpoint.
      * @default 196
      */
-    width?: number;
-
-    /**
-     * Responsive widths — applied via CSS custom properties.
-     * The production CSS resolves width at each breakpoint.
-     */
-    smWidth?: number;
-    mdWidth?: number;
-    lgWidth?: number;
+    width?: number | BookResponsiveWidth;
 
     /**
      * Book title displayed on the cover.
@@ -58,22 +66,35 @@ export interface BookProps extends React.HTMLAttributes<HTMLDivElement> {
     illustration?: React.ReactNode;
 
     /**
-     * Logo rendered at the bottom of the content (stripe variant only).
+     * Icon rendered at the bottom of the content (stripe variant only).
+     * @default <LogoVercel size={16} />
      */
-    logo?: React.ReactNode;
+    icon?: React.ReactNode;
 
     /**
      * Whether to apply the textured pages and overlay.
      * @default false
      */
     textured?: boolean;
+}
 
-    /**
-     * Rotation angle of the texture overlay in degrees.
-     * Production uses 0deg or 180deg.
-     * @default 0
-     */
-    textureRotation?: 0 | 180;
+/**
+ * Resolve the `width` prop into the matching CSS custom properties.
+ * A number sets the fixed `--book-width`; a responsive map sets one
+ * `--<bp>-book-width` per provided breakpoint (and leaves `--book-width`
+ * for the media queries to fill in).
+ */
+function resolveWidthStyle(width: number | BookResponsiveWidth): CSSProperties {
+    if (typeof width === 'number') {
+        return { '--book-width': width } as CSSProperties;
+    }
+    return {
+        ...(width.xs != null ? { '--xs-book-width': width.xs } : {}),
+        ...(width.sm != null ? { '--sm-book-width': width.sm } : {}),
+        ...(width.smd != null ? { '--smd-book-width': width.smd } : {}),
+        ...(width.md != null ? { '--md-book-width': width.md } : {}),
+        ...(width.lg != null ? { '--lg-book-width': width.lg } : {}),
+    } as CSSProperties;
 }
 
 /**
@@ -86,14 +107,10 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
             color,
             textColor,
             width = 196,
-            smWidth,
-            mdWidth,
-            lgWidth,
             title,
             illustration,
-            logo,
+            icon,
             textured = false,
-            textureRotation = 0,
             className,
             style,
             ...props
@@ -101,32 +118,37 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
         ref,
     ) => {
         // Production behavior: stripe default = amber, simple default = no color
-        const effectiveColor = color ?? (variant === 'stripe' ? 'var(--ds-amber-600)' : undefined);
+        const effectiveColor =
+            color ?? (variant === 'stripe' ? 'var(--ds-amber-600)' : undefined);
         const hasColor = Boolean(effectiveColor);
 
-        // --- CSS custom properties ---
+        // Auto-derived, deterministic per-instance texture rotation. Production
+        // alternates the texture overlay between 0deg and 180deg across a row of
+        // textured Books; deriving the angle from the stable per-instance id
+        // reproduces that visual variation without an extra prop.
+        const instanceId = useId();
+        let idHash = 0;
+        for (let i = 0; i < instanceId.length; i += 1) {
+            idHash += instanceId.charCodeAt(i);
+        }
+        const textureRotation = idHash % 2 === 0 ? 0 : 180;
+
+        // Width vars live on the root .perspective element (matches production).
         const perspectiveStyle: CSSProperties = {
             ...style,
-            // Fixed width (used when smWidth/mdWidth are NOT set)
-            ...(smWidth == null && mdWidth == null && lgWidth == null
-                ? ({ '--book-width': width } as CSSProperties)
+            ...resolveWidthStyle(width),
+        };
+
+        // Color vars live on the .rotate-wrapper element (matches production).
+        const wrapperStyle: CSSProperties = {
+            ...(effectiveColor != null
+                ? ({ '--book-color': effectiveColor } as CSSProperties)
                 : {}),
-            // Responsive widths
-            ...(smWidth != null
-                ? ({ '--sm-book-width': smWidth } as CSSProperties)
-                : {}),
-            ...(mdWidth != null
-                ? ({ '--md-book-width': mdWidth } as CSSProperties)
-                : {}),
-            ...(lgWidth != null
-                ? ({ '--lg-book-width': lgWidth } as CSSProperties)
-                : {}),
-            // Colors
-            ...(effectiveColor != null ? ({ '--book-color': effectiveColor } as CSSProperties) : {}),
             ...(textColor != null
                 ? ({ '--book-text-color': textColor } as CSSProperties)
                 : {}),
         };
+        const hasWrapperStyle = Object.keys(wrapperStyle).length > 0;
 
         // Rotate-wrapper class names
         const wrapperClasses = cn(
@@ -142,7 +164,10 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                 style={perspectiveStyle}
                 {...props}
             >
-                <div className={wrapperClasses}>
+                <div
+                    className={wrapperClasses}
+                    style={hasWrapperStyle ? wrapperStyle : undefined}
+                >
                     {/* ---- BOOK element ---- */}
                     <Stack
                         className={styles.book}
@@ -202,9 +227,8 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                                     <div className={styles.illustration}>{illustration}</div>
                                 )}
 
-                                {variant === 'stripe' && (
-                                    logo !== undefined ? logo : <LogoVercel size={16} />
-                                )}
+                                {variant === 'stripe' &&
+                                    (icon !== undefined ? icon : <LogoVercel size={16} />)}
                             </Stack>
                         </Stack>
 

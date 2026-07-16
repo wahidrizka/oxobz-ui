@@ -56,6 +56,44 @@ describe('Spinner', () => {
         expect(el.style.height).toBe('40px');
     });
 
+    // ---- Named size tokens (Geist API parity) ----
+
+    it.each([
+        ['sm', '12px'],
+        ['md', '16px'],
+        ['lg', '20px'],
+        ['xl', '24px'],
+        ['2xl', '32px'],
+        ['3xl', '40px'],
+        ['4xl', '56px'],
+    ] as const)('maps named token size="%s" to %s', (token, expected) => {
+        const { container } = render(<Spinner size={token} />);
+        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
+        expect(el.style.width).toBe(expected);
+        expect(el.style.height).toBe(expected);
+    });
+
+    it('inner container matches token size', () => {
+        const { container } = render(<Spinner size="xl" />);
+        const inner = container.querySelector('[data-oxobz-spinner] > div') as HTMLElement;
+        expect(inner.style.width).toBe('24px');
+        expect(inner.style.height).toBe('24px');
+    });
+
+    it('renders 8 bars for the small token "sm" (12px)', () => {
+        const { container } = render(<Spinner size="sm" />);
+        const inner = container.querySelector('[data-oxobz-spinner] > div');
+        const bars = inner?.querySelectorAll('div');
+        expect(bars?.length).toBe(8);
+    });
+
+    it('renders 12 bars for the "lg" token (20px)', () => {
+        const { container } = render(<Spinner size="lg" />);
+        const inner = container.querySelector('[data-oxobz-spinner] > div');
+        const bars = inner?.querySelectorAll('div');
+        expect(bars?.length).toBe(12);
+    });
+
     // ---- Bar count ----
 
     it('renders 12 bars for default size (20px)', () => {

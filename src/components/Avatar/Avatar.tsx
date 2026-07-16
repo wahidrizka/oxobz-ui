@@ -54,16 +54,22 @@ import styles from './Avatar.module.css';
 export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
     /** Image URL */
     src?: string;
+    /** Vercel username. When `src` is absent, the image src is built as
+     *  `https://vercel.com/api/www/avatar?s={size*2}&u={username}` (Geist `username` API). */
+    username?: string;
     /** Accessible label */
     alt?: string;
     /** Pixel size — set as CSS variable --size */
     size?: number;
     /** Name (used for aria-label & fallback initial) */
     name?: string;
+    /** 1–2 uppercase letters shown when no image is available. Screen-reader label is
+     *  prefixed with `Avatar with initials:` (Geist `letter` API). */
+    letter?: string;
     /** Square instead of circle (data-mask=false) */
     squared?: boolean;
     /** Whether the avatar image has loaded (controls shimmer).
-     *  Defaults to `true` when `src` is provided, `false` otherwise. */
+     *  Defaults to `true` when a resolvable src is present, `false` otherwise. */
     resolved?: boolean;
     /** Shorthand for unresolved placeholder avatar (data-resolved="false", aria-label="Placeholder Avatar") */
     placeholder?: boolean;
@@ -75,9 +81,11 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
     (
         {
             src,
+            username,
             alt,
             size = 32,
             name,
+            letter,
             squared = false,
             resolved,
             placeholder = false,
@@ -89,17 +97,40 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
         },
         ref,
     ) => {
-        // Derive resolved: explicit > placeholder > src presence
+        // Build the image src: explicit `src` wins, otherwise derive from `username`
+        // via Vercel's public avatar service (same URL shape as AvatarGroup members).
+        // Note: this is an external runtime dependency on vercel.com — intentional
+        // production (Geist) behavior, kept as-is.
+        const finalSrc =
+            src ??
+            (username
+                ? `https://vercel.com/api/www/avatar?s=${size * 2}&u=${username}`
+                : undefined);
+
+        // `username` also acts as a name for labelling/initials when `name` is absent.
+        const effectiveName = name ?? username;
+
+        // Derive resolved: explicit > placeholder > presence of a resolvable src.
         const finalResolved = placeholder
             ? false
-            : (resolved ?? Boolean(src));
+            : (resolved ?? Boolean(finalSrc));
 
-        // Derive label: placeholder > alt > name-based > ""
-        const label = placeholder
-            ? (alt ?? 'Placeholder Avatar')
-            : (alt ?? (name ? `Avatar for ${name}` : ''));
+        // Derive label. `alt` overrides everything; then a letter avatar gets the
+        // Geist screen-reader prefix; then placeholder; then a name-based label.
+        let label: string;
+        if (alt !== undefined) {
+            label = alt;
+        } else if (letter) {
+            label = `Avatar with initials: ${letter}`;
+        } else if (placeholder) {
+            label = 'Placeholder Avatar';
+        } else if (effectiveName) {
+            label = `Avatar for ${effectiveName}`;
+        } else {
+            label = '';
+        }
 
-        const initial = name ? name.charAt(0).toUpperCase() : undefined;
+        const initial = effectiveName ? effectiveName.charAt(0).toUpperCase() : undefined;
 
         return (
             <span
@@ -114,7 +145,7 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
                 style={{ '--size': `${size}px`, ...style } as CSSProperties}
                 {...props}
             >
-                {src && !placeholder ? (
+                {finalSrc && !placeholder ? (
                     <img
                         data-version="v1"
                         alt={label}
@@ -125,12 +156,14 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
                         decoding="sync"
                         data-nimg="1"
                         className={styles.intrinsic}
-                        src={src}
+                        src={finalSrc}
                         style={{ color: 'transparent' }}
                         {...imgProps}
                     />
                 ) : children ? (
                     children
+                ) : letter ? (
+                    <span>{letter}</span>
                 ) : initial ? (
                     <span>{initial}</span>
                 ) : null}
@@ -154,60 +187,94 @@ export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
     }>;
     /** Pixel size for each avatar */
     size?: number;
-    /** Max rendered items (normal + note). Defaults to members.length.
-     *  Note avatar is always the member at position limit-1.
-     *  noteText = total - limit + 1. */
+    /** Number of rendered slots (normal avatars + the trailing note). Defaults to
+     *  members.length. The last slot is always a note representing the remaining
+     *  members; a "+N" bubble is drawn only when 2 or more members collapse into it. */
     limit?: number;
+    /** Overlap spacing between stacked avatars. `'auto'` (default) uses the
+     *  production-tuned spacing (-10px, the value shipped in the cloned build); a
+     *  number sets a fixed pixel overlap instead (Geist `overlap` API). */
+    overlap?: 'auto' | number;
+    /** Flip the stacking order so the last member sits on top of the stack.
+     *  The visual left-to-right order is unchanged (Geist `reverse` API). */
+    reverse?: boolean;
+}
+
+/**
+ * Compute the inline style for a single stacked slot.
+ * - Fixed `overlap` (a number) overrides the CSS default -10px on every slot
+ *   past the first. `'auto'` returns no margin so the CSS rule stays in effect.
+ * - `reverse` makes the last member sit on top by handing each slot a z-index;
+ *   slot 0 gets the highest value so, when off, natural DOM order applies and
+ *   the markup stays byte-identical to the production snapshot (no z-index).
+ */
+function slotStyle(
+    index: number,
+    count: number,
+    overlap: 'auto' | number,
+    reverse: boolean,
+): CSSProperties | undefined {
+    const s: CSSProperties = {};
+    if (typeof overlap === 'number' && index >= 1) {
+        s.marginLeft = -overlap;
+    }
+    if (reverse) {
+        s.position = 'relative';
+        s.zIndex = count - index;
+    }
+    return Object.keys(s).length > 0 ? s : undefined;
 }
 
 export function AvatarGroup({
     members,
     size = 32,
     limit,
+    overlap = 'auto',
+    reverse = false,
     children,
     className,
     ...props
 }: AvatarGroupProps) {
     /* Declarative mode — members prop */
     if (members && members.length > 0) {
-        const N = limit ?? members.length;
-        const overflow = members.length - N; // 0 when no limit or limit >= members
-        const hasNote = overflow > 0;
-        // When note present: show first (N-1) normally, then note at position N-1
-        // When no note: show all N normally
-        const normalCount = hasNote ? N - 1 : N;
+        const total = members.length;
+        // Geist always reserves the last visible slot as a "note". The first
+        // (limit-1) members render normally; the member at `normalCount` becomes
+        // the note, and `noteCount` counts every member from that slot onward.
+        // A "+N" bubble is shown only when 2+ members collapse into the note —
+        // matching the production snapshot where a single trailing member is
+        // wrapped in a note (aria "1 more avatars in this group") without a bubble.
+        const normalCount = Math.max(0, Math.min((limit ?? total) - 1, total - 1));
         const normal = members.slice(0, normalCount);
-        const noteAvatar = hasNote ? members[normalCount] : null;
-        // noteCount = total members not shown normally (includes the one in the note)
-        const noteCount = members.length - normalCount;
+        const noteMember = members[normalCount];
+        const noteCount = total - normalCount;
+        const showBubble = noteCount >= 2;
+        const slotCount = normalCount + 1;
 
-        // Members without an explicit src fall back to Vercel's public avatar
-        // service — intentional production (Geist) behavior, kept as-is.
-        // Note: this is an external runtime dependency on vercel.com.
         return (
             <div className={cn(styles.group, className)} {...props}>
                 {normal.map((m, i) => (
-                    <span key={m.username || i} className={styles.groupAvatar}>
-                        <Avatar
-                            src={m.src || (m.username ? `https://vercel.com/api/www/avatar?s=${size * 2}&u=${m.username}` : undefined)}
-                            name={m.username}
-                            alt={m.alt || (m.username ? `Avatar for ${m.username}` : undefined)}
-                            size={size}
-                        />
+                    <span
+                        key={m.username || i}
+                        className={styles.groupAvatar}
+                        style={slotStyle(i, slotCount, overlap, reverse)}
+                    >
+                        <Avatar src={m.src} username={m.username} alt={m.alt} size={size} />
                     </span>
                 ))}
-                {noteAvatar && (
-                    <span
-                        aria-label={`${noteCount} more avatars in this group`}
-                        title={`${noteCount} more avatars in this group`}
-                        className={cn(styles.note, styles.groupAvatar)}
-                    >
-                        <Avatar
-                            src={noteAvatar.src || (noteAvatar.username ? `https://vercel.com/api/www/avatar?s=${size * 2}&u=${noteAvatar.username}` : undefined)}
-                            name={noteAvatar.username}
-                            alt={noteAvatar.alt || (noteAvatar.username ? `Avatar for ${noteAvatar.username}` : undefined)}
-                            size={size}
-                        />
+                <span
+                    aria-label={`${noteCount} more avatars in this group`}
+                    title={`${noteCount} more avatars in this group`}
+                    className={cn(styles.note, styles.groupAvatar)}
+                    style={slotStyle(normalCount, slotCount, overlap, reverse)}
+                >
+                    <Avatar
+                        src={noteMember.src}
+                        username={noteMember.username}
+                        alt={noteMember.alt}
+                        size={size}
+                    />
+                    {showBubble && (
                         <span
                             className={cn(styles.noteText, 'dark-theme')}
                             data-version="v1"
@@ -219,8 +286,8 @@ export function AvatarGroup({
                                 '--text-weight': '600',
                             } as React.CSSProperties}
                         >+{noteCount}</span>
-                    </span>
-                )}
+                    )}
+                </span>
             </div>
         );
     }
@@ -230,7 +297,11 @@ export function AvatarGroup({
     return (
         <div className={cn(styles.group, className)} {...props}>
             {childArray.map((child, i) => (
-                <span key={i} className={styles.groupAvatar}>
+                <span
+                    key={i}
+                    className={styles.groupAvatar}
+                    style={slotStyle(i, childArray.length, overlap, reverse)}
+                >
                     {child}
                 </span>
             ))}

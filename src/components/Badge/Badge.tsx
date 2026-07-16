@@ -4,31 +4,36 @@ import styles from './Badge.module.css';
 
 export type BadgeVariant =
     | 'gray' | 'blue' | 'red' | 'amber' | 'green' | 'teal' | 'purple' | 'pink'
-    | 'gray-subtle' | 'blue-subtle' | 'red-subtle' | 'amber-subtle'
-    | 'green-subtle' | 'teal-subtle' | 'purple-subtle' | 'pink-subtle'
     | 'inverted' | 'turbo' | 'trial' | 'pill';
 export type BadgeSize = 'sm' | 'md' | 'lg';
+export type BadgeContrast = 'low';
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
     variant?: BadgeVariant;
     size?: BadgeSize;
+    /** Tone the color variant down for dense surfaces (renders the "-subtle" style) */
+    contrast?: BadgeContrast;
     icon?: ReactNode;
     /** Render as a link (pill variant) */
     href?: string;
 }
 
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
-    ({ variant = 'gray', size = 'md', icon, href, className, children, ...props }, ref) => {
+    ({ variant = 'gray', size = 'md', contrast, icon, href, className, children, ...props }, ref) => {
 
         // Pill variant renders as <a>, otherwise <span>
         const Tag = (href ? 'a' : 'span') as 'span';
+
+        // contrast="low" derives the subtle class from the variant (e.g. blue -> blue-subtle)
+        const variantClass = contrast === 'low' ? `${variant}-subtle` : variant;
 
         return (
             <Tag
                 ref={ref}
                 className={cn(
                     styles.badge,
-                    styles[variant],
+                    styles.capitalize,
+                    styles[variantClass],
                     styles[size],
                     className,
                 )}

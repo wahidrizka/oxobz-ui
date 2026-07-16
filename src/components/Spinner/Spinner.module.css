@@ -1,8 +1,8 @@
 /* ================================================================
  *  Spinner — CSS Module
  *
- *  100% consistent with production Geist spinner:
- *    _nextstatic/chunks/8cfa8a674deaaab6.css  (line 2)
+ *  Bar geometry, timing and keyframes verified against production Geist:
+ *    _nextstatic/chunks/b4b9d0dd5348b0c3.css  (line 2, canonical chunk)
  *    _nextstatic/component-inspect-element/spinner.html
  *
  *  Production class:  .spinner-module__gyz83a__line
@@ -10,8 +10,9 @@
  * ================================================================ */
 
 /* ---- Container (data-oxobz-spinner wrapper) ----
- *  .spinner class for CSS module binding. No extra styles needed;
- *  sized via inline width/height.
+ *  .spinner class for CSS module binding; sized via inline width/height.
+ *  `inline-block` matches the current production spinner, whose cva base
+ *  class includes `inline-block` (chunk 2aacxal9r7gff.js).
  */
 .spinner {
     display: inline-block;

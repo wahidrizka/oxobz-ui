@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ChoiceboxGroup } from './ChoiceboxGroup';
+import { ChoiceboxGroup, ChoiceboxGroupItem } from './ChoiceboxGroup';
 
 /** Two plain items used across tests */
 const twoItems = (
@@ -337,6 +337,30 @@ describe('ChoiceboxGroup — disabled', () => {
         }
     });
 
+    it('disabled radio marks its check span with the Radio disabled class', () => {
+        // Regression: the radio indicator must receive the Radio module's
+        // `disabled` class so --radio-color resolves to gray-500 (matches
+        // production), otherwise it falls back to gray-700.
+        const { container } = render(
+            <ChoiceboxGroup label="plan" disabled>
+                {twoItems}
+            </ChoiceboxGroup>,
+        );
+        const radioInput = container.querySelector('input[value="pro"]') as HTMLInputElement;
+        const checkSpan = radioInput.parentElement as HTMLElement;
+        expect(checkSpan.className).toContain('radio');
+        expect(checkSpan.className).toContain('disabled');
+    });
+
+    it('enabled radio check span has no disabled class', () => {
+        const { container } = render(
+            <ChoiceboxGroup label="plan">{twoItems}</ChoiceboxGroup>,
+        );
+        const radioInput = container.querySelector('input[value="pro"]') as HTMLInputElement;
+        const checkSpan = radioInput.parentElement as HTMLElement;
+        expect(checkSpan.className).not.toContain('disabled');
+    });
+
     it('group disabled prevents onChange on click', () => {
         const onChange = vi.fn();
         const { container } = render(
@@ -473,6 +497,70 @@ describe('ChoiceboxGroup.Item', () => {
             render(<ChoiceboxGroup.Item title="Orphan" value="orphan" />),
         ).toThrow('ChoiceboxGroup.Item must be used within a ChoiceboxGroup');
         spy.mockRestore();
+    });
+});
+
+describe('ChoiceboxGroup — checkbox id/for pairing', () => {
+    it('pairs the checkbox input id with the wrapping label for', () => {
+        const { container } = render(
+            <ChoiceboxGroup label="plan" type="checkbox">
+                {twoItems}
+            </ChoiceboxGroup>,
+        );
+        const input = container.querySelector(
+            'input[type="checkbox"][value="pro"]',
+        ) as HTMLInputElement;
+        expect(input.id).toMatch(/^checkbox-/);
+        const label = container.querySelector(`label[for="${input.id}"]`);
+        expect(label).not.toBeNull();
+        // The pairing label wraps this very input.
+        expect(label?.contains(input)).toBe(true);
+    });
+
+    it('radio inputs have no id (no id/for pairing in radio mode)', () => {
+        const { container } = render(
+            <ChoiceboxGroup label="plan">{twoItems}</ChoiceboxGroup>,
+        );
+        for (const input of container.querySelectorAll('input[type="radio"]')) {
+            expect(input.getAttribute('id')).toBeNull();
+        }
+    });
+});
+
+describe('ChoiceboxGroup — listClassName', () => {
+    it('applies listClassName to the inner ul', () => {
+        const { container } = render(
+            <ChoiceboxGroup label="plan" listClassName="flex-row">
+                {twoItems}
+            </ChoiceboxGroup>,
+        );
+        const ul = container.querySelector('ul');
+        expect(ul?.className).toContain('flex-row');
+    });
+
+    it('keeps the stack class when listClassName is set', () => {
+        const { container } = render(
+            <ChoiceboxGroup label="plan" listClassName="flex-row">
+                {twoItems}
+            </ChoiceboxGroup>,
+        );
+        const ul = container.querySelector('ul');
+        expect(ul?.className).toContain('stack');
+    });
+});
+
+describe('ChoiceboxGroup — named export', () => {
+    it('ChoiceboxGroupItem is the same component as ChoiceboxGroup.Item', () => {
+        expect(ChoiceboxGroupItem).toBe(ChoiceboxGroup.Item);
+    });
+
+    it('renders when used via the standalone named export', () => {
+        render(
+            <ChoiceboxGroup label="plan">
+                <ChoiceboxGroupItem title="Trial" value="trial" />
+            </ChoiceboxGroup>,
+        );
+        expect(screen.getByText('Trial')).toBeInTheDocument();
     });
 });
 

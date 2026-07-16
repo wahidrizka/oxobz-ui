@@ -85,6 +85,37 @@ describe('Badge', () => {
         expect(el?.className).toContain('pill');
     });
 
+    it('always applies the capitalize base class', () => {
+        render(<Badge>capitalized</Badge>);
+        const el = screen.getByText('capitalized').closest('[data-oxobz-badge]');
+        expect(el?.className).toContain('capitalize');
+    });
+
+    it('derives the subtle class from variant + contrast="low"', () => {
+        render(<Badge variant="blue" contrast="low">blue subtle</Badge>);
+        const el = screen.getByText('blue subtle').closest('[data-oxobz-badge]');
+        expect(el?.className).toContain('blue-subtle');
+    });
+
+    it('derives subtle for every color variant with contrast="low"', () => {
+        const colors = ['gray', 'blue', 'purple', 'amber', 'red', 'pink', 'green', 'teal'] as const;
+        colors.forEach((color) => {
+            const { unmount } = render(
+                <Badge variant={color} contrast="low">{`${color} subtle`}</Badge>,
+            );
+            const el = screen.getByText(`${color} subtle`).closest('[data-oxobz-badge]');
+            expect(el?.className).toContain(`${color}-subtle`);
+            unmount();
+        });
+    });
+
+    it('does NOT apply the subtle class without contrast', () => {
+        render(<Badge variant="blue">solid blue</Badge>);
+        const el = screen.getByText('solid blue').closest('[data-oxobz-badge]');
+        expect(el?.className).toContain('blue');
+        expect(el?.className).not.toContain('blue-subtle');
+    });
+
     it('applies size class — sm', () => {
         render(<Badge size="sm">small</Badge>);
         const el = screen.getByText('small').closest('[data-oxobz-badge]');

@@ -1,5 +1,7 @@
 import {
     forwardRef,
+    Children,
+    isValidElement,
     type CSSProperties,
     type ReactNode,
     type HTMLAttributes,
@@ -9,17 +11,24 @@ import styles from './Grid.module.css';
 
 // ---- Types ----
 
-/** Responsive value: single value or per-breakpoint */
+/** Responsive value: single value or per-breakpoint. Public API uses { sm, md, lg }. */
 type ResponsiveValue<T> = T | { sm?: T; smd?: T; md?: T; lg?: T };
+
+type ResolvedResponsive<T> = { sm?: T; smd?: T; md?: T; lg?: T };
 
 /** Height mode for the grid */
 type GridHeight = 'fit-content' | 'preserve-aspect-ratio';
+
+/** Which guide lines to hide */
+type HideGuides = 'row' | 'column' | 'both';
 
 export interface GridSystemProps extends HTMLAttributes<HTMLDivElement> {
     /** Content to render inside the grid system */
     children?: ReactNode;
     /** Enable debug mode (shows yellow guide overlay) */
     debug?: boolean;
+    /** Render guides with a dashed border style */
+    dashedGuides?: boolean;
     /** Width of guide lines in pixels */
     guideWidth?: number;
     /** Use container queries instead of media queries */
@@ -33,14 +42,14 @@ export interface GridSystemProps extends HTMLAttributes<HTMLDivElement> {
 export interface GridProps extends HTMLAttributes<HTMLElement> {
     /** Content (Grid.Cell children) */
     children?: ReactNode;
-    /** Number of columns */
+    /** Number of columns (responsive: { sm, md, lg }) */
     columns?: ResponsiveValue<number>;
-    /** Number of rows */
+    /** Number of rows (responsive: { sm, md, lg }) */
     rows?: ResponsiveValue<number>;
     /** Height mode */
     height?: GridHeight;
     /** Hide specific guide lines */
-    hideGuides?: 'row' | 'column' | 'both';
+    hideGuides?: HideGuides;
 }
 
 export interface GridCellProps extends HTMLAttributes<HTMLDivElement> {
@@ -50,22 +59,104 @@ export interface GridCellProps extends HTMLAttributes<HTMLDivElement> {
     column?: ResponsiveValue<string | number>;
     /** Row placement (e.g. 'auto', '1', '1/3') */
     row?: ResponsiveValue<string | number>;
-    /** Whether the cell occludes guides */
+    /** Whether the cell occludes (clips) the guides it overlaps */
     solid?: boolean;
-    /** Explicit cell rows span */
-    cellRows?: ResponsiveValue<number | string>;
-    /** Explicit cell columns span */
-    cellColumns?: ResponsiveValue<number | string>;
 }
+
+// ---- Breakpoints ----
+
+/** Internal breakpoints, ordered smallest → largest, mirroring the CSS media/container queries. */
+const GUIDE_BREAKPOINTS = ['xs', 'sm', 'smd', 'md', 'lg'] as const;
+type Breakpoint = (typeof GUIDE_BREAKPOINTS)[number];
+
+const GUIDE_BREAKPOINT_CLASS: Record<Breakpoint, string> = {
+    xs: styles.xsGuide,
+    sm: styles.smGuide,
+    smd: styles.smdGuide,
+    md: styles.mdGuide,
+    lg: styles.lgGuide,
+};
 
 // ---- Helpers ----
 
-function resolveResponsive<T>(value: ResponsiveValue<T> | undefined): { sm?: T; smd?: T; md?: T; lg?: T } {
+function resolveResponsive<T>(value: ResponsiveValue<T> | undefined): ResolvedResponsive<T> {
     if (value === undefined) return {};
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        return value as { sm?: T; smd?: T; md?: T; lg?: T };
+        return value as ResolvedResponsive<T>;
     }
     return { sm: value as T };
+}
+
+/**
+ * Resolve a responsive value at a specific breakpoint, mirroring the CSS custom-property
+ * fallback chains (e.g. `--md-* , var(--smd-*, var(--sm-*))`).
+ */
+function resolveAtBreakpoint<T>(resolved: ResolvedResponsive<T>, bp: Breakpoint): T | undefined {
+    switch (bp) {
+        case 'xs':
+            return resolved.sm;
+        case 'sm':
+            return resolved.sm;
+        case 'smd':
+            return resolved.smd ?? resolved.md ?? resolved.sm;
+        case 'md':
+            return resolved.md ?? resolved.smd ?? resolved.sm;
+        case 'lg':
+            return resolved.lg ?? resolved.md ?? resolved.smd ?? resolved.sm;
+    }
+}
+
+/** Format a placement value for `--*-grid-column` / `--*-grid-row`. */
+function formatPlacement(value: string | number): string {
+    const s = String(value).trim();
+    if (s === 'auto') return 'auto';
+    if (s.includes('/')) return s; // e.g. "1/3", "1/-1"
+    return `${s} / span 1`; // single track
+}
+
+/** Derive the `--*-cell-columns` / `--*-cell-rows` span count from a placement value. */
+function deriveSpanCount(value: string | number): number | string {
+    const s = String(value).trim();
+    if (s === 'auto') return 'auto';
+    if (s.includes('/')) {
+        const [aStr, bStr] = s.split('/');
+        const a = Number.parseInt(aStr.trim(), 10);
+        const b = Number.parseInt(bStr.trim(), 10);
+        if (Number.isNaN(a) || Number.isNaN(b)) return 'auto';
+        return b - a; // "1/3" → 2, "1/-1" → -2
+    }
+    return 1;
+}
+
+/**
+ * Parse a placement value into the inclusive grid-track range [start, end] it covers,
+ * resolving negative line numbers against the total track count.
+ * Returns null when the value cannot be resolved (e.g. "auto").
+ */
+function parseCoveredTracks(
+    value: string | number | undefined,
+    total: number,
+): [number, number] | null {
+    if (value === undefined) return null;
+    const s = String(value).trim();
+    if (s === '' || s === 'auto') return null;
+
+    const resolveLine = (n: number): number => (n < 0 ? total + 2 + n : n);
+
+    if (s.includes('/')) {
+        const [aStr, bStr] = s.split('/');
+        const aRaw = Number.parseInt(aStr.trim(), 10);
+        const bRaw = Number.parseInt(bStr.trim(), 10);
+        if (Number.isNaN(aRaw) || Number.isNaN(bRaw)) return null;
+        const start = resolveLine(aRaw);
+        const end = resolveLine(bRaw);
+        return [start, end - 1]; // grid line `end` covers tracks up to end - 1
+    }
+
+    const line = Number.parseInt(s, 10);
+    if (Number.isNaN(line)) return null;
+    const resolved = resolveLine(line);
+    return [resolved, resolved];
 }
 
 function buildGridVars(
@@ -75,12 +166,12 @@ function buildGridVars(
 ): CSSProperties {
     const cols = resolveResponsive(columns);
     const rs = resolveResponsive(rows);
-    const vars: Record<string, string | number | undefined> = {};
+    const vars: Record<string, string | number> = {};
 
-    // Non-responsive: directly use --grid-columns / --grid-rows
+    // Non-responsive: use --grid-columns / --grid-rows directly.
     if (typeof columns === 'number') {
         vars['--grid-columns'] = columns;
-    } else if (typeof columns === 'object') {
+    } else if (typeof columns === 'object' && columns !== null) {
         if (cols.sm !== undefined) vars['--sm-grid-columns'] = cols.sm;
         if (cols.smd !== undefined) vars['--smd-grid-columns'] = cols.smd;
         if (cols.md !== undefined) vars['--md-grid-columns'] = cols.md;
@@ -89,7 +180,7 @@ function buildGridVars(
 
     if (typeof rows === 'number') {
         vars['--grid-rows'] = rows;
-    } else if (typeof rows === 'object') {
+    } else if (typeof rows === 'object' && rows !== null) {
         if (rs.sm !== undefined) vars['--sm-grid-rows'] = rs.sm;
         if (rs.smd !== undefined) vars['--smd-grid-rows'] = rs.smd;
         if (rs.md !== undefined) vars['--md-grid-rows'] = rs.md;
@@ -106,50 +197,102 @@ function buildGridVars(
     return vars as CSSProperties;
 }
 
+/** Emit `--*-grid-{axis}` placement vars for one axis (or `auto` when unset). */
+function emitPlacementVars(
+    value: ResponsiveValue<string | number> | undefined,
+    axis: 'grid-row' | 'grid-column',
+    vars: Record<string, string | number>,
+): void {
+    if (value === undefined) {
+        vars[`--sm-${axis}`] = 'auto';
+        return;
+    }
+    const resolved = resolveResponsive(value);
+    for (const bp of ['sm', 'smd', 'md', 'lg'] as const) {
+        const v = resolved[bp];
+        if (v !== undefined) vars[`--${bp}-${axis}`] = formatPlacement(v);
+    }
+}
+
+/** Emit `--*-cell-{axis}` span-count vars for one axis (or `auto` when unset). */
+function emitSpanCountVars(
+    value: ResponsiveValue<string | number> | undefined,
+    axis: 'cell-rows' | 'cell-columns',
+    vars: Record<string, string | number>,
+): void {
+    if (value === undefined) {
+        vars[`--sm-${axis}`] = 'auto';
+        return;
+    }
+    const resolved = resolveResponsive(value);
+    for (const bp of ['sm', 'smd', 'md', 'lg'] as const) {
+        const v = resolved[bp];
+        if (v !== undefined) vars[`--${bp}-${axis}`] = deriveSpanCount(v);
+    }
+}
+
 function buildCellVars(
     column: ResponsiveValue<string | number> | undefined,
     row: ResponsiveValue<string | number> | undefined,
 ): CSSProperties {
-    const vars: Record<string, string | number | undefined> = {};
-
-    if (column === undefined && row === undefined) {
-        // Auto placement
-        vars['--sm-grid-row'] = 'auto';
-        vars['--sm-grid-column'] = 'auto';
-        vars['--sm-cell-rows'] = 'auto';
-        vars['--sm-cell-columns'] = 'auto';
-        return vars as CSSProperties;
-    }
-
-    const cols = resolveResponsive(column);
-    const rs = resolveResponsive(row);
-
-    // Column vars
-    if (typeof column === 'string' || typeof column === 'number') {
-        vars['--sm-grid-column'] = String(column);
-    } else if (typeof column === 'object') {
-        if (cols.sm !== undefined) vars['--sm-grid-column'] = String(cols.sm);
-        if (cols.smd !== undefined) vars['--smd-grid-column'] = String(cols.smd);
-        if (cols.md !== undefined) vars['--md-grid-column'] = String(cols.md);
-        if (cols.lg !== undefined) vars['--lg-grid-column'] = String(cols.lg);
-    }
-
-    // Row vars
-    if (typeof row === 'string' || typeof row === 'number') {
-        vars['--sm-grid-row'] = String(row);
-    } else if (typeof row === 'object') {
-        if (rs.sm !== undefined) vars['--sm-grid-row'] = String(rs.sm);
-        if (rs.smd !== undefined) vars['--smd-grid-row'] = String(rs.smd);
-        if (rs.md !== undefined) vars['--md-grid-row'] = String(rs.md);
-        if (rs.lg !== undefined) vars['--lg-grid-row'] = String(rs.lg);
-    }
-
+    const vars: Record<string, string | number> = {};
+    // Order mirrors Geist: grid-row → grid-column → cell-rows → cell-columns.
+    emitPlacementVars(row, 'grid-row', vars);
+    emitPlacementVars(column, 'grid-column', vars);
+    emitSpanCountVars(row, 'cell-rows', vars);
+    emitSpanCountVars(column, 'cell-columns', vars);
     return vars as CSSProperties;
 }
 
-// ---- Generate guides ----
+// ---- Guides ----
 
-function generateGuides(columns: number, rows: number, hideGuides?: 'row' | 'column' | 'both'): ReactNode[] {
+interface SolidCellSpec {
+    column?: ResponsiveValue<string | number>;
+    row?: ResponsiveValue<string | number>;
+}
+
+interface SolidRegion {
+    /** first covered column track */
+    c1: number;
+    /** last covered column track */
+    c2: number;
+    /** first covered row track */
+    r1: number;
+    /** last covered row track */
+    r2: number;
+}
+
+/** Resolve each solid cell into its covered track region at a given breakpoint. */
+function computeSolidRegions(
+    solidCells: SolidCellSpec[],
+    bp: Breakpoint,
+    columns: number,
+    rows: number,
+): SolidRegion[] {
+    const regions: SolidRegion[] = [];
+    for (const cell of solidCells) {
+        const colValue = resolveAtBreakpoint(resolveResponsive(cell.column), bp);
+        const rowValue = resolveAtBreakpoint(resolveResponsive(cell.row), bp);
+        const colTracks = parseCoveredTracks(colValue, columns);
+        const rowTracks = parseCoveredTracks(rowValue, rows);
+        if (colTracks && rowTracks) {
+            regions.push({ c1: colTracks[0], c2: colTracks[1], r1: rowTracks[0], r2: rowTracks[1] });
+        }
+    }
+    return regions;
+}
+
+/**
+ * Generate one set of guide cells for a grid of `columns` × `rows`.
+ * Interior borders of `solid` regions are removed so the cell occludes the guides behind it.
+ */
+function generateGuideSet(
+    columns: number,
+    rows: number,
+    hideGuides: HideGuides | undefined,
+    solids: SolidRegion[],
+    bpClass?: string,
+): ReactNode[] {
     const guides: ReactNode[] = [];
 
     for (let y = 1; y <= rows; y++) {
@@ -159,30 +302,27 @@ function generateGuides(columns: number, rows: number, hideGuides?: 'row' | 'col
                 '--y': y,
             };
 
-            // Remove right border on last column
-            if (x === columns) {
-                guideStyle.borderRight = 'none';
-            }
-            // Remove bottom border on last row
-            if (y === rows) {
-                guideStyle.borderBottom = 'none';
+            // Edges of the grid are drawn by the system border, not the guide.
+            let removeRight = x === columns;
+            let removeBottom = y === rows;
+
+            if (hideGuides === 'row' || hideGuides === 'both') removeBottom = true;
+            if (hideGuides === 'column' || hideGuides === 'both') removeRight = true;
+
+            // Clip interior guides overlapped by solid cells.
+            for (const s of solids) {
+                if (x >= s.c1 && x <= s.c2 - 1 && y >= s.r1 && y <= s.r2) removeRight = true;
+                if (y >= s.r1 && y <= s.r2 - 1 && x >= s.c1 && x <= s.c2) removeBottom = true;
             }
 
-            // Hide row guides (horizontal lines)
-            if (hideGuides === 'row' || hideGuides === 'both') {
-                guideStyle.borderBottom = 'none';
-            }
-
-            // Hide column guides (vertical lines)
-            if (hideGuides === 'column' || hideGuides === 'both') {
-                guideStyle.borderRight = 'none';
-            }
+            if (removeRight) guideStyle.borderRight = 'none';
+            if (removeBottom) guideStyle.borderBottom = 'none';
 
             guides.push(
                 <div
                     key={`${x}-${y}`}
                     aria-hidden="true"
-                    className={styles.guide}
+                    className={bpClass ? cn(styles.guide, bpClass) : styles.guide}
                     style={guideStyle}
                 />,
             );
@@ -192,23 +332,41 @@ function generateGuides(columns: number, rows: number, hideGuides?: 'row' | 'col
     return guides;
 }
 
+/** Collect the placement specs of all `solid` GridCell children. */
+function collectSolidCells(children: ReactNode): SolidCellSpec[] {
+    const solids: SolidCellSpec[] = [];
+    Children.forEach(children, (child) => {
+        if (!isValidElement<GridCellProps>(child)) return;
+        if (child.type !== GridCell) return;
+        const { solid, column, row } = child.props;
+        if (solid && column !== undefined && row !== undefined) {
+            solids.push({ column, row });
+        }
+    });
+    return solids;
+}
+
 // ---- Components ----
 
 /**
  * Grid.System — Container for the grid system.
  */
 export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
-    ({
-        children,
-        className,
-        debug = false,
-        guideWidth,
-        unstable_useContainer = false,
-        maxWidth,
-        minWidth,
-        style,
-        ...props
-    }, ref) => {
+    (
+        {
+            children,
+            className,
+            debug = false,
+            dashedGuides = false,
+            guideWidth,
+            unstable_useContainer = false,
+            maxWidth,
+            minWidth,
+            style,
+            ...props
+        },
+        ref,
+    ) => {
         const systemStyle: CSSProperties & Record<string, string | number> = { ...style };
         if (guideWidth !== undefined) systemStyle['--guide-width'] = `${guideWidth}px`;
         if (maxWidth !== undefined) systemStyle['--max-width'] = `${maxWidth}px`;
@@ -217,6 +375,7 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
         const systemClasses = cn(
             styles.gridSystem,
             debug && styles.systemDebug,
+            dashedGuides && styles.systemDashed,
             unstable_useContainer && styles.useContainer,
             className,
         );
@@ -230,17 +389,13 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
                 {...props}
             >
                 {children}
+                {unstable_useContainer && <div className={styles.gridSystemLazyContent} />}
                 {debug && <div className={styles.systemDebugOverlay} />}
             </div>
         );
 
         if (unstable_useContainer) {
-            return (
-                <div className={styles.unstable_gridSystemWrapper}>
-                    {content}
-                    <div className={styles.gridSystemLazyContent} />
-                </div>
-            );
+            return <div className={styles.unstable_gridSystemWrapper}>{content}</div>;
         }
 
         return content;
@@ -250,81 +405,17 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
 GridSystem.displayName = 'Grid.System';
 
 /**
- * Grid — The grid section.
- */
-const GridRoot = forwardRef<HTMLElement, GridProps>(
-    ({ children, className, columns, rows, height = 'fit-content', hideGuides, style, ...props }, ref) => {
-        const gridVars = buildGridVars(columns, rows, height);
-        const resolvedCols = typeof columns === 'number' ? columns : 0;
-        const resolvedRows = typeof rows === 'number' ? rows : 0;
-
-        return (
-            <section
-                ref={ref}
-                className={cn(styles.grid, className)}
-                style={{ ...gridVars, ...style }}
-                data-grid=""
-                data-oxobz-grid=""
-                {...props}
-            >
-                {children}
-
-                {/* Non-responsive guides */}
-                {resolvedCols > 0 && resolvedRows > 0 && (
-                    <div
-                        aria-hidden="true"
-                        className={styles.guides}
-                        data-grid-guides="true"
-                    >
-                        {generateGuides(resolvedCols, resolvedRows, hideGuides)}
-                    </div>
-                )}
-            </section>
-        );
-    },
-);
-
-GridRoot.displayName = 'Grid';
-
-/**
  * Grid.Cell — A cell within the grid.
  */
 export const GridCell = forwardRef<HTMLDivElement, GridCellProps>(
-    ({ children, className, column, row, solid, cellRows, cellColumns, style, ...props }, ref) => {
+    ({ children, className, column, row, solid: _solid, style, ...props }, ref) => {
         const cellVars = buildCellVars(column, row);
-        const extraVars: Record<string, string | number | undefined> = {};
-
-        // cellRows
-        if (cellRows !== undefined) {
-            if (typeof cellRows === 'object') {
-                const cr = resolveResponsive(cellRows);
-                if (cr.sm !== undefined) extraVars['--sm-cell-rows'] = String(cr.sm);
-                if (cr.smd !== undefined) extraVars['--smd-cell-rows'] = String(cr.smd);
-                if (cr.md !== undefined) extraVars['--md-cell-rows'] = String(cr.md);
-                if (cr.lg !== undefined) extraVars['--lg-cell-rows'] = String(cr.lg);
-            } else {
-                extraVars['--sm-cell-rows'] = String(cellRows);
-            }
-        }
-
-        // cellColumns
-        if (cellColumns !== undefined) {
-            if (typeof cellColumns === 'object') {
-                const cc = resolveResponsive(cellColumns);
-                if (cc.sm !== undefined) extraVars['--sm-cell-columns'] = String(cc.sm);
-                if (cc.smd !== undefined) extraVars['--smd-cell-columns'] = String(cc.smd);
-                if (cc.md !== undefined) extraVars['--md-cell-columns'] = String(cc.md);
-                if (cc.lg !== undefined) extraVars['--lg-cell-columns'] = String(cc.lg);
-            } else {
-                extraVars['--sm-cell-columns'] = String(cellColumns);
-            }
-        }
 
         return (
             <div
                 ref={ref}
                 className={cn(styles.block, className)}
-                style={{ ...cellVars, ...extraVars as CSSProperties, ...style }}
+                style={{ ...cellVars, ...style }}
                 data-grid-cell=""
                 data-oxobz-grid-cell=""
                 {...props}
@@ -336,6 +427,70 @@ export const GridCell = forwardRef<HTMLDivElement, GridCellProps>(
 );
 
 GridCell.displayName = 'Grid.Cell';
+
+/**
+ * Grid — The grid section.
+ */
+const GridRoot = forwardRef<HTMLElement, GridProps>(
+    ({ children, className, columns, rows, height = 'fit-content', hideGuides, style, ...props }, ref) => {
+        const gridVars = buildGridVars(columns, rows, height);
+
+        const columnsIsResponsive = typeof columns === 'object' && columns !== null;
+        const rowsIsResponsive = typeof rows === 'object' && rows !== null;
+        const isResponsive = columnsIsResponsive || rowsIsResponsive;
+
+        const solidCells = collectSolidCells(children);
+
+        let guides: ReactNode = null;
+        if (isResponsive) {
+            const colResolved = resolveResponsive(columns);
+            const rowResolved = resolveResponsive(rows);
+            guides = GUIDE_BREAKPOINTS.map((bp) => {
+                const colCount = resolveAtBreakpoint(colResolved, bp);
+                const rowCount = resolveAtBreakpoint(rowResolved, bp);
+                if (!colCount || !rowCount || colCount <= 0 || rowCount <= 0) return null;
+                const solids = computeSolidRegions(solidCells, bp, colCount, rowCount);
+                return (
+                    <div
+                        key={bp}
+                        aria-hidden="true"
+                        className={styles.guides}
+                        data-grid-guides="true"
+                    >
+                        {generateGuideSet(colCount, rowCount, hideGuides, solids, GUIDE_BREAKPOINT_CLASS[bp])}
+                    </div>
+                );
+            });
+        } else {
+            const colCount = typeof columns === 'number' ? columns : 0;
+            const rowCount = typeof rows === 'number' ? rows : 0;
+            if (colCount > 0 && rowCount > 0) {
+                const solids = computeSolidRegions(solidCells, 'sm', colCount, rowCount);
+                guides = (
+                    <div aria-hidden="true" className={styles.guides} data-grid-guides="true">
+                        {generateGuideSet(colCount, rowCount, hideGuides, solids)}
+                    </div>
+                );
+            }
+        }
+
+        return (
+            <section
+                ref={ref}
+                className={cn(styles.grid, className)}
+                style={{ ...gridVars, ...style }}
+                data-grid=""
+                data-oxobz-grid=""
+                {...props}
+            >
+                {children}
+                {guides}
+            </section>
+        );
+    },
+);
+
+GridRoot.displayName = 'Grid';
 
 // ---- Compound component ----
 

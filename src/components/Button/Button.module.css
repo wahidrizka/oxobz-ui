@@ -39,6 +39,15 @@
     outline: var(--ds-focus-ring-outline);
 }
 
+/*
+ * Keyboard focus ring fallback. Production sets `data-focus` via react-aria on keyboard
+ * focus; `.reset` clears the native outline, so without this rule keyboard focus shows no
+ * ring. `:focus-visible` matches keyboard focus only (same visual result as data-focus).
+ */
+.button[data-oxobz-button]:focus-visible {
+    outline: var(--ds-focus-ring-outline);
+}
+
 /* ---- Button ---- */
 .button {
     display: flex;
@@ -264,6 +273,10 @@
 
 /* ---- Secondary ---- */
 .secondary[data-oxobz-button] {
+    color: var(--oxobz-foreground);
+}
+
+.secondary[data-oxobz-button] {
     --themed-bg: var(--ds-background-100);
     --themed-hover-bg: var(--ds-gray-alpha-200);
     --themed-fg: var(--ds-gray-1000);
@@ -358,6 +371,33 @@
     --themed-border: var(--themed-bg);
     --themed-press-bg: #a35200;
     --themed-focus-ring: #a35200;
+}
+
+/* ---- Custom (CustomButton per-state color overrides) ---- */
+.custom[data-oxobz-custom-button]:not([disabled]) {
+    color: var(--button-custom-fg) !important;
+    background: var(--button-custom-bg) !important;
+    --themed-border: var(--button-custom-border) !important;
+}
+
+.custom[data-oxobz-custom-button]:focus-visible {
+    box-shadow: 0 0 0 1px var(--oxobz-background),
+        0 0 0 3px var(--button-custom-bg-hover, var(--button-custom-bg, var(--oxobz-foreground))) !important;
+    color: var(--button-custom-fg-hover) !important;
+    background: var(--button-custom-bg-hover) !important;
+    --themed-border: var(--button-custom-border-hover) !important;
+}
+
+.custom[data-oxobz-custom-button][data-hover] {
+    color: var(--button-custom-fg-hover) !important;
+    background: var(--button-custom-bg-hover) !important;
+    --themed-border: var(--button-custom-border-hover) !important;
+}
+
+.custom[data-oxobz-custom-button][data-active] {
+    color: var(--button-custom-fg-active, var(--button-custom-fg-hover)) !important;
+    background: var(--button-custom-bg-active, var(--button-custom-bg-hover)) !important;
+    --themed-border: var(--button-custom-border-active, var(--button-custom-border-hover)) !important;
 }
 
 /* ---- Responsive ---- */

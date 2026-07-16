@@ -2,22 +2,21 @@
  * ChoiceboxGroup — large-form radio / checkbox selector
  *
  * 1:1 translation from production CSS (choicebox-group-module__kLcSnq)
- * Source: _nextstatic/chunks/76a5400c61fb370f.css  L3740-3897
- *        _nextstatic/chunks/1c419a75d7e589ae.css  L20
+ * Source: _nextstatic/chunks/1c419a75d7e589ae.css  L20
  *
  * No --geist-* tokens found in this module — no renames needed.
  */
 
 /* ── Group reset ──────────────────────────────────────── */
-.choicebox-group {
-    width: 100%;
-}
-
+/*
+ * Production has no standalone `.choicebox-group` rule; the class is only
+ * carried by the `.choicebox-group ul` selector below. The `choicebox-group`
+ * key is still exported by CSS Modules from that descendant selector.
+ */
 .choicebox-group ul {
     margin: 0;
     padding: 0;
     list-style: none;
-    width: 100%;
 }
 
 /* ── Choicebox item (each <label>) ────────────────────── */
@@ -63,7 +62,13 @@
 
 /* ── Option row ───────────────────────────────────────── */
 .choicebox .option {
-    height: 100%;
+    /*
+     * Faithful 1:1 reproduction of production CSS: the property is
+     * misspelled `heigth` upstream (1c419a75d7e589ae.css L20), so browsers
+     * ignore it and the option gets no explicit height. Do NOT "fix" this to
+     * `height` — that would deviate from production rendering.
+     */
+    heigth: 100%;
     border-radius: 6px;
     padding: 12px;
     transition: background 0.15s, border 0.15s;

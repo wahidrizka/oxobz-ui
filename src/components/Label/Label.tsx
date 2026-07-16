@@ -7,16 +7,32 @@ import styles from './Label.module.css';
 /* ------------------------------------------------------------------ */
 
 export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
-    /** Label content */
+    /**
+     * The text content of the label. Mirrors the Geist `value` prop from the
+     * official Label docs (`<Label id="test-input" value="This is a label" />`).
+     */
+    value?: ReactNode;
+
+    /**
+     * Fallback content. Prefer `value`; `children` is only rendered when
+     * `value` is omitted, kept for backward compatibility during migration.
+     */
     children?: ReactNode;
 
-    /** Adds cursor:text style (used when label is associated with a text input) */
-    isInput?: boolean;
+    /**
+     * Applies `cursor: text`, used when the label is associated with a text
+     * input. Mirrors the Geist `withInput` prop.
+     */
+    withInput?: boolean;
 
-    /** Applies text-transform: capitalize */
-    capitalize?: boolean;
+    /**
+     * Opts out of the default `text-transform: capitalize` styling. Casing is
+     * applied by default; pass `bypassCasing` to disable it. Mirrors the Geist
+     * `bypassCasing` prop (opt-out — inverse polarity of a `capitalize` flag).
+     */
+    bypassCasing?: boolean;
 
-    /** data-version attribute matching Geist production output */
+    /** `data-version` attribute matching Geist production output. */
     'data-version'?: string;
 }
 
@@ -25,20 +41,22 @@ export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
 /* ------------------------------------------------------------------ */
 
 /**
- * A form field label.
+ * An accessible text label for form controls.
  *
- * Production DOM:
- * ```html
- * <label class="label capitalize">Choicebox group disabled</label>
- * ```
+ * Text is provided via the `value` prop (per the Geist API); casing is
+ * capitalized by default and can be disabled with `bypassCasing`.
+ *
+ * @example
+ * <Label id="email" value="Email address" withInput />
  */
 const Label = forwardRef<HTMLLabelElement, LabelProps>(
     (
         {
+            value,
             children,
             className,
-            isInput = false,
-            capitalize = false,
+            withInput = false,
+            bypassCasing = false,
             'data-version': dataVersion = 'v1',
             ...rest
         },
@@ -49,14 +67,14 @@ const Label = forwardRef<HTMLLabelElement, LabelProps>(
                 {...rest}
                 className={cn(
                     styles.label,
-                    isInput && styles.input,
-                    capitalize && styles.capitalize,
+                    withInput && styles.input,
+                    !bypassCasing && styles.capitalize,
                     className,
                 )}
                 data-version={dataVersion}
                 ref={ref}
             >
-                {children}
+                {value ?? children}
             </label>
         );
     },

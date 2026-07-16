@@ -51,18 +51,28 @@ describe('Book', () => {
 
     // ---- Color ----
     describe('color prop', () => {
-        it('set --book-color via inline style', () => {
+        it('set --book-color via inline style pada rotate-wrapper', () => {
             const { container } = render(<Book title="Test" color="#FED954" />);
-            const el = container.firstChild as HTMLElement;
-            expect(el.style.getPropertyValue('--book-color')).toBe('#FED954');
+            const wrapper = container.querySelector(
+                '[class*="rotateWrapper"]',
+            ) as HTMLElement;
+            expect(wrapper.style.getPropertyValue('--book-color')).toBe('#FED954');
         });
 
-        it('set --book-text-color via inline style', () => {
+        it('--book-color TIDAK di-set pada elemen root perspective', () => {
+            const { container } = render(<Book title="Test" color="#FED954" />);
+            const el = container.firstChild as HTMLElement;
+            expect(el.style.getPropertyValue('--book-color')).toBe('');
+        });
+
+        it('set --book-text-color via inline style pada rotate-wrapper', () => {
             const { container } = render(
                 <Book title="Test" color="#9D2127" textColor="#ece4db" />,
             );
-            const el = container.firstChild as HTMLElement;
-            expect(el.style.getPropertyValue('--book-text-color')).toBe('#ece4db');
+            const wrapper = container.querySelector(
+                '[class*="rotateWrapper"]',
+            ) as HTMLElement;
+            expect(wrapper.style.getPropertyValue('--book-text-color')).toBe('#ece4db');
         });
 
         it('wrapper mempunyai class color jika color prop ada', () => {
@@ -82,25 +92,41 @@ describe('Book', () => {
     });
 
     // ---- Width ----
-    describe('width props', () => {
-        it('set --book-width default 196 bila hanya width yang diberikan', () => {
+    describe('width prop', () => {
+        it('width number set --book-width', () => {
             const { container } = render(<Book title="Test" width={300} />);
             const el = container.firstChild as HTMLElement;
             expect(el.style.getPropertyValue('--book-width')).toBe('300');
         });
 
-        it('set --sm-book-width bila smWidth diberikan', () => {
+        it('default --book-width 196 bila width tidak diberikan', () => {
+            const { container } = render(<Book title="Test" />);
+            const el = container.firstChild as HTMLElement;
+            expect(el.style.getPropertyValue('--book-width')).toBe('196');
+        });
+
+        it('width object set custom property per breakpoint', () => {
             const { container } = render(
-                <Book title="Test" smWidth={150} mdWidth={196} />,
+                <Book title="Test" width={{ sm: 150, md: 196 }} />,
             );
             const el = container.firstChild as HTMLElement;
             expect(el.style.getPropertyValue('--sm-book-width')).toBe('150');
             expect(el.style.getPropertyValue('--md-book-width')).toBe('196');
         });
 
-        it('tidak set --book-width bila responsive width props diberikan', () => {
+        it('width object mendukung xs/smd/lg', () => {
             const { container } = render(
-                <Book title="Test" smWidth={150} mdWidth={196} />,
+                <Book title="Test" width={{ xs: 120, smd: 170, lg: 240 }} />,
+            );
+            const el = container.firstChild as HTMLElement;
+            expect(el.style.getPropertyValue('--xs-book-width')).toBe('120');
+            expect(el.style.getPropertyValue('--smd-book-width')).toBe('170');
+            expect(el.style.getPropertyValue('--lg-book-width')).toBe('240');
+        });
+
+        it('tidak set --book-width bila width object diberikan', () => {
+            const { container } = render(
+                <Book title="Test" width={{ sm: 150, md: 196 }} />,
             );
             const el = container.firstChild as HTMLElement;
             expect(el.style.getPropertyValue('--book-width')).toBe('');
@@ -152,14 +178,31 @@ describe('Book', () => {
             expect(texture).toBeNull();
         });
 
-        it('textureRotation 180 diterapkan ke style', () => {
-            const { container } = render(
-                <Book title="Test" textured textureRotation={180} />,
-            );
+        it('texture rotation auto-derived ke 0deg atau 180deg', () => {
+            const { container } = render(<Book title="Test" textured />);
             const texture = container.querySelector(
                 '[class*="texture"]',
             ) as HTMLElement;
-            expect(texture?.style.transform).toBe('rotate(180deg)');
+            expect(texture.style.transform).toMatch(/^rotate\((0|180)deg\)$/);
+        });
+
+        it('deret textured books bervariasi rotasinya (auto-alternate)', () => {
+            const { container } = render(
+                <div>
+                    <Book title="A" textured />
+                    <Book title="B" textured />
+                    <Book title="C" textured />
+                    <Book title="D" textured />
+                </div>,
+            );
+            const rotations = Array.from(
+                container.querySelectorAll('[class*="texture"]'),
+            )
+                .map((el) => (el as HTMLElement).style.transform)
+                .filter((t) => t.length > 0);
+            expect(rotations).toHaveLength(4);
+            // Production alternates the texture across a row; ensure not all identical.
+            expect(new Set(rotations).size).toBeGreaterThan(1);
         });
 
         it('pages mempunyai class textured jika textured=true', () => {
@@ -207,18 +250,24 @@ describe('Book', () => {
         });
     });
 
-    // ---- Logo ----
-    describe('logo (stripe variant)', () => {
-        it('render logo di content area stripe variant', () => {
+    // ---- Icon ----
+    describe('icon (stripe variant)', () => {
+        it('render custom icon di content area stripe variant', () => {
             const { container } = render(
                 <Book
                     variant="stripe"
                     title="Test"
-                    logo={<svg data-testid="test-logo" />}
+                    icon={<svg data-testid="test-icon" />}
                 />,
             );
-            const logo = container.querySelector('[data-testid="test-logo"]');
-            expect(logo).not.toBeNull();
+            const icon = container.querySelector('[data-testid="test-icon"]');
+            expect(icon).not.toBeNull();
+        });
+
+        it('default icon (LogoVercel) dirender bila icon tidak diberikan', () => {
+            const { container } = render(<Book variant="stripe" title="Test" />);
+            const svg = container.querySelector('[data-testid="oxobz-icon"]');
+            expect(svg).not.toBeNull();
         });
     });
 
@@ -233,13 +282,17 @@ describe('Book', () => {
 
     // ---- Style forwarding ----
     describe('style forwarding', () => {
-        it('menggabungkan custom style dengan book CSS vars', () => {
+        it('custom style diteruskan ke root, color var tetap di wrapper', () => {
             const { container } = render(
                 <Book title="Test" color="#FED954" style={{ marginTop: '20px' }} />,
             );
             const el = container.firstChild as HTMLElement;
             expect(el.style.marginTop).toBe('20px');
-            expect(el.style.getPropertyValue('--book-color')).toBe('#FED954');
+            expect(el.style.getPropertyValue('--book-width')).toBe('196');
+            const wrapper = container.querySelector(
+                '[class*="rotateWrapper"]',
+            ) as HTMLElement;
+            expect(wrapper.style.getPropertyValue('--book-color')).toBe('#FED954');
         });
     });
 });

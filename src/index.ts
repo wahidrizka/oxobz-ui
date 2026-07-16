@@ -11,7 +11,7 @@ export type { Size, ColorVariant, BaseComponentProps } from './utils/types';
 
 // Components — Verified ✅
 export { Badge } from './components/Badge';
-export type { BadgeProps, BadgeVariant, BadgeSize } from './components/Badge';
+export type { BadgeProps, BadgeVariant, BadgeSize, BadgeContrast } from './components/Badge';
 
 export { Avatar, AvatarGroup, AvatarWithIcon, GitHubAvatar, GitLabAvatar, BitbucketAvatar } from './components/Avatar';
 export type { AvatarProps, AvatarGroupProps, AvatarWithIconProps, GitAvatarProps } from './components/Avatar';
@@ -23,7 +23,7 @@ export { Text } from './components/Text';
 export type { TextProps } from './components/Text';
 
 export { Book } from './components/Book';
-export type { BookProps } from './components/Book';
+export type { BookProps, BookResponsiveWidth } from './components/Book';
 
 export { Browser } from './components/Browser';
 export type { BrowserProps } from './components/Browser';
@@ -31,32 +31,29 @@ export type { BrowserProps } from './components/Browser';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
 
-export { Radio } from './components/Radio';
-export type { RadioProps } from './components/Radio';
-
-export { RadioGroup } from './components/Radio';
-export type { RadioGroupProps, RadioGroupItemProps } from './components/Radio';
+export { Radio, RadioGroup, RadioGroupItem, useRadio } from './components/Radio';
+export type { RadioProps, RadioGroupProps, RadioGroupItemProps, UseRadioOptions, UseRadioReturn } from './components/Radio';
 
 export { Label } from './components/Label';
 export type { LabelProps } from './components/Label';
 
-export { ChoiceboxGroup } from './components/ChoiceboxGroup';
+export { ChoiceboxGroup, ChoiceboxGroupItem } from './components/ChoiceboxGroup';
 export type { ChoiceboxGroupProps, ChoiceboxGroupItemProps } from './components/ChoiceboxGroup';
 
 export { CodeBlock } from './components/CodeBlock';
-export type { CodeBlockProps, SwitcherOption } from './components/CodeBlock';
+export type { CodeBlockProps, SwitcherOption, SwitcherConfig } from './components/CodeBlock';
 
 export { Grid, GridSystem, GridCell } from './components/Grid';
 export type { GridSystemProps, GridProps, GridCellProps } from './components/Grid';
 
-export { Button, ButtonLink } from './components/Button';
-export type { ButtonProps, ButtonLinkProps, ButtonVariant, ButtonSize, ButtonShape } from './components/Button';
+export { Button, ButtonLink, CustomButton } from './components/Button';
+export type { ButtonProps, ButtonLinkProps, CustomButtonProps, CustomButtonColors, ButtonVariant, ButtonSize, ButtonShape } from './components/Button';
 
 export { Spinner } from './components/Spinner';
-export type { SpinnerProps } from './components/Spinner';
+export type { SpinnerProps, SpinnerSize } from './components/Spinner';
 
-export { CollapseGroup, CollapseItem } from './components/Collapse';
-export type { CollapseGroupProps, CollapseItemProps } from './components/Collapse';
+export { Collapse, CollapseGroup, CollapseItem } from './components/Collapse';
+export type { CollapseProps, CollapseGroupProps, CollapseItemProps } from './components/Collapse';
 
 export { Input } from './components/Input';
 export type { InputProps, InputSize } from './components/Input';

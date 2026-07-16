@@ -1,6 +1,8 @@
 import {
     forwardRef,
     useCallback,
+    useEffect,
+    useMemo,
     useRef,
     useState,
     type HTMLAttributes,
@@ -59,13 +61,18 @@ export interface SwitcherOption {
     label: string;
 }
 
-interface SwitcherProps {
+/**
+ * Config object for the language switcher / tabs, matching the official
+ * Geist `switcher` / `tabs` prop shape: `{ options, value, onChange }`.
+ */
+export interface SwitcherConfig {
     options: SwitcherOption[];
     value: string;
     onChange: (value: string) => void;
 }
 
-function Switcher({ options, value, onChange }: SwitcherProps) {
+/** Select-based language switcher (default variant). */
+function Switcher({ options, value, onChange }: SwitcherConfig) {
     const currentLabel = options.find((o) => o.value === value)?.label ?? value;
 
     return (
@@ -80,11 +87,35 @@ function Switcher({ options, value, onChange }: SwitcherProps) {
                 onChange={(e) => onChange(e.target.value)}
             >
                 {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option
+                        key={opt.value}
+                        value={opt.value}
+                        className="text-gray-1000"
+                    >
                         {opt.label}
                     </option>
                 ))}
             </select>
+        </div>
+    );
+}
+
+/** Tabbed language switcher (`tabs` variant). */
+function Tabs({ options, value, onChange }: SwitcherConfig) {
+    return (
+        <div className={switcherStyles.tabs} role="tablist">
+            {options.map((opt) => (
+                <button
+                    key={opt.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={opt.value === value}
+                    className={switcherStyles.tab}
+                    onClick={() => onChange(opt.value)}
+                >
+                    {opt.label}
+                </button>
+            ))}
         </div>
     );
 }
@@ -116,17 +147,29 @@ export interface CodeBlockProps
     /** Line numbers marked as removed (1-based) */
     removedLinesNumbers?: number[];
 
-    /** Whether to show line numbers (default: true) */
-    showLineNumbers?: boolean;
+    /** Hide line numbers entirely (default: false). Mirrors the Geist API. */
+    hideLineNumbers?: boolean;
 
-    /** Language switcher options */
-    switcherOptions?: SwitcherOption[];
+    /**
+     * Select-based language switcher, rendered in the header.
+     * Shape matches the official Geist `switcher` prop.
+     */
+    switcher?: SwitcherConfig;
 
-    /** Current switcher value */
-    switcherValue?: string;
+    /**
+     * Tabbed language switcher, rendered in the header.
+     * Shape matches the official Geist `tabs` prop. When both `tabs` and
+     * `switcher` are supplied, `tabs` takes precedence.
+     */
+    tabs?: SwitcherConfig;
 
-    /** Switcher change handler */
-    onSwitcherChange?: (value: string) => void;
+    /**
+     * Adds an "Open in v0" toolbar action ('ask' | 'build').
+     * Accepted for API parity with Geist; the v0.dev integration itself is a
+     * Vercel-product-specific feature and is intentionally not wired here.
+     * Declared so the value never leaks onto the DOM via {...rest}.
+     */
+    v0?: 'ask' | 'build';
 }
 
 /* ------------------------------------------------------------------ */
@@ -165,6 +208,24 @@ function CopyButton({ text, floating }: CopyButtonProps) {
             <Check size={16} aria-hidden />
         </button>
     );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Referenced lines — stable per-block id from code content           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Deterministic 32-bit FNV-1a hash of the code, rendered as 8 hex chars.
+ * Used to build the per-line anchor ids (`C<hash>-L<n>`) that back the
+ * "Referenced lines" feature, so a shared URL resolves to the same line.
+ */
+function hashCode(input: string): string {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < input.length; i++) {
+        hash ^= input.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
 /* ------------------------------------------------------------------ */
@@ -215,10 +276,10 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
             highlightedLinesNumbers = [],
             addedLinesNumbers = [],
             removedLinesNumbers = [],
-            showLineNumbers = true,
-            switcherOptions,
-            switcherValue,
-            onSwitcherChange,
+            hideLineNumbers = false,
+            switcher,
+            tabs,
+            v0,
             className,
             ...rest
         },
@@ -227,9 +288,34 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
         const hasFileName = !!filename;
         const codeText = children;
 
+        /* Accepted for API parity; the v0.dev action is intentionally omitted. */
+        void v0;
+
         const highlightSet = new Set(highlightedLinesNumbers);
         const addedSet = new Set(addedLinesNumbers);
         const removedSet = new Set(removedLinesNumbers);
+
+        /* Stable per-block id backing the referenced-lines anchors. */
+        const blockId = useMemo(() => `C${hashCode(codeText)}`, [codeText]);
+
+        /* Active (referenced) line, driven by the URL hash. */
+        const [activeLineId, setActiveLineId] = useState<string | null>(null);
+
+        useEffect(() => {
+            const sync = () => {
+                setActiveLineId(window.location.hash.slice(1) || null);
+            };
+            sync();
+            window.addEventListener('hashchange', sync);
+            return () => window.removeEventListener('hashchange', sync);
+        }, []);
+
+        const handleLineAnchor = useCallback((lineId: string) => {
+            if (typeof window !== 'undefined') {
+                window.location.hash = lineId;
+            }
+            setActiveLineId(lineId);
+        }, []);
 
         return (
             <div
@@ -240,7 +326,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                     'relative',
                     styles.wrapper,
                     hasFileName && styles.hasFileName,
-                    !showLineNumbers && styles.hideLineNumbers,
+                    hideLineNumbers && styles.hideLineNumbers,
                     className,
                 )}
                 data-oxobz-code-block=""
@@ -257,13 +343,11 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                             <span className={styles.filenameP}>{filename}</span>
                         </div>
                         <div className={styles.actions}>
-                            {switcherOptions && switcherValue && onSwitcherChange && (
-                                <Switcher
-                                    options={switcherOptions}
-                                    value={switcherValue}
-                                    onChange={onSwitcherChange}
-                                />
-                            )}
+                            {tabs ? (
+                                <Tabs {...tabs} />
+                            ) : switcher ? (
+                                <Switcher {...switcher} />
+                            ) : null}
                             <CopyButton text={codeText} />
                         </div>
                     </div>
@@ -283,15 +367,18 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                             <code className={styles.code} data-oxobz-code-block="true">
                                 {tokens.map((line, i) => {
                                     const lineNum = i + 1;
+                                    const lineId = `${blockId}-L${lineNum}`;
                                     const isHighlighted = highlightSet.has(lineNum);
                                     const isAdded = addedSet.has(lineNum);
                                     const isRemoved = removedSet.has(lineNum);
+                                    const isActive = activeLineId === lineId;
                                     const lineProps = getLineProps({ line });
 
                                     return (
                                         <div
                                             key={lineNum}
                                             {...lineProps}
+                                            id={lineId}
                                             className="line"
                                             style={{
                                                 fontFeatureSettings: '"liga" 0',
@@ -302,6 +389,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                                             }
                                             data-added={isAdded ? 'true' : undefined}
                                             data-removed={isRemoved ? 'true' : undefined}
+                                            data-active={isActive ? 'true' : undefined}
                                         >
                                             <button
                                                 aria-hidden="true"
@@ -309,6 +397,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                                                 type="button"
                                                 aria-label="Add line anchor to the URL"
                                                 className={styles.lineNumber}
+                                                onClick={() => handleLineAnchor(lineId)}
                                             >
                                                 {lineNum}
                                             </button>

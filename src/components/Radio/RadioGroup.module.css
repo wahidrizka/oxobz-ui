@@ -90,13 +90,10 @@
     --radio-color: var(--ds-gray-1000);
 }
 
-/* ── Checked icon dot visible ──────────────────────────── */
-.radio-input:checked+.radio-icon::after {
-    transform: translate(-50%, -50%) scale(1);
-}
-
-/* ── Focus ring suppressed: managed by parent ──────────── */
-.radio-input:focus-visible+.radio-icon,
-.radio-input[data-focus-visible-added]+.radio-icon {
-    box-shadow: var(--ds-focus-ring);
-}
+/*
+ * NOTE: the checked dot-scale (`radio-input:checked + radio-icon::after`) and
+ * the focus ring (`radio-input:focus-visible + radio-icon`) are intentionally
+ * absent here — Geist production's radio-group-module has neither. Group items
+ * compose the radio-module classes (`check`/`input`/`icon`), so both effects
+ * come from Radio.module.css, matching production exactly.
+ */

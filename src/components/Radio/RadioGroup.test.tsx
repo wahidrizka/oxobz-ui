@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { RadioGroup } from './RadioGroup';
+import { RadioGroup, RadioGroupItem, useRadio } from './RadioGroup';
 
 /** Helper: query a radio input inside a container by its value attribute. */
 function getRadioByValue(container: HTMLElement, value: string): HTMLInputElement {
@@ -333,6 +333,122 @@ describe('RadioGroup', () => {
             </RadioGroup>,
         );
         expect(ref).toHaveBeenCalledWith(expect.any(HTMLInputElement));
+    });
+
+    // ── Named export parity (Geist docs) ──
+
+    it('exports RadioGroupItem as a named export equal to RadioGroup.Item', () => {
+        expect(RadioGroupItem).toBe(RadioGroup.Item);
+    });
+
+    it('RadioGroupItem (named) works inside a RadioGroup', () => {
+        const { container } = render(
+            <RadioGroup value="b" onChange={() => { }}>
+                <RadioGroupItem value="a">A</RadioGroupItem>
+                <RadioGroupItem value="b">B</RadioGroupItem>
+            </RadioGroup>,
+        );
+        expect(getRadioByValue(container, 'a')).not.toBeChecked();
+        expect(getRadioByValue(container, 'b')).toBeChecked();
+    });
+
+    // ── DOM class composition (Geist production parity) ──
+
+    it('Item composes both radio-module and radio-group-module classes', () => {
+        const { container } = render(
+            <RadioGroup>
+                <RadioGroup.Item value="a">A</RadioGroup.Item>
+            </RadioGroup>,
+        );
+        const check = container.querySelector('.radio-check') as HTMLElement;
+        expect(check.className).toContain('check');
+        expect(check.className).toContain('radio-check');
+
+        const input = container.querySelector(
+            'input[type="radio"]',
+        ) as HTMLInputElement;
+        expect(input.className).toContain('input');
+        expect(input.className).toContain('radio-input');
+        expect(input.className).toContain('oxobz-sr-only');
+
+        const icon = container.querySelector(
+            '[aria-hidden="true"]',
+        ) as HTMLElement;
+        expect(icon.className).toContain('icon');
+        expect(icon.className).toContain('radio-icon');
+    });
+
+    it('disabled Item adds the radio-module disabled class to the check span', () => {
+        const { container } = render(
+            <RadioGroup>
+                <RadioGroup.Item value="a" disabled>
+                    A
+                </RadioGroup.Item>
+            </RadioGroup>,
+        );
+        const check = container.querySelector('.radio-check') as HTMLElement;
+        expect(check.className).toContain('disabled');
+    });
+
+    // ── Headless useRadio ──
+
+    it('useRadio returns a component rendering a span item that reads group context', () => {
+        function Harness() {
+            const { component } = useRadio({ value: 'one', disabled: false });
+            const { component: component2 } = useRadio({
+                value: 'two',
+                disabled: false,
+            });
+            return (
+                <RadioGroup value="one" onChange={() => { }}>
+                    {component}
+                    {component2}
+                </RadioGroup>
+            );
+        }
+        const { container } = render(<Harness />);
+
+        const items = container.querySelectorAll('[data-oxobz-radio-item]');
+        expect(items).toHaveLength(2);
+        items.forEach((item) => expect(item.tagName).toBe('SPAN'));
+
+        const first = getRadioByValue(container, 'one');
+        const second = getRadioByValue(container, 'two');
+        expect(first).toBeChecked();
+        expect(second).not.toBeChecked();
+        // name is wired from the surrounding RadioGroup context
+        expect(first.name).toContain('radio-name-');
+        expect(first.name).toBe(second.name);
+    });
+
+    it('useRadio component fires the group onChange when clicked', () => {
+        const onChange = vi.fn();
+        function Harness() {
+            const { component } = useRadio({ value: 'two' });
+            return (
+                <RadioGroup value="one" onChange={onChange}>
+                    {component}
+                </RadioGroup>
+            );
+        }
+        const { container } = render(<Harness />);
+        fireEvent.click(getRadioByValue(container, 'two'));
+        expect(onChange).toHaveBeenCalledWith('two');
+    });
+
+    it('useRadio component does not render a text span or zero-width space', () => {
+        function Harness() {
+            const { component } = useRadio({ value: 'one' });
+            return (
+                <RadioGroup value="one" onChange={() => { }}>
+                    {component}
+                </RadioGroup>
+            );
+        }
+        const { container } = render(<Harness />);
+        expect(container.querySelector('.text')).toBeNull();
+        const check = container.querySelector('.radio-check') as HTMLElement;
+        expect(check.textContent).not.toContain('​');
     });
 
     // ── Display names ──

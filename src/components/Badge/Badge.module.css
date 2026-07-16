@@ -28,6 +28,11 @@
     display: inline-flex;
 }
 
+/* Base text-transform (production emits a literal "capitalize" utility on every badge) */
+.capitalize {
+    text-transform: capitalize;
+}
+
 /* === Sizes === */
 
 .sm {
@@ -204,13 +209,10 @@
     padding: 0 10px 0 8px;
 }
 
-/* Pill hover — only on hover-capable devices, only on a/button (production-exact) */
-@media (hover: hover) {
-
-    a.pill:hover,
-    button.pill:hover {
-        --badge-bg-color: var(--ds-gray-200);
-    }
+/* Pill hover — production-exact: bare .pill:hover (tag-agnostic) + button.pill:hover, no @media */
+.pill:hover,
+button.pill:hover {
+    --badge-bg-color: var(--ds-gray-200);
 }
 
 /* === Icon & Content Containers === */

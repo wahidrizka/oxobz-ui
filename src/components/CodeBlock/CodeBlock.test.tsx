@@ -22,6 +22,8 @@ beforeAll(() => {
 
 beforeEach(() => {
     writeTextMock.mockClear();
+    // Referenced-lines tests mutate window.location.hash — reset between tests.
+    window.location.hash = '';
 });
 
 /** Root wrapper has data-oxobz-code-block="" (the inner <code> has "true") */
@@ -171,9 +173,9 @@ describe('CodeBlock', () => {
         );
     });
 
-    it('showLineNumbers={false} adds hideLineNumbers class (buttons stay in DOM, hidden via CSS)', () => {
+    it('hideLineNumbers adds hideLineNumbers class (buttons stay in DOM, hidden via CSS)', () => {
         const { container } = render(
-            <CodeBlock showLineNumbers={false}>{MULTILINE_CODE}</CodeBlock>,
+            <CodeBlock hideLineNumbers>{MULTILINE_CODE}</CodeBlock>,
         );
         expect(getRoot(container)?.className).toContain('hideLineNumbers');
         expect(container.querySelectorAll('.lineNumber')).toHaveLength(3);
@@ -209,6 +211,59 @@ describe('CodeBlock', () => {
         expect(lines[0]).not.toHaveAttribute('data-removed');
         expect(lines[1]).toHaveAttribute('data-removed', 'true');
         expect(lines[2]).not.toHaveAttribute('data-removed');
+    });
+
+    // ── Referenced lines (per-line anchor id + click-to-link) ──
+
+    it('gives each line a stable "C<hash>-L<n>" anchor id sharing one prefix', () => {
+        const { container } = render(<CodeBlock>{MULTILINE_CODE}</CodeBlock>);
+        const lines = getLines(container);
+        const ids = Array.from(lines).map((l) => l.id);
+        ids.forEach((id, idx) => {
+            expect(id).toMatch(new RegExp(`^C[0-9a-f]{8}-L${idx + 1}$`));
+        });
+        const prefixes = ids.map((id) => id.split('-L')[0]);
+        expect(new Set(prefixes).size).toBe(1);
+    });
+
+    it('the same code produces the same block id on re-render (stable)', () => {
+        const first = render(<CodeBlock>{MULTILINE_CODE}</CodeBlock>);
+        const idA = getLines(first.container)[0].id;
+        first.unmount();
+        const second = render(<CodeBlock>{MULTILINE_CODE}</CodeBlock>);
+        const idB = getLines(second.container)[0].id;
+        expect(idA).toBe(idB);
+    });
+
+    it('clicking a line number writes the anchor to the URL and activates the line', () => {
+        const { container } = render(<CodeBlock>{MULTILINE_CODE}</CodeBlock>);
+        const lines = getLines(container);
+        const targetId = lines[1].id;
+        const lineButtons = container.querySelectorAll<HTMLButtonElement>(
+            '.lineNumber',
+        );
+
+        act(() => {
+            fireEvent.click(lineButtons[1]);
+        });
+
+        expect(window.location.hash).toBe(`#${targetId}`);
+        expect(lines[1]).toHaveAttribute('data-active', 'true');
+        expect(lines[0]).not.toHaveAttribute('data-active');
+        expect(lines[2]).not.toHaveAttribute('data-active');
+    });
+
+    it('activates the line referenced by the initial URL hash on mount', () => {
+        // Pre-compute the block id by mounting once and reading a line id.
+        const probe = render(<CodeBlock>{MULTILINE_CODE}</CodeBlock>);
+        const secondLineId = getLines(probe.container)[1].id;
+        probe.unmount();
+
+        window.location.hash = secondLineId;
+        const { container } = render(<CodeBlock>{MULTILINE_CODE}</CodeBlock>);
+        const lines = getLines(container);
+        expect(lines[1]).toHaveAttribute('data-active', 'true');
+        expect(lines[0]).not.toHaveAttribute('data-active');
     });
 
     // ── Copy button ──
@@ -258,15 +313,17 @@ describe('CodeBlock', () => {
         expect(button.className).toContain('copyButtonCopied');
     });
 
-    // ── Switcher ──
+    // ── Switcher (object API: switcher={{ options, value, onChange }}) ──
 
     it('renders switcher with the selected option label visible', () => {
         const { container } = render(
             <CodeBlock
                 filename="index.js"
-                switcherOptions={SWITCHER_OPTIONS}
-                switcherValue="js"
-                onSwitcherChange={() => { }}
+                switcher={{
+                    options: SWITCHER_OPTIONS,
+                    value: 'js',
+                    onChange: () => { },
+                }}
             >
                 {'x'}
             </CodeBlock>,
@@ -279,13 +336,33 @@ describe('CodeBlock', () => {
         expect(screen.getAllByRole('option')).toHaveLength(2);
     });
 
+    it('gives each <option> the text-gray-1000 class (production parity)', () => {
+        render(
+            <CodeBlock
+                filename="index.js"
+                switcher={{
+                    options: SWITCHER_OPTIONS,
+                    value: 'js',
+                    onChange: () => { },
+                }}
+            >
+                {'x'}
+            </CodeBlock>,
+        );
+        screen.getAllByRole('option').forEach((opt) => {
+            expect(opt.className).toContain('text-gray-1000');
+        });
+    });
+
     it('falls back to the raw value as label when value is not in options', () => {
         const { container } = render(
             <CodeBlock
                 filename="index.go"
-                switcherOptions={SWITCHER_OPTIONS}
-                switcherValue="go"
-                onSwitcherChange={() => { }}
+                switcher={{
+                    options: SWITCHER_OPTIONS,
+                    value: 'go',
+                    onChange: () => { },
+                }}
             >
                 {'x'}
             </CodeBlock>,
@@ -293,14 +370,12 @@ describe('CodeBlock', () => {
         expect(container.querySelector('.visible')?.textContent).toContain('go');
     });
 
-    it('calls onSwitcherChange with the picked option value', () => {
-        const onSwitcherChange = vi.fn();
+    it('calls switcher.onChange with the picked option value', () => {
+        const onChange = vi.fn();
         render(
             <CodeBlock
                 filename="index.js"
-                switcherOptions={SWITCHER_OPTIONS}
-                switcherValue="js"
-                onSwitcherChange={onSwitcherChange}
+                switcher={{ options: SWITCHER_OPTIONS, value: 'js', onChange }}
             >
                 {'x'}
             </CodeBlock>,
@@ -308,30 +383,106 @@ describe('CodeBlock', () => {
         fireEvent.change(screen.getByRole('combobox'), {
             target: { value: 'ts' },
         });
-        expect(onSwitcherChange).toHaveBeenCalledTimes(1);
-        expect(onSwitcherChange).toHaveBeenCalledWith('ts');
+        expect(onChange).toHaveBeenCalledTimes(1);
+        expect(onChange).toHaveBeenCalledWith('ts');
     });
 
-    it('does not render switcher when switcherValue is missing', () => {
-        render(
-            <CodeBlock filename="index.js" switcherOptions={SWITCHER_OPTIONS}>
-                {'x'}
-            </CodeBlock>,
-        );
+    it('does not render switcher when the switcher prop is absent', () => {
+        render(<CodeBlock filename="index.js">{'x'}</CodeBlock>);
         expect(screen.queryByRole('combobox')).toBeNull();
     });
 
     it('does not render switcher without filename (switcher lives in the header)', () => {
         render(
             <CodeBlock
-                switcherOptions={SWITCHER_OPTIONS}
-                switcherValue="js"
-                onSwitcherChange={() => { }}
+                switcher={{
+                    options: SWITCHER_OPTIONS,
+                    value: 'js',
+                    onChange: () => { },
+                }}
             >
                 {'x'}
             </CodeBlock>,
         );
         expect(screen.queryByRole('combobox')).toBeNull();
+    });
+
+    // ── Tabs (object API: tabs={{ options, value, onChange }}) ──
+
+    it('renders a tablist with one tab button per option', () => {
+        render(
+            <CodeBlock
+                filename="index.js"
+                tabs={{ options: SWITCHER_OPTIONS, value: 'js', onChange: () => { } }}
+            >
+                {'x'}
+            </CodeBlock>,
+        );
+        expect(screen.getByRole('tablist')).toBeInTheDocument();
+        const tabList = screen.getAllByRole('tab');
+        expect(tabList).toHaveLength(2);
+        expect(tabList.map((t) => t.textContent)).toEqual([
+            'JavaScript',
+            'TypeScript',
+        ]);
+    });
+
+    it('marks the active tab with aria-selected="true"', () => {
+        render(
+            <CodeBlock
+                filename="index.js"
+                tabs={{ options: SWITCHER_OPTIONS, value: 'ts', onChange: () => { } }}
+            >
+                {'x'}
+            </CodeBlock>,
+        );
+        const [js, ts] = screen.getAllByRole('tab');
+        expect(js).toHaveAttribute('aria-selected', 'false');
+        expect(ts).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('calls tabs.onChange with the clicked tab value', () => {
+        const onChange = vi.fn();
+        render(
+            <CodeBlock
+                filename="index.js"
+                tabs={{ options: SWITCHER_OPTIONS, value: 'js', onChange }}
+            >
+                {'x'}
+            </CodeBlock>,
+        );
+        fireEvent.click(screen.getByRole('tab', { name: 'TypeScript' }));
+        expect(onChange).toHaveBeenCalledTimes(1);
+        expect(onChange).toHaveBeenCalledWith('ts');
+    });
+
+    it('tabs takes precedence over switcher when both are provided', () => {
+        render(
+            <CodeBlock
+                filename="index.js"
+                switcher={{
+                    options: SWITCHER_OPTIONS,
+                    value: 'js',
+                    onChange: () => { },
+                }}
+                tabs={{ options: SWITCHER_OPTIONS, value: 'js', onChange: () => { } }}
+            >
+                {'x'}
+            </CodeBlock>,
+        );
+        expect(screen.getByRole('tablist')).toBeInTheDocument();
+        expect(screen.queryByRole('combobox')).toBeNull();
+    });
+
+    it('does not render tabs without filename (tabs live in the header)', () => {
+        render(
+            <CodeBlock
+                tabs={{ options: SWITCHER_OPTIONS, value: 'js', onChange: () => { } }}
+            >
+                {'x'}
+            </CodeBlock>,
+        );
+        expect(screen.queryByRole('tablist')).toBeNull();
     });
 
     // ── className / prop forwarding / ref ──

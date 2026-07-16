@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Button } from './Button';
+import { Button, ButtonLink, CustomButton } from './Button';
 
 describe('Button', () => {
     // ---- Rendering ----
@@ -48,22 +48,22 @@ describe('Button', () => {
         expect(el).toHaveAttribute('data-suffix', 'true');
     });
 
-    // ---- HTML type ----
+    // ---- HTML type (typeName) ----
 
-    it('default htmlType is submit', () => {
+    it('default typeName is submit', () => {
         render(<Button>submit btn</Button>);
         const el = screen.getByText('submit btn').closest('[data-oxobz-button]');
         expect(el).toHaveAttribute('type', 'submit');
     });
 
-    it('htmlType="button" sets type attribute', () => {
-        render(<Button htmlType="button">btn type</Button>);
+    it('typeName="button" sets type attribute', () => {
+        render(<Button typeName="button">btn type</Button>);
         const el = screen.getByText('btn type').closest('[data-oxobz-button]');
         expect(el).toHaveAttribute('type', 'button');
     });
 
-    it('htmlType="reset" sets type attribute', () => {
-        render(<Button htmlType="reset">reset type</Button>);
+    it('typeName="reset" sets type attribute', () => {
+        render(<Button typeName="reset">reset type</Button>);
         const el = screen.getByText('reset type').closest('[data-oxobz-button]');
         expect(el).toHaveAttribute('type', 'reset');
     });
@@ -221,16 +221,16 @@ describe('Button', () => {
         expect(el.disabled).toBe(true);
     });
 
-    it('sets aria-disabled="true" when disabled', () => {
+    it('does NOT set aria-disabled when disabled (production parity)', () => {
         render(<Button disabled>disabled aria</Button>);
         const el = screen.getByText('disabled aria').closest('[data-oxobz-button]');
-        expect(el).toHaveAttribute('aria-disabled', 'true');
+        expect(el).not.toHaveAttribute('aria-disabled');
     });
 
-    it('sets tabIndex=-1 when disabled', () => {
+    it('keeps tabIndex=0 when disabled (production parity)', () => {
         render(<Button disabled>disabled tab</Button>);
         const el = screen.getByText('disabled tab').closest('[data-oxobz-button]');
-        expect(el).toHaveAttribute('tabindex', '-1');
+        expect(el).toHaveAttribute('tabindex', '0');
     });
 
     it('does not add data-hover when disabled and hovered', () => {
@@ -248,10 +248,11 @@ describe('Button', () => {
         expect(el?.className).toContain('loading');
     });
 
-    it('sets aria-disabled="true" when loading', () => {
+    it('sets native disabled but no aria-disabled when loading', () => {
         render(<Button loading>loading aria</Button>);
-        const el = screen.getByText('loading aria').closest('[data-oxobz-button]');
-        expect(el).toHaveAttribute('aria-disabled', 'true');
+        const el = screen.getByText('loading aria').closest('[data-oxobz-button]') as HTMLButtonElement;
+        expect(el.disabled).toBe(true);
+        expect(el).not.toHaveAttribute('aria-disabled');
     });
 
     // ---- Hover / Active states ----
@@ -328,5 +329,111 @@ describe('Button', () => {
         const el = screen.getByText('reset once').closest('[data-oxobz-button]');
         const resetOccurrences = el?.className.match(/reset/g) ?? [];
         expect(resetOccurrences).toHaveLength(1);
+    });
+});
+
+describe('ButtonLink', () => {
+    it('renders as <a> element with data-oxobz-button', () => {
+        render(<ButtonLink href="#">go</ButtonLink>);
+        const el = screen.getByText('go').closest('[data-oxobz-button]');
+        expect(el?.tagName).toBe('A');
+        expect(el).toHaveAttribute('data-oxobz-button', '');
+    });
+
+    it('keeps role="link" and tabIndex=0', () => {
+        render(<ButtonLink href="#">link roles</ButtonLink>);
+        const el = screen.getByText('link roles').closest('[data-oxobz-button]');
+        expect(el).toHaveAttribute('role', 'link');
+        expect(el).toHaveAttribute('tabindex', '0');
+    });
+
+    it('adds data-hover on pointerEnter and removes on pointerLeave', () => {
+        render(<ButtonLink href="#">link hover</ButtonLink>);
+        const el = screen.getByText('link hover').closest('[data-oxobz-button]') as HTMLElement;
+        fireEvent.pointerEnter(el);
+        expect(el).toHaveAttribute('data-hover');
+        fireEvent.pointerLeave(el);
+        expect(el).not.toHaveAttribute('data-hover');
+    });
+
+    it('adds data-active on pointerDown and removes on pointerUp', () => {
+        render(<ButtonLink href="#">link active</ButtonLink>);
+        const el = screen.getByText('link active').closest('[data-oxobz-button]') as HTMLElement;
+        fireEvent.pointerDown(el);
+        expect(el).toHaveAttribute('data-active');
+        fireEvent.pointerUp(el);
+        expect(el).not.toHaveAttribute('data-active');
+    });
+
+    it('applies secondary class for variant="secondary"', () => {
+        render(
+            <ButtonLink href="#" variant="secondary">
+                link secondary
+            </ButtonLink>,
+        );
+        const el = screen.getByText('link secondary').closest('[data-oxobz-button]');
+        expect(el?.className).toContain('secondary');
+    });
+
+    it('forwards ref to the anchor', () => {
+        const ref = { current: null } as React.RefObject<HTMLAnchorElement | null>;
+        render(
+            <ButtonLink ref={ref} href="#">
+                link ref
+            </ButtonLink>,
+        );
+        expect(ref.current).toBeInstanceOf(HTMLAnchorElement);
+    });
+});
+
+describe('CustomButton', () => {
+    it('renders a button with custom + data-oxobz-custom-button', () => {
+        render(<CustomButton>custom btn</CustomButton>);
+        const el = screen.getByText('custom btn').closest('[data-oxobz-button]') as HTMLButtonElement;
+        expect(el.tagName).toBe('BUTTON');
+        expect(el.className).toContain('custom');
+        expect(el).toHaveAttribute('data-oxobz-custom-button', '');
+    });
+
+    it('sets normal/hover/active color CSS variables', () => {
+        render(
+            <CustomButton
+                normal={{ foreground: '#fff', background: 'var(--ds-blue-700)', border: 'var(--ds-blue-700)' }}
+                hover={{ foreground: '#fff', background: '#0B7BFE', border: 'var(--ds-blue-700)' }}
+                active={{ foreground: '#fff', background: 'var(--ds-blue-900)', border: 'var(--ds-blue-900)' }}
+            >
+                custom vars
+            </CustomButton>,
+        );
+        const el = screen.getByText('custom vars').closest('[data-oxobz-button]') as HTMLElement;
+        expect(el.style.getPropertyValue('--button-custom-fg')).toBe('#fff');
+        expect(el.style.getPropertyValue('--button-custom-bg')).toBe('var(--ds-blue-700)');
+        expect(el.style.getPropertyValue('--button-custom-bg-hover')).toBe('#0B7BFE');
+        expect(el.style.getPropertyValue('--button-custom-bg-active')).toBe('var(--ds-blue-900)');
+    });
+
+    it('applies width via inline style', () => {
+        render(<CustomButton width={160}>wide</CustomButton>);
+        const el = screen.getByText('wide').closest('[data-oxobz-button]') as HTMLElement;
+        expect(el.style.width).toBe('160px');
+    });
+
+    it('default typeName is submit', () => {
+        render(<CustomButton>custom submit</CustomButton>);
+        const el = screen.getByText('custom submit').closest('[data-oxobz-button]');
+        expect(el).toHaveAttribute('type', 'submit');
+    });
+
+    it('adds data-hover on pointerEnter', () => {
+        render(<CustomButton>custom hover</CustomButton>);
+        const el = screen.getByText('custom hover').closest('[data-oxobz-button]') as HTMLElement;
+        fireEvent.pointerEnter(el);
+        expect(el).toHaveAttribute('data-hover');
+    });
+
+    it('forwards ref', () => {
+        const ref = { current: null } as React.RefObject<HTMLButtonElement | null>;
+        render(<CustomButton ref={ref}>custom ref</CustomButton>);
+        expect(ref.current).toBeInstanceOf(HTMLButtonElement);
     });
 });

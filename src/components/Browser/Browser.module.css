@@ -120,11 +120,6 @@
     text-align: center;
 }
 
-/* Content area — children slot */
-.content {
-    padding: 24px;
-}
-
 /* Copy button — static styles (moved from inline, identical value-per-value) */
 .copyButton {
     background: transparent;
@@ -161,6 +156,19 @@
     transition: all 150ms ease-out;
     transform: scale(1);
     opacity: 1;
+}
+
+/* Responsive: below md breakpoint (<601px) — max-md */
+@media (max-width: 600px) {
+    /* Left section shrinks to content width (max-md:first:flex-none) */
+    .headerLeft {
+        flex: none;
+    }
+
+    /* Navigation icons hidden below md (max-md:hidden) */
+    .navIcons {
+        display: none;
+    }
 }
 
 /* Responsive: md breakpoint (≥601px) */
