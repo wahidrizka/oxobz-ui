@@ -1,0 +1,115 @@
+/**
+ * Tabs — CSS Module (horizontal tab row, controlled selection)
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: tabs-module__Da1ZWG — .tabs, .tab, .tabIcon + the
+ *   [data-variant=secondary] rules, aria-selected / focus / hover / disabled
+ *   states. (The tabs-module__Vi5NcG "tabsWrapper" in the same chunk is a
+ *   different docs-only component and is intentionally NOT used here.)
+ * - _nextstatic/component-inspect-element/tabs.html
+ *   Current production DOM renders the Tabs component with Tailwind v4
+ *   arbitrary-value classes rather than the Da1ZWG module. Their values match
+ *   the module 1:1 except the row cross-axis alignment: the snapshot uses
+ *   `items-center` where the (older) module used `align-items:baseline` — the
+ *   snapshot wins. The snapshot also hides the scrollbar (`no-scrollbar`),
+ *   folded in below.
+ *
+ * No .dark-theme override exists in production — every color is a semantic
+ * --ds-* token that flips with the theme automatically.
+ */
+
+/* ---- Tablist row (tabs-module __tabs) ---- */
+.tabs {
+    box-shadow: 0 -1px 0 var(--accents-2) inset;
+    flex-wrap: nowrap;
+    /* Snapshot: items-center (module used align-items:baseline) */
+    align-items: center;
+    gap: 24px;
+    padding-bottom: 1px;
+    display: flex;
+    overflow-x: auto;
+    /* Snapshot: no-scrollbar utility */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+/* Let the focus ring escape the scroll container while a tab is focused */
+.tabs:has(.tab:focus-visible) {
+    overflow: visible;
+}
+
+.tabs[data-variant='secondary'] {
+    box-shadow: none;
+    gap: 8px;
+}
+
+/* ---- Tab (tabs-module __tab) ---- */
+.tab {
+    color: var(--ds-gray-900);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    outline: 0;
+    align-items: center;
+    margin-bottom: -1px;
+    padding: 14px 2px;
+    font-size: 14px;
+    display: flex;
+}
+
+.tab[aria-selected='true'] {
+    color: var(--ds-gray-1000);
+}
+
+/* Underline indicator — primary variant only (secondary uses a filled pill) */
+.tabs[data-variant='primary'] .tab[aria-selected='true'] {
+    border-bottom-color: var(--ds-gray-1000);
+}
+
+.tab:focus-visible[data-show-focus-ring='true'] {
+    box-shadow: var(--ds-focus-ring);
+}
+
+@media (hover: hover) {
+    .tab:not(:disabled):hover {
+        color: var(--ds-gray-1000);
+    }
+}
+
+.tab:disabled {
+    cursor: not-allowed;
+}
+
+/* ---- Secondary variant tab (pill) ---- */
+.tabs[data-variant='secondary'] .tab {
+    background: var(--ds-gray-alpha-200);
+    height: 24px;
+    color: var(--ds-gray-1000);
+    cursor: pointer;
+    border-bottom: none;
+    border-radius: 6px;
+    padding: 0 6px;
+    font-size: 13px;
+}
+
+.tabs[data-variant='secondary'] .tab[aria-selected='true'] {
+    background: var(--ds-gray-1000);
+    color: var(--ds-background-100);
+}
+
+.tabs[data-variant='secondary'] .tab:disabled {
+    background: var(--ds-gray-200);
+    color: var(--ds-gray-900);
+    cursor: not-allowed;
+}
+
+/* ---- Icon slot (tabs-module __tabIcon) ---- */
+.tabIcon {
+    margin-right: 6px;
+}

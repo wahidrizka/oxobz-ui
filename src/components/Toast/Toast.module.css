@@ -1,0 +1,290 @@
+/**
+ * Toast — CSS Module
+ *
+ * Production source:
+ * - _nextstatic/chunks/d2f6d4dcdb88e56d.css
+ *   Module: toasts-module__QgOjEG (note: plural "toasts", not "toast").
+ *   Classes translated 1:1 — toastArea, center, multiple, toastContainer,
+ *   fullBleed, overflowHidden, error, success, warning, actionsContainer,
+ *   fullActions, visible, hiding, toast, message, fullWidth, visualContainer.
+ *   All transitions/animations, the two @media (hover:hover) fan-out blocks,
+ *   the :nth-last-child stacking limits, and the .dark-theme warning overrides
+ *   are preserved verbatim.
+ *
+ * Var renames (Geist -> oxobz branding):
+ *   --geist-gap        -> --oxobz-gap
+ *   --geist-background -> --oxobz-background
+ *   --offset-bottom    -> --oxobz-offset-bottom (fallback 0px)
+ * Kept as-is (runtime per-instance vars, not design tokens):
+ *   --y, --z, --max-height, --visual-height, --themed-bg, --themed-border
+ *   and every --ds-* token.
+ *
+ * NOTE: toast.html snapshot only contains the docs page prose (Best Practices),
+ * not a rendered toast, so the DOM tree here is derived from the class-usage
+ * semantics of this module + the toast.md API. data-oxobz-* / data-version are
+ * unverifiable from the snapshot; they follow the workspace convention (v1).
+ */
+
+/* ---- Area (toastArea) — fixed anchor, bottom-right ---- */
+.toastArea {
+    bottom: calc(var(--oxobz-gap) + var(--oxobz-offset-bottom, 0px));
+    right: var(--oxobz-gap);
+    z-index: 5000;
+    transition: transform 0.4s, bottom 0.4s;
+    position: fixed;
+}
+
+.toastArea.center {
+    right: calc(50% - 210px);
+}
+
+@media (hover: hover) {
+    .toastArea.multiple:hover {
+        transform: translateY(-10px);
+    }
+}
+
+/* ---- Container (toastContainer) — one card, enter/exit lifecycle ---- */
+.toastContainer {
+    width: 420px;
+    box-shadow: var(--ds-shadow-menu);
+    background: var(--oxobz-background);
+    color: var(--ds-gray-1000);
+    opacity: 0;
+    z-index: 5000;
+    max-width: min(420px, calc(100vw - 2 * var(--oxobz-gap)));
+    border-radius: 12px;
+    padding: 16px;
+    line-height: 21px;
+    transition: all 0.35s cubic-bezier(0.25, 0.75, 0.6, 0.98);
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    transform: translate3d(0, 100%, 150px) scale(1);
+}
+
+.toastContainer.fullBleed {
+    padding: 0;
+}
+
+.toastContainer.overflowHidden {
+    overflow: hidden;
+}
+
+/* ---- Type: error ---- */
+.toastContainer.error {
+    background-color: var(--ds-red-800);
+    color: var(--ds-contrast-fg);
+    border: 0;
+}
+
+.toastContainer.error .actionsContainer {
+    --themed-bg: var(--ds-red-700);
+}
+
+.toastContainer.error .actionsContainer button {
+    color: var(--ds-contrast-fg);
+}
+
+.toastContainer.error .fullActions button:first-of-type {
+    --themed-bg: var(--ds-red-700);
+}
+
+/* ---- Type: success ---- */
+.toastContainer.success {
+    background-color: var(--ds-blue-700);
+    color: var(--ds-contrast-fg);
+    border: 0;
+}
+
+.toastContainer.success .actionsContainer {
+    --themed-bg: var(--ds-blue-600);
+}
+
+.toastContainer.success .actionsContainer button {
+    color: var(--ds-contrast-fg);
+}
+
+.toastContainer.success .fullActions button:first-of-type {
+    --themed-bg: var(--ds-blue-600);
+}
+
+/* ---- Type: warning ---- */
+.toastContainer.warning {
+    background-color: var(--ds-amber-800);
+    color: var(--ds-gray-1000);
+    border: 0;
+}
+
+.toastContainer.warning .actionsContainer {
+    --themed-bg: var(--ds-amber-700);
+}
+
+.toastContainer.warning .actionsContainer button {
+    color: var(--ds-gray-1000);
+}
+
+.toastContainer.warning .fullActions button:first-of-type {
+    --themed-bg: var(--ds-amber-700);
+}
+
+/* ---- Full-width actions row (fullActions) ---- */
+.fullActions {
+    width: 100%;
+}
+
+.fullActions button:first-of-type {
+    color: inherit;
+}
+
+.fullActions button:last-of-type {
+    --themed-border: none !important;
+}
+
+/* ---- Dark theme warning overrides ---- */
+:global(.dark-theme) .toastContainer.warning {
+    color: var(--ds-gray-100);
+}
+
+:global(.dark-theme) .toastContainer.warning button {
+    color: var(--ds-gray-100);
+}
+
+/* ---- Lifecycle: visible / hiding ---- */
+.toastContainer.visible {
+    opacity: 1;
+    transform: none;
+}
+
+.toastContainer.hiding {
+    opacity: 0;
+    transition: all 0.16s cubic-bezier(0.6, 0.3, 0.98, 0.5);
+    transform: scale(0.98);
+}
+
+/* ---- Toast body (toast) — source ships two rules, kept in order ---- */
+.toast {
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 12px;
+    display: flex;
+}
+
+/* Hover fan-out: expand + lift each card to its measured --y/--z slot. */
+@media (hover: hover) {
+    .toastArea:hover .toastContainer {
+        max-height: var(--max-height) !important;
+        transform: translate3d(0, var(--y), var(--z)) scale(1) !important;
+    }
+}
+
+/* Behind cards hide their message until the stack is hovered. */
+.toastArea .toastContainer:not(:last-child) .toast .message {
+    opacity: 0;
+}
+
+@media (hover: hover) {
+    .toastArea:hover .toastContainer .toast .message {
+        opacity: 1;
+    }
+
+    .toastArea:hover .toastContainer:after {
+        content: '';
+        background: 0 0;
+        width: 100%;
+        height: 20px;
+        position: absolute;
+        top: calc(100% + 1px);
+        left: 0;
+        right: 0;
+    }
+}
+
+/* Only the front three cards are visible in the collapsed stack. */
+.toastArea .toastContainer:nth-last-child(n + 4) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.toast {
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+    font-size: 0.875rem;
+    transition: all 0.4s;
+    display: flex;
+}
+
+/* ---- Message (message) ---- */
+.message {
+    opacity: 1;
+    word-break: break-word;
+    text-wrap: pretty;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    height: 100%;
+    margin-top: -1px;
+    transition: opacity 0.4s;
+    display: flex;
+}
+
+.message.fullWidth > span {
+    width: 100%;
+}
+
+.message span,
+.message div,
+.message blockquote,
+.message h1,
+.message h2,
+.message h3,
+.message h4,
+.message h5,
+.message h6,
+.message label,
+.message legend,
+.message p,
+.message q,
+.message small,
+.message strong {
+    color: inherit;
+}
+
+.message a {
+    background-image: linear-gradient(var(--ds-gray-1000), var(--ds-gray-1000));
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+    font-weight: 500;
+}
+
+/* ---- Actions (actionsContainer) ---- */
+.actionsContainer {
+    flex-direction: row;
+    flex-wrap: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+    display: flex;
+}
+
+.actionsContainer button {
+    color: inherit;
+}
+
+/* On narrow viewports only the front two cards remain visible. */
+@media (max-width: 440px) {
+    .toastArea .toastContainer:nth-last-child(n + 3) {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* ---- Visual header slot (visualContainer) ---- */
+.visualContainer {
+    height: var(--visual-height, 128px);
+    width: calc(100% + 32px);
+    margin: -16px -16px 0;
+}

@@ -1,0 +1,149 @@
+/**
+ * Skeleton — CSS Module
+ *
+ * Production source:
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   Module: skeleton-module__uXTLWW — .skeleton, .loaded, .wrapper, .show,
+ *   .noAnimation, .inline, .pill, .squared, .rounded + @keyframes …__loading.
+ * - _nextstatic/component-inspect-element/skeleton.html
+ *   Snapshot (docs preview) renders the same behaviour with Tailwind
+ *   utilities; used to confirm DOM structure, inline width/min-height/
+ *   margin-bottom, and the `button` prop offset (after:-top-px
+ *   after:-bottom-px after:-left-px) which is NOT in the chunk module.
+ *
+ * Notes:
+ * - Source base radius is `var(--geist-radius, 5px)`; --geist-radius is
+ *   unset in production so it resolves to 5px (snapshot uses rounded-[5px]).
+ *   Hard-coded to 5px here — mapping to the defined --oxobz-radius (6px)
+ *   would deviate from production.
+ * - Shimmer gradient keeps the semantic --ds-gray-100/--ds-gray-200 tokens.
+ * - `.no-skeleton-animations` global escape hatch preserved via :global().
+ */
+
+/* ---- Shimmer keyframes (skeleton-module __loading) ---- */
+@keyframes loading {
+    to {
+        transform: translate(-50%);
+    }
+}
+
+/* ---- Root (skeleton-module __skeleton) ---- */
+.skeleton {
+    border-radius: 5px;
+    display: block;
+}
+
+/* ---- Loaded: children present + fixed width → keep box, drop width ---- */
+.skeleton.loaded {
+    width: unset !important;
+}
+
+/* ---- Hidden when not shown and not wrapping children ---- */
+.skeleton:not(.wrapper):not(.show) {
+    display: none;
+}
+
+/* ---- Plain placeholder clips the sliding shimmer ---- */
+.skeleton:not(.wrapper):not(.loaded) {
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton:not(.wrapper):not(.loaded)::after {
+    content: '';
+    background: linear-gradient(
+            90deg,
+            var(--ds-gray-100),
+            var(--ds-gray-200),
+            var(--ds-gray-100)
+        )
+        0 0 / 50% 100%;
+    animation: 1.5s ease-in-out infinite reverse loading;
+    position: absolute;
+    inset: 0 -200% 0 0;
+}
+
+:global(.no-skeleton-animations)
+    .skeleton:not(.wrapper):not(.loaded)::after {
+    background-color: var(--ds-gray-100);
+    background: 0 0;
+    animation: none;
+}
+
+/* ---- No animation (skeleton-module __noAnimation) ---- */
+.noAnimation::after {
+    animation: none !important;
+}
+
+.noAnimation.wrapper::after {
+    animation: none;
+}
+
+/* ---- Wrapper: measures its children (skeleton-module __wrapper) ---- */
+.wrapper {
+    visibility: hidden;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.wrapper:not(.show) {
+    visibility: visible;
+    overflow: visible;
+}
+
+.wrapper:not(.show)::after {
+    content: none;
+    visibility: hidden;
+}
+
+.wrapper::after {
+    content: '';
+    background: linear-gradient(
+            90deg,
+            var(--ds-gray-100),
+            var(--ds-gray-200),
+            var(--ds-gray-100)
+        )
+        0 0 / 50% 100%;
+    visibility: visible;
+    animation: 1.5s ease-in-out infinite reverse loading;
+    position: absolute;
+    inset: 0 -200% 0 0;
+}
+
+:global(.no-skeleton-animations) .wrapper::after {
+    background-color: var(--ds-gray-100);
+    background: 0 0;
+    animation: none;
+}
+
+/* ---- Inline layout (skeleton-module __inline) ---- */
+.inline {
+    display: inline-block !important;
+}
+
+/* ---- Shapes (skeleton-module __pill / __squared / __rounded) ---- */
+.pill,
+.pill.wrapper::after {
+    border-radius: 9999px;
+}
+
+.squared,
+.squared.wrapper::after {
+    border-radius: 0;
+}
+
+.rounded,
+.rounded.wrapper::after {
+    border-radius: 50%;
+}
+
+/* ---- Button: extend the shimmer 1px past the button border ----
+   Snapshot-only (Tailwind after:-top-px after:-bottom-px after:-left-px);
+   not present in the chunk module. */
+.button::after {
+    top: -1px;
+    bottom: -1px;
+    left: -1px;
+}

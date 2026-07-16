@@ -1,0 +1,236 @@
+/**
+ * Modal — CSS Module
+ *
+ * Sources:
+ * - Overlay + backdrop: chunk 1c419a75d7e589ae.css
+ *   (`.geist-overlay`, `.geist-overlay-backdrop`, `.geist-overlay-backdrop.active`).
+ * - Dialog / body / header / title / actions: geistcn snapshot
+ *   `_nextstatic/component-inspect-element/modal.html`
+ *   (Tailwind arbitrary values translated to plain CSS).
+ * - Inset: modal module in chunk 1c419a75d7e589ae.css (`modal-module__inset`).
+ * - Motion: `--ds-motion-overlay-*` tokens (src/tokens/motion.css).
+ *
+ * Adaptations (documented, not fabricated):
+ * - `--ds-overlay-backdrop-color` is not defined in @oxobz tokens; it resolves
+ *   to `--ds-background-200` in production, so it is used as the fallback.
+ * - `--header-zindex` is not part of @oxobz tokens; fallback 999 keeps the
+ *   overlay above page content (final z-index 1000).
+ * - The scroll-driven sticky blur shadows (IntersectionObserver-toggled in
+ *   Geist) are not implemented; the static sticky positioning + hairline is.
+ */
+
+/* ---- Overlay (from `.geist-overlay`) ---- */
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    /* stylelint-disable-next-line value-no-vendor-prefix */
+    height: -webkit-fill-available;
+    z-index: calc(var(--header-zindex, 999) + 1);
+    display: flex;
+    flex-direction: column;
+    place-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+/* Focus-lock wrapper (tabindex=-1) — hugs the dialog. */
+.wrapper {
+    max-width: 100%;
+    outline: none;
+}
+
+/* ---- Backdrop (from `.geist-overlay-backdrop`) ---- */
+
+.backdrop {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: calc(var(--header-zindex, 999) + 1);
+    opacity: 0;
+    background-color: var(--ds-overlay-backdrop-color, var(--ds-background-200));
+    pointer-events: none;
+    transition: opacity var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing);
+}
+
+.backdrop.active {
+    opacity: var(--ds-overlay-backdrop-opacity);
+    pointer-events: all;
+}
+
+/* ---- Dialog (from `[data-geist-modal]`) ---- */
+
+.modal {
+    --modal-padding: 24px;
+    --modal-radius: 12px;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    max-height: min(800px, 80vh);
+    color: var(--ds-gray-1000);
+    background-color: var(--ds-background-100);
+    border-radius: var(--modal-radius);
+    box-shadow: var(--ds-shadow-modal);
+    overflow-y: auto;
+    transition:
+        opacity var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing),
+        transform var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing);
+}
+
+.modal > form {
+    border-radius: var(--modal-radius);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Tailwind `sm:` breakpoint = min-width 640px. */
+@media (min-width: 640px) {
+    .modal {
+        overflow: hidden;
+    }
+}
+
+/* Tailwind `max-[540px]:max-w-[calc(100vw-20px)]`. */
+@media (max-width: 540px) {
+    .modal {
+        max-width: calc(100vw - 20px);
+    }
+}
+
+/* ---- Body (from `[data-geist-modal-body]`) ---- */
+
+.body {
+    position: relative;
+    /* p-[var(--modal-padding)] (24px) then pt-5 (20px). */
+    padding: 20px var(--modal-padding) var(--modal-padding);
+    overflow-x: hidden;
+    border-top-left-radius: var(--modal-radius);
+    border-top-right-radius: var(--modal-radius);
+}
+
+@media (min-width: 640px) {
+    .body {
+        overflow-y: auto;
+    }
+}
+
+:global(.dark-theme) .body {
+    background-color: var(--ds-background-200);
+}
+
+/* Sentinels for the (unimplemented) sticky-shadow observer. */
+.sentinelTop {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 1px;
+    pointer-events: none;
+}
+
+.sentinelBottom {
+    width: 100%;
+    height: 1px;
+    pointer-events: none;
+}
+
+/* ---- Header (from `[data-geist-modal-header]`) ---- */
+
+.header {
+    z-index: 10;
+    margin-bottom: 24px;
+    color: var(--ds-gray-1000);
+}
+
+.header:last-child {
+    margin-bottom: 0;
+}
+
+/* Sticky header — Tailwind `[.sticky_&]` variants (verified values only). */
+.sticky .header {
+    position: sticky;
+    top: 0;
+    margin-right: calc(-1 * var(--modal-padding));
+    margin-left: calc(-1 * var(--modal-padding));
+    padding: 16px 24px;
+    background-color: var(--ds-background-200);
+    box-shadow: 0 1px 0 0 var(--ds-gray-alpha-400);
+}
+
+@media (min-width: 640px) {
+    .sticky .header {
+        padding: 20px var(--modal-padding);
+    }
+}
+
+:global(.dark-theme) .sticky .header {
+    background-color: var(--ds-background-100);
+}
+
+/* ---- Title (from `[data-geist-modal-title]`) ---- */
+
+.title {
+    padding-bottom: 4px;
+    text-align: left;
+}
+
+/* ---- Inset (from `modal-module__inset`) ---- */
+
+.inset {
+    margin: 0 calc(-1 * var(--modal-padding));
+    padding: var(--geist-gap, 16px) var(--modal-padding);
+    background: var(--accents-1);
+    border-top: 1px solid var(--accents-2);
+    border-bottom: 1px solid var(--accents-2);
+}
+
+.inset:last-of-type {
+    border-bottom: 0;
+}
+
+/* ---- Actions / footer (from `[data-geist-modal-actions]`) ---- */
+
+.actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: space-between;
+    padding: 16px;
+    background-color: var(--ds-background-200);
+    box-shadow: 0 -1px 0 0 var(--ds-gray-alpha-400);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Grouped buttons: `[&>div]:flex [&>div]:gap-4`. */
+.actions > div {
+    display: flex;
+    gap: 16px;
+}
+
+@media (min-width: 640px) {
+    .actions {
+        border-bottom-right-radius: var(--modal-radius);
+        border-bottom-left-radius: var(--modal-radius);
+    }
+}
+
+/* ---- Action button ---- */
+
+.action {
+    /* Base marker; styling comes from the shared Button component. */
+    display: inline-flex;
+}
+
+.fullWidth {
+    width: 100%;
+}

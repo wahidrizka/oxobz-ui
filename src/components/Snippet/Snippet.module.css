@@ -1,0 +1,159 @@
+/**
+ * Snippet — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: snippet-module__7Mr-qq — .snippet, .prompt, .dark,
+ *   .isUsingPlaceholder, button.copyIcon (+ svg / :hover), pre rules.
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   Global variant classes referenced by the production DOM
+ *   (.geist-new-themed.geist-new-<type>) → folded into the per-type
+ *   classes below as --themed-* overrides.
+ * - _nextstatic/component-inspect-element/snippet.html
+ *   Snapshot-only detail translated here: the copy/check icon cross-fade
+ *   ("relative size-4" stack, layers "transition-all duration-200
+ *   ease-in-out" toggling opacity 0/100 + scale 50%/100%) and the focus
+ *   ring on the copy button.
+ *
+ * Var mapping: --geist-gap-double → --oxobz-gap-double (48px),
+ * --geist-radius → --oxobz-radius, --geist-selection → --oxobz-selection.
+ *
+ * Note: production snippet-module has no :global(.dark-theme) block —
+ * theme switching is handled by the --ds-* tokens; `.dark` here is the
+ * `dark` prop (inverted color scheme), not the app theme.
+ */
+
+/* ---- Root (snippet-module __snippet) ---- */
+.snippet {
+    /* Themed defaults (gray). Type variants override --themed-*. */
+    --themed-fg: var(--ds-gray-1000);
+
+    width: fit-content;
+    max-width: 100%;
+    padding: 10px var(--oxobz-gap-double) 10px 12px;
+    border-radius: 6px;
+    position: relative;
+
+    border: 1px solid var(--themed-border, var(--ds-gray-alpha-400));
+    background: var(--themed-bg, var(--ds-background-100));
+    color: var(--themed-fg);
+}
+
+/* ---- Placeholder empty state (snippet-module __isUsingPlaceholder) ---- */
+.snippet.isUsingPlaceholder pre {
+    opacity: 0.5;
+}
+
+/* ---- Inverted color scheme (snippet-module __dark) ---- */
+.snippet.dark {
+    background: var(--ds-gray-1000);
+    color: var(--ds-gray-100);
+}
+
+/* ---- Lines (snippet-module __snippet pre) ---- */
+.snippet pre {
+    text-align: left;
+    font-family: var(--font-mono);
+    margin: 0;
+    font-size: 13px;
+    line-height: 20px;
+    /* Long commands scroll horizontally; scrollbar hidden below. */
+    overflow-x: auto;
+}
+
+.snippet pre::-webkit-scrollbar {
+    background: transparent;
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.snippet pre::selection {
+    background: var(--oxobz-selection);
+}
+
+/* ---- Prompt prefix (snippet-module __prompt) ---- */
+.snippet.prompt pre::before {
+    content: '$ ';
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ---- Copy button (snippet-module button __copyIcon) ---- */
+.snippet button.copyIcon {
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    border-radius: var(--oxobz-radius);
+    outline: none;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s;
+    display: flex;
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    color: inherit !important;
+    background: transparent !important;
+}
+
+.snippet button.copyIcon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.snippet button.copyIcon:hover {
+    opacity: 0.8;
+}
+
+.snippet button.copyIcon:focus-visible {
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* ---- Icon cross-fade stack (snapshot: "relative size-4" + layers) ---- */
+.iconStack {
+    position: relative;
+    width: 16px;
+    height: 16px;
+}
+
+.iconLayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    transition: all 0.2s ease-in-out;
+}
+
+.iconVisible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.iconHidden {
+    opacity: 0;
+    transform: scale(0.5);
+}
+
+/* ---- Type variants (folded from .geist-new-themed.geist-new-<type>) ---- */
+.success {
+    --themed-fg: var(--ds-blue-900);
+    --themed-bg: var(--ds-blue-100);
+    --themed-border: var(--ds-blue-400);
+}
+
+.error {
+    --themed-fg: var(--ds-red-900);
+    --themed-bg: var(--ds-red-100);
+    --themed-border: var(--ds-red-400);
+}
+
+.warning {
+    --themed-fg: var(--ds-amber-900);
+    --themed-bg: var(--ds-amber-100);
+    --themed-border: var(--ds-amber-400);
+}
