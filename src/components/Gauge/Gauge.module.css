@@ -1,0 +1,84 @@
+/**
+ * Gauge — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: gauge-module__U3a4pa — .circle, .content, .animate .arc,
+ *   .animate .arcSecondary, .indeterminate (circle / .arc / .arcSecondary).
+ * - _nextstatic/component-inspect-element/gauge.html
+ *   Snapshot geistcn/Tailwind: root data-geist-progress-circle + the SVG
+ *   <circle> geometry (cx/cy/r/stroke-width, stroke-dashoffset, round caps).
+ *   Dynamic values (--circle-size, --circumference, --percent-to-px,
+ *   --gap-percent, --offset-factor, --stroke-percent) are set inline.
+ *
+ * The arcs only receive their geometry through `.animate` (always applied),
+ * matching the chunk. Colors reference --ds-* tokens verbatim.
+ */
+
+.circle {
+    --transition-length: 1s;
+    --transition-step: 0.2s;
+    --delay: 0s;
+    --percent-to-deg: 3.6deg;
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transform: translateZ(0);
+}
+
+.circle svg {
+    overflow: visible;
+}
+
+.content {
+    display: flex;
+    position: absolute;
+}
+
+.value {
+    color: inherit;
+}
+
+.animate .arc {
+    stroke-dasharray: calc(var(--stroke-percent) * var(--percent-to-px))
+        var(--circumference);
+    transition:
+        var(--transition-length) ease var(--delay),
+        stroke var(--transition-length) ease var(--delay);
+    transform: rotate(
+        calc(-90deg + var(--gap-percent) * var(--offset-factor) * var(--percent-to-deg))
+    );
+    transform-origin: calc(var(--circle-size) / 2) calc(var(--circle-size) / 2);
+    transition-property: stroke-dasharray, transform;
+}
+
+.animate .arcSecondary {
+    --offset-factor-secondary: calc(1 - var(--offset-factor));
+    stroke-dasharray: calc(var(--stroke-percent) * var(--percent-to-px))
+        var(--circumference);
+    transform: rotate(
+            calc(
+                360deg - 90deg -
+                    (var(--gap-percent) * var(--percent-to-deg) *
+                        var(--offset-factor-secondary))
+            )
+        )
+        scaleY(-1);
+    transition: all var(--transition-length) ease var(--delay);
+    transform-origin: calc(var(--circle-size) / 2) calc(var(--circle-size) / 2);
+}
+
+.indeterminate circle {
+    stroke: var(--ds-gray-alpha-400) !important;
+}
+
+.indeterminate .arcSecondary {
+    opacity: 0 !important;
+    --stroke-percent: 0 !important;
+}
+
+.indeterminate .arc {
+    --stroke-percent: 100 !important;
+}

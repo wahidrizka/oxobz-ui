@@ -1,0 +1,453 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { createRef } from 'react';
+import {
+    Menu,
+    MenuContainer,
+    MenuButton,
+    MenuItem,
+    MenuItemLocked,
+    MenuLink,
+    MenuSection,
+    MenuDivider,
+} from './Menu';
+
+/** A default, fully-populated menu used across several tests. */
+function renderMenu(
+    props: {
+        onOne?: () => void;
+        disabledThree?: boolean;
+        position?: React.ComponentProps<typeof MenuContainer>['position'];
+        width?: number;
+    } = {},
+) {
+    return render(
+        <MenuContainer position={props.position}>
+            <MenuButton>Actions</MenuButton>
+            <Menu width={props.width}>
+                <MenuItem onClick={props.onOne}>One</MenuItem>
+                <MenuItem>Two</MenuItem>
+                <MenuItem disabled={props.disabledThree}>Three</MenuItem>
+                <MenuItem href="https://vercel.com">Test for Link</MenuItem>
+                <MenuItem type="error">Delete</MenuItem>
+            </Menu>
+        </MenuContainer>,
+    );
+}
+
+/** Open the menu by clicking its trigger (defaults to the "Actions" button). */
+function open(name: string | RegExp = 'Actions') {
+    fireEvent.click(screen.getByRole('button', { name }));
+}
+
+describe('Menu', () => {
+    // ── Open / close ──
+
+    it('is closed by default (no menu in the document)', () => {
+        renderMenu();
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('opens on trigger click and renders the menu in a portal', () => {
+        renderMenu();
+        open();
+        const menu = screen.getByRole('menu');
+        expect(menu).toBeInTheDocument();
+        expect(document.body.contains(menu)).toBe(true);
+        expect(menu).toHaveAttribute('data-oxobz-menu');
+        expect(menu).toHaveAttribute('data-version', 'v1');
+    });
+
+    it('toggles closed on a second trigger click', () => {
+        renderMenu();
+        open();
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+        open();
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    // ── Trigger ARIA wiring ──
+
+    it('wires aria-haspopup / aria-expanded / aria-controls on the trigger', () => {
+        renderMenu();
+        const button = screen.getByRole('button', { name: 'Actions' });
+        expect(button).toHaveAttribute('aria-haspopup', 'true');
+        expect(button).toHaveAttribute('aria-expanded', 'false');
+        open();
+        expect(button).toHaveAttribute('aria-expanded', 'true');
+        const menu = screen.getByRole('menu');
+        expect(button.getAttribute('aria-controls')).toBe(menu.getAttribute('id'));
+        expect(menu.getAttribute('aria-labelledby')).toBe(button.getAttribute('id'));
+        expect(button).toHaveAttribute('data-oxobz-menu-button');
+        expect(button).toHaveAttribute('data-is-open', 'true');
+    });
+
+    it('renders the trigger on top of the shared Button', () => {
+        renderMenu();
+        const button = screen.getByRole('button', { name: 'Actions' });
+        expect(button).toHaveAttribute('data-oxobz-button');
+    });
+
+    // ── Items ──
+
+    it('renders items with role=menuitem', () => {
+        renderMenu();
+        open();
+        const items = screen.getAllByRole('menuitem');
+        // One, Two, Three, link anchor, Delete
+        expect(items).toHaveLength(5);
+        expect(items[0]).toHaveTextContent('One');
+    });
+
+    it('marks a disabled item with aria-disabled and keeps it out of keyboard nav', () => {
+        renderMenu({ disabledThree: true });
+        open();
+        const three = screen.getByText('Three').closest('[role="menuitem"]');
+        expect(three).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    it('applies the error variant class to a destructive item', () => {
+        renderMenu();
+        open();
+        const del = screen.getByText('Delete').closest('[role="menuitem"]');
+        expect(del?.className).toContain('error');
+    });
+
+    it('renders prefix and suffix slots', () => {
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu>
+                    <MenuItem prefix={<span data-testid="pfx">P</span>} suffix={<span data-testid="sfx">S</span>}>
+                        Item
+                    </MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        expect(screen.getByTestId('pfx')).toBeInTheDocument();
+        expect(screen.getByTestId('sfx')).toBeInTheDocument();
+    });
+
+    // ── Link items ──
+
+    it('renders an href item as li[role=none] > a[role=menuitem]', () => {
+        renderMenu();
+        open();
+        const anchor = screen.getByText('Test for Link').closest('a');
+        expect(anchor).not.toBeNull();
+        expect(anchor).toHaveAttribute('role', 'menuitem');
+        expect(anchor).toHaveAttribute('href', 'https://vercel.com');
+        // External link → target/rel.
+        expect(anchor).toHaveAttribute('target', '_blank');
+        expect(anchor).toHaveAttribute('rel', 'noopener noreferrer');
+        const wrapper = anchor?.closest('[data-oxobz-menu-link]');
+        expect(wrapper).toHaveAttribute('role', 'none');
+    });
+
+    it('renders MenuLink as an anchor menuitem', () => {
+        render(
+            <MenuContainer>
+                <MenuButton>Links</MenuButton>
+                <Menu>
+                    <MenuLink href="/one">One</MenuLink>
+                </Menu>
+            </MenuContainer>,
+        );
+        open('Links');
+        const anchor = screen.getByText('One').closest('a');
+        expect(anchor).toHaveAttribute('role', 'menuitem');
+        expect(anchor).toHaveAttribute('href', '/one');
+    });
+
+    // ── Locked / section / divider ──
+
+    it('renders MenuItemLocked as disabled with the lock marker', () => {
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu>
+                    <MenuItemLocked>Delete</MenuItemLocked>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        const locked = screen.getByText('Delete').closest('[role="menuitem"]');
+        expect(locked).toHaveAttribute('aria-disabled', 'true');
+        expect(locked).toHaveAttribute('data-oxobz-menu-item-locked');
+        expect(locked?.querySelector('svg')).not.toBeNull();
+    });
+
+    it('renders MenuSection with a title and a role=group list', () => {
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu>
+                    <MenuSection title="Section">
+                        <MenuItem>One</MenuItem>
+                    </MenuSection>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        const section = document.querySelector('[data-oxobz-menu-section]');
+        expect(section).toBeInTheDocument();
+        expect(screen.getByText('Section')).toBeInTheDocument();
+        expect(section?.querySelector('[role="group"]')).not.toBeNull();
+    });
+
+    it('renders MenuDivider as a separator', () => {
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu>
+                    <MenuItem>One</MenuItem>
+                    <MenuDivider />
+                    <MenuItem>Two</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        expect(screen.getByRole('separator')).toBeInTheDocument();
+        expect(screen.getByRole('separator')).toHaveAttribute('data-oxobz-menu-divider');
+    });
+
+    // ── Activation ──
+
+    it('calls the item onClick and closes the menu on click', () => {
+        const onOne = vi.fn();
+        renderMenu({ onOne });
+        open();
+        fireEvent.click(screen.getByText('One'));
+        expect(onOne).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('does not activate a disabled item', () => {
+        const onClick = vi.fn();
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu>
+                    <MenuItem disabled onClick={onClick}>
+                        One
+                    </MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        fireEvent.click(screen.getByText('One'));
+        expect(onClick).not.toHaveBeenCalled();
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+    });
+
+    // ── Keyboard navigation ──
+
+    it('highlights items with ArrowDown / ArrowUp', () => {
+        renderMenu();
+        open();
+        const menu = screen.getByRole('menu');
+        const items = screen.getAllByRole('menuitem');
+
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+        expect(items[0]).toHaveAttribute('data-highlighted');
+        expect(menu.getAttribute('aria-activedescendant')).toBe(items[0].id);
+
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+        expect(items[1]).toHaveAttribute('data-highlighted');
+        expect(items[0]).not.toHaveAttribute('data-highlighted');
+
+        fireEvent.keyDown(menu, { key: 'ArrowUp' });
+        expect(items[0]).toHaveAttribute('data-highlighted');
+    });
+
+    it('jumps to first / last with Home / End', () => {
+        renderMenu();
+        open();
+        const menu = screen.getByRole('menu');
+        const items = screen.getAllByRole('menuitem');
+        fireEvent.keyDown(menu, { key: 'End' });
+        expect(items[items.length - 1]).toHaveAttribute('data-highlighted');
+        fireEvent.keyDown(menu, { key: 'Home' });
+        expect(items[0]).toHaveAttribute('data-highlighted');
+    });
+
+    it('activates the highlighted item with Enter', () => {
+        const onOne = vi.fn();
+        renderMenu({ onOne });
+        open();
+        const menu = screen.getByRole('menu');
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+        fireEvent.keyDown(menu, { key: 'Enter' });
+        expect(onOne).toHaveBeenCalledTimes(1);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('supports typeahead', () => {
+        renderMenu();
+        open();
+        const menu = screen.getByRole('menu');
+        const items = screen.getAllByRole('menuitem');
+        // "d" jumps to Delete.
+        fireEvent.keyDown(menu, { key: 'd' });
+        expect(items[items.length - 1]).toHaveAttribute('data-highlighted');
+    });
+
+    // ── Dismissal ──
+
+    it('closes on Escape', async () => {
+        renderMenu();
+        open();
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+        await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    });
+
+    it('closes on outside click', async () => {
+        render(
+            <div>
+                <button type="button">outside</button>
+                <MenuContainer>
+                    <MenuButton>Actions</MenuButton>
+                    <Menu>
+                        <MenuItem>One</MenuItem>
+                    </Menu>
+                </MenuContainer>
+            </div>,
+        );
+        open();
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'outside' }));
+        await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    });
+
+    // ── Props: width / chevron / unstyled ──
+
+    it('applies the width prop as an inline pixel style', () => {
+        renderMenu({ width: 200 });
+        open();
+        expect(screen.getByRole('menu')).toHaveStyle({ width: '200px' });
+    });
+
+    it('renders a chevron suffix when showChevron is set', () => {
+        render(
+            <MenuContainer>
+                <MenuButton showChevron>Actions</MenuButton>
+                <Menu>
+                    <MenuItem>One</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        const button = screen.getByRole('button', { name: 'Actions' });
+        expect(button).toHaveAttribute('data-suffix', 'true');
+        expect(button.querySelector('svg')).not.toBeNull();
+    });
+
+    it('renders an unstyled trigger', () => {
+        render(
+            <MenuContainer>
+                <MenuButton type="unstyled">
+                    <span>Trigger</span>
+                </MenuButton>
+                <Menu>
+                    <MenuItem>One</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        const button = screen.getByRole('button');
+        expect(button.className).toContain('unstyled');
+        expect(button).not.toHaveAttribute('data-oxobz-button');
+        expect(button).toHaveAttribute('data-oxobz-menu-button');
+        open('Trigger');
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+    });
+
+    it('honours the position prop on the popover wrapper', () => {
+        renderMenu({ position: 'left-start' });
+        open();
+        const wrapper = screen.getByRole('menu').parentElement;
+        expect(wrapper).toHaveAttribute('data-popper-placement', 'left-start');
+    });
+
+    // ── className / ref ──
+
+    it('appends a custom className on the menu', () => {
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu className="custom-menu">
+                    <MenuItem>One</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        const menu = screen.getByRole('menu');
+        expect(menu.className).toContain('menu');
+        expect(menu.className).toContain('custom-menu');
+    });
+
+    it('forwards a ref to the menu list element', () => {
+        const ref = createRef<HTMLUListElement>();
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu ref={ref}>
+                    <MenuItem>One</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        expect(ref.current).toBeInstanceOf(HTMLUListElement);
+        expect(ref.current).toHaveAttribute('data-oxobz-menu');
+    });
+
+    it('forwards a ref to the trigger button', () => {
+        const ref = createRef<HTMLButtonElement>();
+        render(
+            <MenuContainer>
+                <MenuButton ref={ref}>Actions</MenuButton>
+                <Menu>
+                    <MenuItem>One</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        expect(ref.current).toBeInstanceOf(HTMLButtonElement);
+        expect(ref.current).toHaveAttribute('data-oxobz-menu-button');
+    });
+
+    it('forwards a ref to a MenuItem li', () => {
+        const ref = createRef<HTMLLIElement>();
+        render(
+            <MenuContainer>
+                <MenuButton>Actions</MenuButton>
+                <Menu>
+                    <MenuItem ref={ref}>One</MenuItem>
+                </Menu>
+            </MenuContainer>,
+        );
+        open();
+        expect(ref.current).toBeInstanceOf(HTMLLIElement);
+    });
+
+    // ── Compound + displayName ──
+
+    it('exposes sub-components as compound members', () => {
+        expect(Menu.Container).toBe(MenuContainer);
+        expect(Menu.Button).toBe(MenuButton);
+        expect(Menu.Item).toBe(MenuItem);
+        expect(Menu.ItemLocked).toBe(MenuItemLocked);
+        expect(Menu.Link).toBe(MenuLink);
+        expect(Menu.Section).toBe(MenuSection);
+        expect(Menu.Divider).toBe(MenuDivider);
+    });
+
+    it('has the expected displayNames', () => {
+        expect(Menu.displayName).toBe('Menu');
+        expect(MenuContainer.displayName).toBe('MenuContainer');
+        expect(MenuButton.displayName).toBe('MenuButton');
+        expect(MenuItem.displayName).toBe('MenuItem');
+        expect(MenuItemLocked.displayName).toBe('MenuItemLocked');
+        expect(MenuLink.displayName).toBe('MenuLink');
+        expect(MenuSection.displayName).toBe('MenuSection');
+        expect(MenuDivider.displayName).toBe('MenuDivider');
+    });
+});

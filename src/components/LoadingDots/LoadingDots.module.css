@@ -1,0 +1,66 @@
+/**
+ * LoadingDots — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: loading-dots-module__QaZbiq — .loading, .spacer, .loading span,
+ *   nth-of-type delays, and the @keyframes blink (opacity 0.2 → 1 → 0.2).
+ * - _nextstatic/component-inspect-element/loading-dots.html
+ *   Snapshot (geistcn/Tailwind) confirms the same values: dots
+ *   `inline-block rounded-full bg-(--ds-gray-900) mx-px animate-blink`,
+ *   sizes size-0.5 / size-[3px] / size-1 (2 / 3 / 4px), delays 200ms / 400ms,
+ *   spacer `mr-2` (8px). Where it differs from the chunk the snapshot wins.
+ *
+ * Var mapping: --geist-gap-half → --ds-gap-half. The chunk used the legacy
+ * --geist-gap-half; the snapshot's `mr-2` (8px) matches --ds-gap-half (8px),
+ * so --ds-gap-half is used here (snapshot wins over the chunk).
+ */
+
+/* ---- Root (loading-dots-module __loading) ---- */
+.loading {
+    --loading-dots-height: auto;
+    --loading-dots-size: 2px;
+    height: var(--loading-dots-height);
+    align-items: center;
+    display: inline-flex;
+}
+
+/* ---- Trailing label spacer (loading-dots-module __spacer) ---- */
+.loading .spacer {
+    margin-right: var(--ds-gap-half);
+}
+
+/* ---- Dots (loading-dots-module __loading span) ---- */
+.loading span {
+    width: var(--loading-dots-size);
+    height: var(--loading-dots-size);
+    background-color: var(--ds-gray-900);
+    border-radius: 50%;
+    margin: 0 1px;
+    animation-name: blink;
+    animation-duration: 1.4s;
+    animation-iteration-count: infinite;
+    animation-fill-mode: both;
+    display: inline-block;
+}
+
+/* Staggered blink — spacer is a <div>, so nth-of-type only counts the dots. */
+.loading span:nth-of-type(2) {
+    animation-delay: 0.2s;
+}
+
+.loading span:nth-of-type(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0.2;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.2;
+    }
+}

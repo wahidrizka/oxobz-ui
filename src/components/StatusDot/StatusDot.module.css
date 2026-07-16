@@ -1,0 +1,56 @@
+/**
+ * StatusDot — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: status-dot-module__WmQFOa — .wrapper, .status, .ready, .error,
+ *   .building, .status-label.
+ * - _nextstatic/component-inspect-element/status-dot.html
+ *   geistcn/Tailwind snapshot (source of truth on conflicts): dot is
+ *   `inline-block size-2.5 rounded-full bg-[color]` (10px, fully round);
+ *   label is `text-label-14 ml-2 leading-[16px]` (14px / 16px / 8px gap).
+ *   Snapshot and chunk agree on every value except radius (chunk 5px vs
+ *   snapshot rounded-full — snapshot wins, folded to 50% for a 10px dot).
+ *
+ * Var mapping (Geist legacy palette → oxobz): --geist-warning →
+ * --oxobz-warning, --geist-error → --oxobz-error, --geist-cyan →
+ * --oxobz-cyan. --accents-2 kept as-is (the default gray dot).
+ *
+ * No .dark-theme override exists in the chunk — the legacy palette tokens
+ * (--accents-2, --oxobz-*) already flip with the theme automatically.
+ */
+
+/* ---- Wrapper (status-dot-module __wrapper) ---- */
+.wrapper {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ---- Dot (status-dot-module __status) ---- */
+.status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accents-2);
+}
+
+/* Colored states; QUEUED / CANCELED / DELETED keep the default gray dot. */
+.ready {
+    background: var(--oxobz-cyan);
+}
+
+.error {
+    background: var(--oxobz-error);
+}
+
+.building {
+    background: var(--oxobz-warning);
+}
+
+/* ---- Label (status-dot-module __status-label) ---- */
+.statusLabel {
+    margin-left: 8px;
+    font-size: 14px;
+    line-height: 16px;
+}

@@ -1,0 +1,197 @@
+/**
+ * Menu — CSS Module
+ *
+ * Sources:
+ * - DOM structure: geistcn snapshot
+ *   `_nextstatic/component-inspect-element/menu.html`
+ *   (open menu: `ul[role=menu][data-geist-menu] > li[role=menuitem][data-geist-menu-item]`).
+ * - Styling values: menu module (`.menu-module__ktVwuW__*`) in chunk
+ *   `b4b9d0dd5348b0c3.css`.
+ * - Material preset: `.material-menu` in chunk `2dd69db0a79ce415.css`
+ *   (box-shadow: var(--ds-shadow-menu); border-radius: 12px).
+ * - Motion: `--ds-motion-popover-*` tokens (src/tokens/motion.css).
+ *
+ * Geist `--geist-*` spacing translated to px (values verified in chunk root):
+ *   gap-quarter = space-2x = 8px, gap-half = 12px, form-large-height = 48px.
+ *
+ * Adaptations (documented, not fabricated):
+ * - The `--ds-popover-*` tokens used by the newer geistcn Tailwind snapshot are
+ *   not present in the reference chunks; the equivalent concrete values from the
+ *   `menu-module` chunk are used instead (the designated styling source).
+ * - Hover feedback is expressed with `:hover` mirroring the production
+ *   `[data-selected]/[data-highlighted]` background (production toggles those
+ *   via react-aria on pointer move); keyboard navigation sets `data-highlighted`.
+ * - The popover exit animation is not implemented (the panel unmounts on close);
+ *   the enter fade/scale uses the popover motion tokens.
+ */
+
+/* Container — positioning reference for the trigger. */
+.container {
+    position: relative;
+    display: inline-block;
+}
+
+/* Portal wrapper (menu-module__wrapper z-index: 2001). */
+.wrapper {
+    position: fixed;
+    z-index: 2001;
+}
+
+/* Menu list (menu-module__menu + .material-menu). */
+.menu {
+    box-shadow: var(--ds-shadow-menu);
+    background: var(--ds-background-100);
+    overscroll-behavior: contain;
+    /* stylelint-disable-next-line property-no-vendor-prefix */
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    outline: none;
+    margin: 0;
+    padding: 8px; /* var(--geist-space-gap-quarter) */
+    font-size: 14px;
+    list-style-type: none;
+    overflow: hidden auto;
+    min-width: max-content;
+    transform-origin: top center;
+    transition:
+        opacity var(--ds-motion-popover-duration) var(--ds-motion-popover-timing),
+        transform var(--ds-motion-popover-duration) var(--ds-motion-popover-timing);
+}
+
+@media (max-width: 600px) {
+    .menu {
+        border-bottom-right-radius: 0;
+        border-bottom-left-radius: 0;
+        width: unset !important;
+    }
+}
+
+/* Item row (menu-module__item). */
+.item {
+    cursor: pointer;
+    padding: 0 8px; /* 0 var(--geist-space-2x) */
+    height: 40px;
+    color: var(--ds-gray-1000);
+    border-radius: 6px;
+    outline: none;
+    align-items: center;
+    width: 100%;
+    text-decoration: none;
+    display: flex;
+}
+
+/* Menu-item icons render at 18px (snapshot `--geist-icon-size: 18px`). */
+.item svg {
+    width: var(--oxobz-icon-size, 18px);
+    height: var(--oxobz-icon-size, 18px);
+}
+
+.item[data-selected],
+.item[data-highlighted],
+.item:hover:not([aria-disabled]) {
+    background: var(--ds-gray-alpha-100);
+}
+
+/* Error / destructive variant (menu-module__error). */
+.error {
+    color: var(--ds-red-900) !important;
+}
+
+.error[data-selected],
+.error[data-highlighted],
+.error:hover:not([aria-disabled]) {
+    background: var(--ds-red-100);
+}
+
+/* Disabled item (menu-module__item[aria-disabled]/[data-disabled]). */
+.item[aria-disabled],
+.item[data-disabled],
+.disabled {
+    cursor: default;
+    color: var(--ds-gray-700);
+    pointer-events: none;
+}
+
+/* Larger rows on mobile (var(--geist-form-large-height) = 48px). */
+@media (max-width: 600px) {
+    .menu .item {
+        height: 48px;
+        font-size: 1rem;
+    }
+}
+
+/* Link item wrapper (li[role=none]). */
+.linkItem {
+    display: flex;
+    width: 100%;
+}
+
+/* Keyboard focus ring on link anchors (snapshot focus-visible outline). */
+.linkItem > a:focus-visible {
+    outline: 2px solid var(--ds-focus-color);
+    outline-offset: 4px;
+}
+
+/* Prefix / suffix slots. */
+.prefix {
+    margin-right: 8px; /* var(--geist-gap-quarter) */
+    display: flex;
+}
+
+.suffix {
+    padding-left: 12px; /* var(--geist-gap-half) */
+    margin-left: auto;
+    display: flex;
+}
+
+/* Divider (menu-module__divider). */
+.divider {
+    background: var(--ds-gray-alpha-400);
+    width: calc(100% + 16px);
+    height: 1px;
+    margin: 8px 0 8px -8px;
+    padding: 0;
+    list-style: none;
+}
+
+/* Section (menu-module__section + __title). */
+.section {
+    display: block;
+}
+
+.section > ul,
+.sectionList {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+.title {
+    color: var(--ds-gray-900);
+    padding: 8px; /* var(--geist-gap-quarter) */
+    font-size: 0.75rem;
+    display: block;
+}
+
+/* Unstyled trigger (MenuButton type="unstyled"). */
+.unstyled {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Chevron suffix (MenuButton showChevron). */
+.chevron {
+    transition: transform 150ms ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}

@@ -1,0 +1,62 @@
+/**
+ * Progress — CSS Module
+ *
+ * Production source:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: progress-module__0dqxSW — the component is a native <progress>
+ *   element. Classes: .progress (root) and .has-progress-bar-stops (stops
+ *   variant, not implemented here — its DOM is not present in the snapshot).
+ *
+ * The snapshot (_nextstatic/component-inspect-element/progress.html) only
+ * contains the docs prose, not the rendered component, so this module mirrors
+ * the chunk verbatim.
+ *
+ * Verbatim notes from the chunk:
+ * - The value pseudo-elements (::-webkit-progress-value / ::-moz-progress-bar)
+ *   are first given `border-radius: var(--geist-radius)`, then overridden by a
+ *   later `border-radius: 0 !important` rule that applies to every .progress
+ *   (same net effect as the .has-progress-bar-stops variant). Folded into the
+ *   final `border-radius: 0 !important` below.
+ * - `--fg` is the fill color, supplied inline by the component (theme token,
+ *   dynamic threshold color, or the default foreground).
+ *
+ * Var mapping: --geist-radius → var(--geist-radius, 5px) (5px is the Geist
+ * production value; --geist-radius is undefined in oxobz tokens — same
+ * convention as Skeleton.module.css). --ds-gray-200 kept as-is (semantic
+ * token that flips with the theme, so no .dark-theme block is needed).
+ */
+
+/* ---- Root native <progress> (progress-module __progress) ---- */
+.progress {
+    appearance: none;
+    border-radius: var(--geist-radius, 5px);
+    background: var(--ds-gray-200);
+    border: none;
+    height: 10px;
+    display: block;
+    overflow: hidden;
+}
+
+/* ---- WebKit / Blink track + fill ---- */
+.progress::-webkit-progress-bar {
+    background: var(--ds-gray-200);
+    border-radius: var(--geist-radius, 5px);
+}
+
+.progress::-webkit-progress-value {
+    background: var(--fg);
+    /* production: radius set then overridden to 0 !important on the value */
+    border-radius: 0 !important;
+    transition:
+        width 0.1s ease-in,
+        background-color 0.1s ease-in;
+}
+
+/* ---- Firefox fill ---- */
+.progress::-moz-progress-bar {
+    background: var(--fg);
+    border-radius: 0 !important;
+    transition:
+        width 0.1s ease-in,
+        background-color 0.1s ease-in;
+}

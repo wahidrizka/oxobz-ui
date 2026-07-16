@@ -1,0 +1,126 @@
+/**
+ * Pagination — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: pagination-module__CyLyHG — .pagination, .item, .align-right,
+ *   .icon, .label, .title, .children + the max-width:1200px breakpoint that
+ *   hides the centered slot.
+ * - _nextstatic/component-inspect-element/pagination.html
+ *   Snapshot (geistcn/Tailwind) confirming the DOM and folded typography:
+ *   label = text-copy-13 (13px/18px/400), title span = 16px/24px/500.
+ *
+ * Var mapping: --geist-foreground -> --oxobz-foreground (hover color of the
+ * label + icon). --ds-gray-900 and --ds-focus-ring kept as-is.
+ *
+ * Snapshot divergence: the geistcn build hides .children below the Tailwind
+ * `xl` breakpoint (1279px) via max-xl:hidden; the production component-module
+ * (source of truth for behaviour) uses max-width:1200px — kept here.
+ */
+
+/* ---- Root (pagination-module __pagination) ---- */
+.pagination {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.pagination a {
+    text-decoration: none;
+}
+
+/* ---- Directional link (__item) ---- */
+.item {
+    border-radius: 6px;
+    padding: 4px;
+}
+
+/* previous slot: chevron sits in the left gutter */
+.item:not(.align-right) {
+    padding-left: 28px;
+    padding-right: 8px;
+}
+
+.item:not(.align-right) .icon {
+    left: -26px;
+}
+
+/* next slot: pushed to the right edge, chevron in the right gutter */
+.item.align-right {
+    margin-left: auto;
+    padding-left: 8px;
+    padding-right: 28px;
+}
+
+.item.align-right .icon {
+    right: -26px;
+}
+
+/* label + icon share the muted color and the hover transition */
+.icon,
+.label {
+    color: var(--ds-gray-900);
+    transition: color 0.2s;
+}
+
+/* ---- "Previous" / "Next" label (__label, folded text-copy-13) ---- */
+.label {
+    margin-bottom: 2px;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 400;
+}
+
+/* ---- Destination title (__title) ---- */
+.title {
+    position: relative;
+    display: flex;
+}
+
+.title > span {
+    display: inline-block;
+    max-width: 20em;
+    overflow: hidden;
+    white-space: nowrap;
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+}
+
+.title .icon {
+    position: absolute;
+    margin-top: 2px;
+}
+
+/* hover: label + chevron rise to full foreground */
+.item:hover .label,
+.item:hover .icon {
+    color: var(--oxobz-foreground);
+}
+
+/* keyboard focus ring on the link */
+.item:focus-visible,
+.item [data-focus] {
+    box-shadow: var(--ds-focus-ring);
+    outline: none;
+}
+
+/* ---- Centered slot (__children) — out of flow, absolute center ---- */
+.children {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+}
+
+@media (max-width: 1200px) {
+    .children {
+        display: none;
+    }
+}

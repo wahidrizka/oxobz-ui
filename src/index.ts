@@ -97,5 +97,29 @@ export type {
     ModalSubtitleProps, ModalInsetProps, ModalActionsProps, ModalActionProps,
 } from './components/Modal';
 
+export { Menu, MenuContainer, MenuButton, MenuItem, MenuItemLocked, MenuLink, MenuSection, MenuDivider } from './components/Menu';
+export type { MenuProps, MenuPosition, MenuContainerProps, MenuButtonProps, MenuItemProps, MenuItemLockedProps, MenuLinkProps, MenuSectionProps, MenuDividerProps } from './components/Menu';
+
+export { Progress } from './components/Progress';
+export type { ProgressProps, ProgressType, ProgressColors } from './components/Progress';
+
+export { Pagination } from './components/Pagination';
+export type { PaginationProps, PaginationLink } from './components/Pagination';
+
+export { Slider } from './components/Slider';
+export type { SliderProps } from './components/Slider';
+
+export { LoadingDots } from './components/LoadingDots';
+export type { LoadingDotsProps, LoadingDotsSize } from './components/LoadingDots';
+
+export { Kbd } from './components/Kbd';
+export type { KbdProps } from './components/Kbd';
+
+export { StatusDot } from './components/StatusDot';
+export type { StatusDotProps, StatusDotState } from './components/StatusDot';
+
+export { Gauge } from './components/Gauge';
+export type { GaugeProps, GaugeSize, GaugeArcPriority, GaugeColors } from './components/Gauge';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

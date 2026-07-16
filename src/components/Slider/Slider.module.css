@@ -1,0 +1,127 @@
+/**
+ * Slider — CSS Module (range input, drag + keyboard)
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: slider-module__v9lqeq (root / track / range / thumb /
+ *   thumbFocused / sliderWrapper / outerWrapper / fullWidth)
+ * - _nextstatic/component-inspect-element/slider.html
+ *   Production DOM is a Radix Slider rendered with Tailwind arbitrary-value
+ *   classes; every value matches the chunk module 1:1 (thumb 6x14, shadow
+ *   0 0 0 1px rgba(0,0,0,.21) / 0 1px 2px rgba(0,0,0,.04), track 8px,
+ *   range blue-700, root min-width 216px). The thumb transition uses the
+ *   module's explicit box-shadow/background/transform .2s — visually
+ *   identical to the snapshot's transition-all duration-200.
+ *
+ * Disabled state is keyed on the root's aria-disabled="true" (module
+ * selector), matching production.
+ */
+
+/* ---- Root (slider-module __root) ---- */
+.root {
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+    align-items: center;
+    min-width: 216px;
+    display: flex;
+    position: relative;
+}
+
+.root[aria-disabled='true'] {
+    cursor: not-allowed;
+}
+
+.root[aria-disabled='true'] .range {
+    background: var(--ds-gray-500);
+}
+
+.root.fullWidth {
+    width: 100%;
+}
+
+/* ---- Track (slider-module __track) ---- */
+.track {
+    background: var(--ds-gray-200);
+    border-radius: 5px;
+    flex-grow: 1;
+    height: 8px;
+    display: block;
+}
+
+/* ---- Range / filled portion (slider-module __range) ---- */
+.range {
+    background-color: var(--ds-blue-700);
+    border-radius: 9999px 0 0 9999px;
+    height: 100%;
+    position: absolute;
+}
+
+/* ---- Thumb (slider-module __thumb) ---- */
+.thumb {
+    background: #fff;
+    border-radius: 1px;
+    width: 6px;
+    height: 14px;
+    transition: box-shadow 0.2s, background 0.2s, transform 0.2s;
+    display: block;
+    position: relative;
+    box-shadow: 0 0 0 1px #00000036, 0 1px 2px #0000000a;
+}
+
+/* Enlarged invisible hit area around the thumb */
+.thumb::after {
+    content: '';
+    width: 200%;
+    height: 200%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Focus is JS-toggled (thumbFocused) in production, mirroring hover */
+.thumb.thumbFocused {
+    outline: none;
+    transform: scale(1.2);
+}
+
+@media (hover: hover) {
+    .thumb:hover {
+        outline: none;
+        transform: scale(1.2);
+    }
+}
+
+:global(.dark-theme) .thumb {
+    box-shadow: 0 0 0 1px #000, 0 1px 2px #0000000a;
+}
+
+/* ---- Row wrapper with optional inputs (slider-module __sliderWrapper) ---- */
+.sliderWrapper {
+    align-items: center;
+    gap: 12px;
+    display: flex;
+}
+
+.sliderWrapper input {
+    width: 48px;
+}
+
+.sliderWrapper input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    margin: 0;
+}
+
+.sliderWrapper input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    margin: 0;
+}
+
+/* ---- Outer column wrapper (slider-module __outerWrapper) ---- */
+.outerWrapper {
+    flex-direction: column;
+    display: flex;
+}

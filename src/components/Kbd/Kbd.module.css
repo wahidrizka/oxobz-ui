@@ -1,0 +1,71 @@
+/**
+ * Kbd — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: kbd-module__xx9QEa — .kbd, `.kbd span`, `.kbd.small`,
+ *   `.kbd span + span`, `.kbd.small span + span`.
+ * - _nextstatic/component-inspect-element/keyboard-input.html
+ *   Snapshot geistcn (Tailwind) for the same component. Where the snapshot and
+ *   the chunk differ, the SNAPSHOT wins (paritas precedent):
+ *     · small margin-left = 2px (snapshot `ml-0.5`) instead of the base 4px the
+ *       chunk leaves inherited; the chunk's redundant `.kbd + kbd` sibling rule
+ *       is therefore dropped — every kbd already carries its own left margin.
+ *     · small adds an explicit height: 20px (snapshot `h-5`).
+ *   Snapshot-only span behaviour: direct-child spans inherit the font family
+ *   (`[&>span]:font-inherit`) — folded into `.kbd span` below.
+ *
+ * Var mapping (Geist → oxobz):
+ *   var(--font-sans)           → var(--font-sans, var(--font-sans-fallback))
+ *   min-width var(--geist-gap) → var(--oxobz-gap)
+ *   --ds-* tokens kept verbatim.
+ */
+
+/* ---- Root (kbd-module __kbd + snapshot base) ---- */
+.kbd {
+    color: var(--ds-gray-1000);
+    background: var(--ds-background-100);
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
+    text-align: center;
+    min-width: var(--oxobz-gap);
+    font-size: 0.875rem;
+    line-height: 1.7em;
+    font-family: var(--font-sans, var(--font-sans-fallback));
+    border-radius: 4px;
+    min-height: 24px;
+    margin-left: 4px;
+    padding: 0 6px;
+    display: inline-block;
+}
+
+/* chunk: `.kbd span { font-size: .875rem }`
+   snapshot: `[&>span]:font-inherit` → font-family inherited by each part span */
+.kbd span {
+    font-size: 0.875rem;
+    font-family: inherit;
+}
+
+/* chunk: `.kbd span + span { margin-left: 4px }` — gap between stacked parts */
+.kbd span + span {
+    margin-left: 4px;
+}
+
+/* ---- Small (kbd-module __small; snapshot overrides win) ---- */
+.kbd.small {
+    font-family: var(--font-sans, var(--font-sans-fallback));
+    min-width: 20px;
+    height: 20px;
+    min-height: 20px;
+    margin-left: 2px;
+    padding: 0 4px;
+    font-size: 0.75rem;
+}
+
+.kbd.small span {
+    font-size: 0.75rem;
+    line-height: 1.7em;
+}
+
+.kbd.small span + span {
+    margin-left: 2px;
+}
