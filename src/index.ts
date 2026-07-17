@@ -143,7 +143,7 @@ export { EmptyState, EmptyStateIcon, EmptyStateTitle, EmptyStateDescription } fr
 export type { EmptyStateProps, EmptyStateIconProps, EmptyStateTitleProps, EmptyStateDescriptionProps } from './components/EmptyState';
 
 export { Feedback } from './components/Feedback';
-export type { FeedbackProps, FeedbackRating, FeedbackSubmitData } from './components/Feedback';
+export type { FeedbackProps, FeedbackRating, FeedbackSubmitData, FeedbackTopic, FeedbackType } from './components/Feedback';
 
 export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
