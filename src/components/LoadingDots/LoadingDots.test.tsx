@@ -43,6 +43,18 @@ describe('LoadingDots', () => {
         expect(root).toHaveAttribute('aria-label', 'Saving');
     });
 
+    it('defaults aria-live to "polite" so screen readers announce progress', () => {
+        const { container } = render(<LoadingDots />);
+        const root = container.querySelector('[data-oxobz-loading-dots]');
+        expect(root).toHaveAttribute('aria-live', 'polite');
+    });
+
+    it('allows overriding aria-live', () => {
+        const { container } = render(<LoadingDots aria-live="assertive" />);
+        const root = container.querySelector('[data-oxobz-loading-dots]');
+        expect(root).toHaveAttribute('aria-live', 'assertive');
+    });
+
     // ── Sizes ──
 
     const sizes: Array<[LoadingDotsSize, string]> = [

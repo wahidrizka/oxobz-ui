@@ -3,6 +3,7 @@ import {
     useId,
     type CSSProperties,
     type InputHTMLAttributes,
+    type KeyboardEventHandler,
     type ReactNode,
 } from 'react';
 import { Stop } from '@oxobz/icons';
@@ -137,6 +138,27 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         const hasPrefix = prefix != null;
         const hasSuffix = suffix != null;
 
+        // Geist behaviour: a search input clears itself when Escape is pressed.
+        // Uses the native value setter + input event so both controlled and
+        // uncontrolled consumers see the change.
+        const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (e) => {
+            rest.onKeyDown?.(e);
+            if (
+                rest.type === 'search' &&
+                e.key === 'Escape' &&
+                !e.defaultPrevented &&
+                !disabled
+            ) {
+                const input = e.currentTarget;
+                const setValue = Object.getOwnPropertyDescriptor(
+                    HTMLInputElement.prototype,
+                    'value',
+                )?.set;
+                setValue?.call(input, '');
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        };
+
         const field = (
             <>
                 <div
@@ -174,6 +196,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                         data-oxobz-input=""
                         disabled={disabled}
                         id={inputId}
+                        onKeyDown={handleKeyDown}
                         ref={ref}
                     />
                     {hasPrefix && (

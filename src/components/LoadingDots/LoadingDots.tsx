@@ -66,6 +66,7 @@ const LoadingDots = forwardRef<HTMLSpanElement, LoadingDotsProps>(
             size,
             style,
             'aria-label': ariaLabel = 'Loading',
+            'aria-live': ariaLive = 'polite',
             'data-version': dataVersion = 'v1',
             ...rest
         },
@@ -85,6 +86,7 @@ const LoadingDots = forwardRef<HTMLSpanElement, LoadingDotsProps>(
             <span
                 {...rest}
                 aria-label={ariaLabel}
+                aria-live={ariaLive}
                 className={cn(styles.loading, className)}
                 data-oxobz-loading-dots=""
                 data-version={dataVersion}

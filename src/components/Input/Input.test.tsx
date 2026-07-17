@@ -348,6 +348,43 @@ describe('Input', () => {
         expect(ref.current).toHaveAttribute('data-oxobz-input');
     });
 
+    // ── Search: Escape-to-clear (Geist behaviour) ──
+
+    it('clears a search input when Escape is pressed', () => {
+        const { container } = render(
+            <Input aria-label="Search" defaultValue="hello" type="search" />,
+        );
+        const input = container.querySelector('input') as HTMLInputElement;
+        expect(input.value).toBe('hello');
+        fireEvent.keyDown(input, { key: 'Escape' });
+        expect(input.value).toBe('');
+    });
+
+    it('does NOT clear a non-search input on Escape', () => {
+        const { container } = render(
+            <Input aria-label="Text" defaultValue="keep" type="text" />,
+        );
+        const input = container.querySelector('input') as HTMLInputElement;
+        fireEvent.keyDown(input, { key: 'Escape' });
+        expect(input.value).toBe('keep');
+    });
+
+    it('still calls a user-provided onKeyDown on search Escape', () => {
+        const onKeyDown = vi.fn();
+        const { container } = render(
+            <Input
+                aria-label="Search"
+                defaultValue="x"
+                onKeyDown={onKeyDown}
+                type="search"
+            />,
+        );
+        const input = container.querySelector('input') as HTMLInputElement;
+        fireEvent.keyDown(input, { key: 'Escape' });
+        expect(onKeyDown).toHaveBeenCalledTimes(1);
+        expect(input.value).toBe('');
+    });
+
     // ── displayName ──
 
     it('has the correct displayName', () => {
