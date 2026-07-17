@@ -64,14 +64,16 @@ describe('Breadcrumbs', () => {
         });
     });
 
-    it('wraps the label text in a breadcrumbWrapper span', () => {
-        render(
+    it('renders the label as a raw text node inside the item (no wrapper span)', () => {
+        const { container } = render(
             <Breadcrumbs>
                 <BreadcrumbsItem>Home</BreadcrumbsItem>
             </Breadcrumbs>,
         );
-        const label = screen.getByText('Home');
-        expect(label.className).toContain('breadcrumbWrapper');
+        const item = container.querySelector('[data-oxobz-breadcrumbs-item]');
+        // The label text is a direct child of the <li>, not wrapped in a span.
+        expect(item?.querySelector('span')).toBeNull();
+        expect(item).toHaveTextContent('Home');
     });
 
     // ── Menu variant ──

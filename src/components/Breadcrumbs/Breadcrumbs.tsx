@@ -78,13 +78,13 @@ const BreadcrumbsContext = createContext<BreadcrumbsContextValue | null>(null);
  * ```html
  * <!-- text variant -->
  * <li class="textItem [active] [disabled]" [aria-current="true"]>
- *   <span class="breadcrumbWrapper">Dashboard</span>
+ *   Dashboard
  *   <svg aria-hidden="true">…chevron…</svg>  <!-- hidden on the last item -->
  * </li>
  *
  * <!-- menu variant -->
  * <button type="button" class="menuItem [active] [disabled]" disabled>
- *   <span class="breadcrumbWrapper">Dashboard</span>
+ *   Dashboard
  * </button>
  * ```
  */
@@ -98,7 +98,10 @@ const BreadcrumbsItem = forwardRef<HTMLElement, BreadcrumbsItemProps>(
             throw new Error('Breadcrumbs.Item must be used within a Breadcrumbs');
         }
 
-        const label = <span className={styles.breadcrumbWrapper}>{children}</span>;
+        // Production renders the label as a raw text node directly inside the
+        // <li>/<button> (no wrapper span) — matching the snapshot exactly keeps
+        // the chevron and text on the same flex baseline (align-items: center).
+        const label = children;
 
         if (ctx.variant === 'menu') {
             return (

@@ -4,7 +4,7 @@
  * Production sources:
  * - _nextstatic/chunks/d2f6d4dcdb88e56d.css
  *   Module: breadcrumbs-module__S3JLGq__ — .ol, .textItem, .active,
- *   .disabled, .menuItem, .menuWrapper, .breadcrumbWrapper.
+ *   .disabled, .menuItem, .menuWrapper.
  * - _nextstatic/component-inspect-element/breadcrumbs.html
  *   Confirms DOM shape for the "text" variant: `<nav aria-label="Breadcrumb">
  *   <ol><li>Label<svg/></li></ol></nav>`, with `aria-current="true"`
@@ -134,22 +134,5 @@
 @media (max-width: 600px) {
     .menuWrapper {
         overflow-x: auto;
-    }
-}
-
-/* ---- Label truncation (both variants) ---- */
-.breadcrumbWrapper {
-    display: inline-block;
-    overflow: hidden;
-    min-width: 0;
-    max-width: 100%;
-    white-space: nowrap;
-    word-wrap: normal;
-    text-overflow: ellipsis;
-}
-
-@media (max-width: 600px) {
-    .breadcrumbWrapper:last-of-type {
-        margin-right: 16px;
     }
 }
