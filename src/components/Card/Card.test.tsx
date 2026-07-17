@@ -17,13 +17,11 @@ describe('Card', () => {
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
         expect(root).toHaveAttribute('data-version', 'v1');
-        expect(root?.className).toContain('card');
+        expect(root?.className).toContain('root');
     });
 
     it('allows a custom data-version', () => {
-        const { container } = render(
-            <Card data-version="v2">A card</Card>,
-        );
+        const { container } = render(<Card data-version="v2">A card</Card>);
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
 
@@ -32,58 +30,77 @@ describe('Card', () => {
         expect(screen.getByText('A simple card')).toBeInTheDocument();
     });
 
-    // ── type ──
-
-    it('does not apply the secondary class by default (type="default")', () => {
-        const { container } = render(<Card>Default</Card>);
+    it('applies no variant classes by default', () => {
+        const { container } = render(<Card>Plain</Card>);
         const root = getRoot(container);
-        expect(root?.className).toContain('card');
-        expect(root?.className).not.toContain('secondary');
+        for (const cls of ['secondary', 'row', 'border', 'borderBetween', 'shadow', 'hoverable']) {
+            expect(root?.className).not.toContain(cls);
+        }
     });
 
-    it('applies the secondary class when type="secondary"', () => {
-        const { container } = render(<Card type="secondary">Secondary</Card>);
-        const root = getRoot(container);
-        expect(root?.className).toContain('secondary');
+    // ── Boolean props ──
+
+    it('applies the secondary class', () => {
+        const { container } = render(<Card secondary>S</Card>);
+        expect(getRoot(container)?.className).toContain('secondary');
     });
 
-    // ── hover ──
-
-    it('does not apply the hover class by default', () => {
-        const { container } = render(<Card>Default</Card>);
-        const root = getRoot(container);
-        expect(root?.className).not.toContain('hover');
+    it('applies the border class', () => {
+        const { container } = render(<Card border>B</Card>);
+        expect(getRoot(container)?.className).toContain('border');
     });
 
-    it('applies the hover class when hover is set', () => {
-        const { container } = render(<Card hover>Elevated</Card>);
-        const root = getRoot(container);
-        expect(root?.className).toContain('hover');
+    it('applies the borderBetween class', () => {
+        const { container } = render(<Card borderBetween>D</Card>);
+        expect(getRoot(container)?.className).toContain('borderBetween');
     });
 
-    it('combines type="secondary" with hover', () => {
+    it('applies the shadow class', () => {
+        const { container } = render(<Card shadow>Sh</Card>);
+        expect(getRoot(container)?.className).toContain('shadow');
+    });
+
+    it('applies the hoverable class', () => {
+        const { container } = render(<Card hoverable>H</Card>);
+        expect(getRoot(container)?.className).toContain('hoverable');
+    });
+
+    // ── direction ──
+
+    it('does not apply the row class for the default column direction', () => {
+        const { container } = render(<Card direction="column">C</Card>);
+        expect(getRoot(container)?.className).not.toContain('row');
+    });
+
+    it('applies the row class when direction="row"', () => {
+        const { container } = render(<Card direction="row">R</Card>);
+        expect(getRoot(container)?.className).toContain('row');
+    });
+
+    it('combines every variant prop', () => {
         const { container } = render(
-            <Card hover type="secondary">
-                Secondary + hover
+            <Card border borderBetween direction="row" hoverable secondary shadow>
+                All
             </Card>,
         );
         const root = getRoot(container);
-        expect(root?.className).toContain('secondary');
-        expect(root?.className).toContain('hover');
+        for (const cls of ['secondary', 'row', 'border', 'borderBetween', 'shadow', 'hoverable']) {
+            expect(root?.className).toContain(cls);
+        }
     });
 
     // ── Custom className ──
 
     it('appends a custom className after the module classes', () => {
         const { container } = render(
-            <Card className="custom-card" hover type="secondary">
+            <Card className="p-4" border shadow>
                 Custom
             </Card>,
         );
         const root = getRoot(container);
-        expect(root?.className).toContain('card');
-        expect(root?.className).toContain('custom-card');
-        expect(root?.className.endsWith('custom-card')).toBe(true);
+        expect(root?.className).toContain('root');
+        expect(root?.className).toContain('p-4');
+        expect(root?.className.endsWith('p-4')).toBe(true);
     });
 
     // ── Ref forwarding ──

@@ -1,89 +1,102 @@
 /**
  * Card — CSS Module
  *
- * Production sources:
- * - _nextstatic/component-inspect-element/card.html
- *   The Geist docs "Card" page has NO dedicated *-module class (verified: the
- *   only "card-module" hit in b4b9d0dd5348b0c3.css is the unrelated
- *   `context-card-module__MV3-Va` tooltip-card, not this component). The
- *   real production DOM is a plain container styled with raw Tailwind
- *   utilities straight in the snapshot:
- *     `list-none bg-[var(--geist-background)] empty:hidden
- *      shadow-[var(--ds-shadow-border)] rounded-lg flex flex-col p-4`
- *   (Default section) plus, in the Border / Border Between / Border Between
- *   Vertical / Secondary sections, an elevated variant:
- *     `shadow-[0_4px_6px_rgba(0,0,0,0.04)] transition-shadow duration-150
- *      ease-in-out rounded-lg hover:shadow-[var(--ds-shadow-border),
- *      0_6px_14px_rgba(0,0,0,0.08)]
- *      shadow-[var(--ds-shadow-border),0_4px_6px_rgba(0,0,0,0.04)]
- *      flex flex-col p-4`
- *   This module folds that Tailwind soup into `.card` (base) + `.hover`
- *   (the elevated/interactive variant) + `.secondary` (background swap).
- * - _nextstatic/chunks/2dd69db0a79ce415.css
- *   Resolves the arbitrary Tailwind classes to real px values (scoped under
- *   `.tailwind`): `.rounded-lg{border-radius:12px}` (NOT the vanilla
- *   Tailwind 8px), `.p-4{padding:1rem}` → 16px. Mapped here to the existing
- *   design tokens `--ds-radius-lg` (12px) and `--oxobz-space-4x` (16px).
- * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   `--ds-shadow-border` token (border-look shadow, used verbatim). The two
- *   elevation shadows (`0 4px 6px rgba(0,0,0,.04)` resting / `0 6px 14px
- *   rgba(0,0,0,.08)` hover) are NOT design tokens — they are Tailwind
- *   arbitrary-value literals lifted verbatim from the snapshot class list.
+ * Ground truth (re-captured card.html with the "Show code" panel expanded):
  *
- * Var mapping: --geist-background (docs legacy alias, #fff light / #000
- * dark) → --ds-background-100 (the DS-token equivalent already in
- * colors.css; no --geist-background token exists in @oxobz/ui).
- * --ds-background-200 kept as-is for the "secondary" background (Secondary
- * section: `bg-[var(--ds-background-200)]`).
+ * Real Geist source (Show-code JSX):
+ *   <Card border borderBetween className="p-4" direction="row" hoverable shadow>
+ *   <Card border borderBetween className="p-4" hoverable secondary shadow>
+ *   -> props are booleans: border | borderBetween | hoverable | secondary |
+ *      shadow, plus direction ('row' | 'column'). Padding is NOT intrinsic —
+ *      it is passed via className ("p-4"), so it is left to the consumer here.
  *
- * Deviation note (documented per "0% assumption" — flagged, not hidden):
- * the docs build the elevated look up progressively across sections. The
- * lone "Hover" section shows `hover:` shadow with NO resting elevation and
- * NO transition; the "Border" / "Border Between" / "Border Between
- * Vertical" / "Secondary" sections (4 of 5 non-Default sections) all share
- * one identical, more complete class bundle (resting elevation + 150ms
- * ease-in-out transition + bigger hover elevation). That repeated bundle is
- * treated here as the real `hover` variant; the outlier "Hover" section is
- * read as an intermediate teaching step in the docs' step-by-step recipe,
- * not a separate shipped variant.
+ * Rendered element classes (the preview-module output), decoded:
+ *   base:            list-none empty:hidden rounded-lg flex flex-col
+ *                    bg-[var(--geist-background)]   (-> --ds-background-100)
+ *   secondary:       bg-[var(--ds-background-200)]
+ *   direction=row:   flex-row
+ *   border:          contributes  var(--ds-shadow-border)  to box-shadow
+ *   shadow:          contributes  0 4px 6px rgba(0,0,0,0.04)  to box-shadow
+ *                    + transition-shadow duration-150 ease-in-out
+ *   hoverable:       hover:shadow adds  0 6px 14px rgba(0,0,0,0.08)
+ *   borderBetween:   divide-y (column) / divide-x (row),
+ *                    divide-[var(--ds-gray-alpha-400)]
  *
- * No .dark-theme override exists for the two elevation shadow literals in
- * the snapshot (no `dark:` prefixed utility appears on the card element) —
- * they stay black-based rgba() in dark mode as authored, unchanged here.
+ * Observed resting box-shadow permutations (border x shadow):
+ *   border only:   shadow-[var(--ds-shadow-border)]
+ *   shadow only:   shadow-[0_4px_6px_rgba(0,0,0,0.04)]
+ *   border+shadow: shadow-[var(--ds-shadow-border),0_4px_6px_rgba(0,0,0,0.04)]
+ * Hover box-shadow (only when hoverable) replaces the resting one:
+ *   border:        hover:shadow-[var(--ds-shadow-border),0_6px_14px_rgba(0,0,0,0.08)]
+ *   no border:     hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)]
+ * The 150ms transition appears only with the `shadow` prop (the lone hoverable-
+ * without-shadow example carries no transition), so it is gated on `.shadow`.
+ *
+ * Chunk sources: rounded-lg = 12px (--ds-radius-lg) from
+ * _nextstatic/chunks/2dd69db0a79ce415.css (.tailwind scope); --ds-shadow-border
+ * and --ds-gray-alpha-400 tokens from 1c419a75d7e589ae.css / colors.css (both
+ * auto-flip for dark theme, so no .dark-theme override is needed). The two
+ * elevation literals are Tailwind arbitrary values lifted verbatim (no dark:
+ * variant present on the element).
  */
 
-/* ---- Root ---- */
-.card {
+/* ---- Root (base, always) ---- */
+.root {
     display: flex;
     flex-direction: column;
     list-style: none;
     border-radius: var(--ds-radius-lg);
-    padding: var(--oxobz-space-4x);
     background: var(--ds-background-100);
-    box-shadow: var(--ds-shadow-border);
     box-sizing: border-box;
 }
 
 /* Matches the Tailwind `empty:hidden` utility present on every example */
-.card:empty {
+.root:empty {
     display: none;
 }
 
-/* ---- type="secondary" (Secondary section: bg-[var(--ds-background-200)]) ---- */
+/* ---- secondary (bg-[var(--ds-background-200)]) ---- */
 .secondary {
     background: var(--ds-background-200);
 }
 
-/* ---- hover (Border / Border Between / Border Between Vertical / Secondary sections) ---- */
-.hover {
-    box-shadow:
-        var(--ds-shadow-border),
-        0 4px 6px rgba(0, 0, 0, 0.04);
+/* ---- direction="row" (flex-row) ---- */
+.row {
+    flex-direction: row;
+}
+
+/* ---- resting box-shadow: composed from border x shadow ---- */
+.border:not(.shadow) {
+    box-shadow: var(--ds-shadow-border);
+}
+
+.shadow:not(.border) {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+}
+
+.border.shadow {
+    box-shadow: var(--ds-shadow-border), 0 4px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* transition only with the shadow prop (matches capture) */
+.shadow {
     transition: box-shadow 150ms ease-in-out;
 }
 
-.hover:hover {
-    box-shadow:
-        var(--ds-shadow-border),
-        0 6px 14px rgba(0, 0, 0, 0.08);
+/* ---- hoverable: grow the shadow on hover ---- */
+.hoverable.border:hover {
+    box-shadow: var(--ds-shadow-border), 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.hoverable:not(.border):hover {
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- borderBetween: dividers between direct children ---- */
+.borderBetween:not(.row) > * + * {
+    border-top: 1px solid var(--ds-gray-alpha-400);
+}
+
+.borderBetween.row > * + * {
+    border-left: 1px solid var(--ds-gray-alpha-400);
 }

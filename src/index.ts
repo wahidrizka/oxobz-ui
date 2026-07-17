@@ -128,7 +128,7 @@ export { Breadcrumbs, BreadcrumbsItem } from './components/Breadcrumbs';
 export type { BreadcrumbsProps, BreadcrumbsItemProps, BreadcrumbsVariant } from './components/Breadcrumbs';
 
 export { Card } from './components/Card';
-export type { CardProps, CardType } from './components/Card';
+export type { CardProps, CardDirection } from './components/Card';
 
 export { Separator } from './components/Separator';
 export type { SeparatorProps, SeparatorOrientation } from './components/Separator';

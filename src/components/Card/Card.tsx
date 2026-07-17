@@ -6,22 +6,29 @@ import styles from './Card.module.css';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-/** Background variant (Default vs Secondary sections in card.html). */
-export type CardType = 'default' | 'secondary';
+/** Flex direction of the card's content (Geist `direction` prop). */
+export type CardDirection = 'row' | 'column';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-    /** Background variant. Omit for the default surface. */
-    type?: CardType;
+    /** Draw the 1px border (via the `--ds-shadow-border` token). */
+    border?: boolean;
 
-    /**
-     * Enables the interactive elevated-shadow look: a subtle resting
-     * elevation that grows on hover, with a 150ms ease-in-out transition
-     * (Border / Border Between / Secondary sections). Omit for the plain
-     * border-only card with no hover behaviour (Default section).
-     */
-    hover?: boolean;
+    /** Draw dividers between direct children (divide-y column / divide-x row). */
+    borderBetween?: boolean;
 
-    /** data-version attribute matching Geist production output */
+    /** Lay children out in a row instead of a column. Default `'column'`. */
+    direction?: CardDirection;
+
+    /** Grow the shadow on hover (animates in 150ms when combined with `shadow`). */
+    hoverable?: boolean;
+
+    /** Use the secondary surface (`--ds-background-200`) instead of the default. */
+    secondary?: boolean;
+
+    /** Add the resting drop shadow + shadow transition. */
+    shadow?: boolean;
+
+    /** data-version attribute matching Geist production output. */
     'data-version'?: string;
 }
 
@@ -30,22 +37,25 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 /* ------------------------------------------------------------------ */
 
 /**
- * A container that groups related content and actions on a surface.
+ * A surface that groups related content. Padding is NOT intrinsic — the Geist
+ * source passes it via `className` (`<Card border borderBetween className="p-4"
+ * direction="row" hoverable shadow>`), so consumers control spacing.
  *
- * Rendered DOM (Geist production structure — card.html has no dedicated
- * *-module class; production is a plain container styled with raw Tailwind
- * utilities, folded here into a CSS Module):
+ * Rendered DOM:
  * ```html
- * <div class="card [secondary] [hover]" data-oxobz-card="" data-version="v1">
- *   {children}
- * </div>
+ * <div class="root [secondary] [row] [border] [borderBetween] [shadow] [hoverable]"
+ *      data-oxobz-card="" data-version="v1">{children}</div>
  * ```
  */
 const Card = forwardRef<HTMLDivElement, CardProps>(
     (
         {
-            type = 'default',
-            hover = false,
+            border = false,
+            borderBetween = false,
+            direction = 'column',
+            hoverable = false,
+            secondary = false,
+            shadow = false,
             className,
             children,
             'data-version': dataVersion = 'v1',
@@ -57,9 +67,13 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
             <div
                 {...rest}
                 className={cn(
-                    styles.card,
-                    type === 'secondary' && styles.secondary,
-                    hover && styles.hover,
+                    styles.root,
+                    secondary && styles.secondary,
+                    direction === 'row' && styles.row,
+                    border && styles.border,
+                    borderBetween && styles.borderBetween,
+                    shadow && styles.shadow,
+                    hoverable && styles.hoverable,
                     className,
                 )}
                 data-oxobz-card=""
