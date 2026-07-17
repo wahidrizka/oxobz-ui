@@ -35,6 +35,27 @@
     background: var(--accents-2);
 }
 
+/*
+ * Animated states (BUILDING / QUEUED). The dot blinks — opacity 0.2 → 1 → 0.2
+ * over 1.4s, looping — per the status-dot.html "Behavior" prose and the
+ * `--animate-blink: blink 1.4s infinite both` token in chunk 20v_289ahbeyd.css.
+ */
+.animated {
+    animation: blink 1.4s infinite both;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0.2;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.2;
+    }
+}
+
 /* Colored states; QUEUED / CANCELED / DELETED keep the default gray dot. */
 .ready {
     background: var(--oxobz-cyan);

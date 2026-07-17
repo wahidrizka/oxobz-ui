@@ -153,6 +153,35 @@ describe('StatusDot', () => {
         expect(root).toHaveStyle({ marginTop: '4px' });
     });
 
+    // ── Animated states (BUILDING / QUEUED pulse) ──
+
+    it('animates the dot while BUILDING', () => {
+        const { container } = render(<StatusDot state="BUILDING" />);
+        const dot = container.querySelector('[data-oxobz-status-dot] > span');
+        expect(dot?.className).toContain('animated');
+    });
+
+    it('animates the dot while QUEUED', () => {
+        const { container } = render(<StatusDot state="QUEUED" />);
+        const dot = container.querySelector('[data-oxobz-status-dot] > span');
+        expect(dot?.className).toContain('animated');
+    });
+
+    it('does not animate terminal states (READY / ERROR)', () => {
+        const ready = render(<StatusDot state="READY" />);
+        expect(
+            ready.container
+                .querySelector('[data-oxobz-status-dot] > span')
+                ?.className,
+        ).not.toContain('animated');
+        const error = render(<StatusDot state="ERROR" />);
+        expect(
+            error.container
+                .querySelector('[data-oxobz-status-dot] > span')
+                ?.className,
+        ).not.toContain('animated');
+    });
+
     // ── displayName ──
 
     it('has the correct displayName', () => {

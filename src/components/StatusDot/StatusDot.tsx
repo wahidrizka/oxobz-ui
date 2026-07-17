@@ -83,9 +83,10 @@ const STATE_CONFIG: Record<
  * </span>
  * ```
  *
- * Note: the snapshot renders every state statically. The docs "Behavior"
- * prose describes an animated dot for BUILDING/QUEUED, but neither the
- * snapshot nor the status-dot-module chunk ships a pulse, so none is added.
+ * Note: the snapshot renders every state statically, but its "Behavior" prose
+ * states the dot animates while BUILDING or QUEUED and goes static at a
+ * terminal state. The blink keyframe (`blink 1.4s infinite both`) is now in the
+ * geistcn chunk, so the pulse is applied to those two states via `.animated`.
  */
 const StatusDot = forwardRef<HTMLSpanElement, StatusDotProps>(
     (
@@ -100,6 +101,9 @@ const StatusDot = forwardRef<HTMLSpanElement, StatusDotProps>(
         ref,
     ) => {
         const { name, message, color } = STATE_CONFIG[state];
+        // status-dot.html prose: "the dot animates while BUILDING or QUEUED and
+        // goes static once the deployment reaches a terminal state."
+        const animated = state === 'BUILDING' || state === 'QUEUED';
 
         return (
             <span
@@ -111,7 +115,13 @@ const StatusDot = forwardRef<HTMLSpanElement, StatusDotProps>(
                 data-version={dataVersion}
                 ref={ref}
             >
-                <span className={cn(styles.status, color && styles[color])} />
+                <span
+                    className={cn(
+                        styles.status,
+                        color && styles[color],
+                        animated && styles.animated,
+                    )}
+                />
                 {label && <span className={styles.statusLabel}>{name}</span>}
             </span>
         );
