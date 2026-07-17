@@ -2,7 +2,9 @@ import {
     forwardRef,
     type CSSProperties,
     type ProgressHTMLAttributes,
+    type ReactNode,
 } from 'react';
+import { Tooltip } from '../Tooltip';
 import { cn } from '../../utils/cn';
 import styles from './Progress.module.css';
 
@@ -24,6 +26,17 @@ export type ProgressType = 'secondary' | 'success' | 'error' | 'warning';
  * progress.md). Overrides `type` when both are provided.
  */
 export type ProgressColors = Record<number, string>;
+
+/**
+ * A discrete stage marker along the bar (the `With Stops` example). `value` is
+ * on the same scale as the bar's `max`; `tooltip` shows on hover/focus;
+ * `ariaLabel` names the marker for assistive tech.
+ */
+export interface ProgressStop {
+    value: number;
+    tooltip?: ReactNode;
+    ariaLabel?: string;
+}
 
 export interface ProgressProps
     extends Omit<
@@ -50,6 +63,12 @@ export interface ProgressProps
 
     /** Bar height in pixels (default: 10, from the module CSS). */
     height?: number;
+
+    /**
+     * Discrete stage markers rendered over the bar (the `With Stops` variant).
+     * Each marker squares the bar's fill and shows an optional tooltip.
+     */
+    stops?: ProgressStop[];
 
     /** data-version attribute matching Geist production output */
     'data-version'?: string;
@@ -120,6 +139,7 @@ const Progress = forwardRef<HTMLProgressElement, ProgressProps>(
             colors,
             height,
             max = 100,
+            stops,
             style,
             type,
             value = 0,
@@ -151,10 +171,16 @@ const Progress = forwardRef<HTMLProgressElement, ProgressProps>(
             ...style,
         } as CSSProperties;
 
-        return (
+        const hasStops = stops != null && stops.length > 0;
+
+        const progressEl = (
             <progress
                 {...rest}
-                className={cn(styles.progress, className)}
+                className={cn(
+                    styles.progress,
+                    hasStops && styles.hasStops,
+                    className,
+                )}
                 data-oxobz-progress=""
                 data-version={dataVersion}
                 role="progressbar"
@@ -166,6 +192,50 @@ const Progress = forwardRef<HTMLProgressElement, ProgressProps>(
                 style={mergedStyle}
                 ref={ref}
             />
+        );
+
+        if (!hasStops) return progressEl;
+
+        return (
+            <span className={styles.stopsContainer}>
+                {progressEl}
+                {stops.map((stop, i) => {
+                    const stopPct =
+                        max > 0
+                            ? (Math.max(0, Math.min(stop.value, max)) / max) *
+                              100
+                            : 0;
+                    const hit = <span className={styles.stopHit} />;
+                    return (
+                        <div
+                            key={i}
+                            className={styles.stop}
+                            style={{ left: `calc(${stopPct}% - 7px)` }}
+                        >
+                            {stop.tooltip != null ? (
+                                <Tooltip
+                                    aria-label={stop.ariaLabel}
+                                    className={styles.stopTrigger}
+                                    text={stop.tooltip}
+                                >
+                                    {hit}
+                                </Tooltip>
+                            ) : (
+                                <span
+                                    aria-label={stop.ariaLabel}
+                                    className={styles.stopTrigger}
+                                >
+                                    {hit}
+                                </span>
+                            )}
+                            <div className={styles.stopTick} aria-hidden="true">
+                                <div className={styles.stopTickLine} />
+                                <div className={styles.stopTickLineBg} />
+                            </div>
+                        </div>
+                    );
+                })}
+            </span>
         );
     },
 );

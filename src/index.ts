@@ -101,7 +101,7 @@ export { Menu, MenuContainer, MenuButton, MenuItem, MenuItemLocked, MenuLink, Me
 export type { MenuProps, MenuPosition, MenuContainerProps, MenuButtonProps, MenuItemProps, MenuItemLockedProps, MenuLinkProps, MenuSectionProps, MenuDividerProps } from './components/Menu';
 
 export { Progress } from './components/Progress';
-export type { ProgressProps, ProgressType, ProgressColors } from './components/Progress';
+export type { ProgressProps, ProgressType, ProgressColors, ProgressStop } from './components/Progress';
 
 export { Pagination } from './components/Pagination';
 export type { PaginationProps, PaginationLink } from './components/Pagination';

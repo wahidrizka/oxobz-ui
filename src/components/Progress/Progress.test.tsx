@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
 import { Progress, type ProgressType } from './Progress';
@@ -247,6 +247,53 @@ describe('Progress', () => {
         expect(root.style.getPropertyValue('--fg')).toBe(
             'var(--oxobz-foreground)',
         );
+    });
+
+    // ── Stops variant ──
+
+    it('renders no stop markers and no hasStops class by default', () => {
+        const { container } = render(<Progress value={30} />);
+        expect(container.querySelectorAll('.stop').length).toBe(0);
+        expect(screen.getByRole('progressbar').className).not.toContain(
+            'hasStops',
+        );
+    });
+
+    it('applies hasStops and renders one marker per stop', () => {
+        const { container } = render(
+            <Progress
+                max={100}
+                stops={[
+                    { value: 10, tooltip: '10%' },
+                    { value: 20, tooltip: '20%' },
+                    { value: 50, tooltip: '50%' },
+                ]}
+                value={30}
+            />,
+        );
+        expect(screen.getByRole('progressbar').className).toContain('hasStops');
+        expect(container.querySelectorAll('.stop').length).toBe(3);
+        expect(container.querySelectorAll('.stopHit').length).toBe(3);
+    });
+
+    it('positions a marker at calc(pos% - 7px) relative to max', () => {
+        const { container } = render(
+            <Progress max={200} stops={[{ value: 50 }]} value={30} />,
+        );
+        const marker = container.querySelector('.stop') as HTMLElement;
+        // 50 / 200 * 100 = 25%
+        expect(marker.style.left).toBe('calc(25% - 7px)');
+    });
+
+    it('shows a stop tooltip on hover', () => {
+        const { container } = render(
+            <Progress stops={[{ value: 10, tooltip: 'ten' }]} value={30} />,
+        );
+        // hidden until the trigger is hovered/focused
+        expect(screen.queryByText('ten')).not.toBeInTheDocument();
+        const trigger = container.querySelector('.stopTrigger') as HTMLElement;
+        fireEvent.mouseEnter(trigger);
+        expect(screen.getByText('ten')).toBeInTheDocument();
     });
 
     // ── displayName ──

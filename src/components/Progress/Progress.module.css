@@ -1,29 +1,31 @@
 /**
  * Progress — CSS Module
  *
- * Production source:
- * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
- *   Module: progress-module__0dqxSW — the component is a native <progress>
- *   element. Classes: .progress (root) and .has-progress-bar-stops (stops
- *   variant, not implemented here — its DOM is not present in the snapshot).
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css (progress-module__0dqxSW)
+ * - _nextstatic/component-inspect-element/progress-additional.html (re-captured
+ *   with "Show code" + the "With Stops" example rendered).
  *
- * The snapshot (_nextstatic/component-inspect-element/progress.html) only
- * contains the docs prose, not the rendered component, so this module mirrors
- * the chunk verbatim.
+ * The component is a native <progress> element. Fill color comes from `--fg`
+ * (theme token / dynamic threshold / default foreground), supplied inline.
  *
- * Verbatim notes from the chunk:
- * - The value pseudo-elements (::-webkit-progress-value / ::-moz-progress-bar)
- *   are first given `border-radius: var(--geist-radius)`, then overridden by a
- *   later `border-radius: 0 !important` rule that applies to every .progress
- *   (same net effect as the .has-progress-bar-stops variant). Folded into the
- *   final `border-radius: 0 !important` below.
- * - `--fg` is the fill color, supplied inline by the component (theme token,
- *   dynamic threshold color, or the default foreground).
+ * RADIUS (corrected against the fresh snapshot — snapshot wins over the old
+ * chunk): a plain bar rounds its value pseudo-element to `--geist-radius`
+ * (`[&::-webkit-progress-value]:rounded-[var(--geist-radius)]`). ONLY the stops
+ * variant squares it (`[&::-webkit-progress-value]:!rounded-none`). The old
+ * chunk had a global `border-radius:0!important` that squared every bar — that
+ * was wrong; corrected here.
  *
- * Var mapping: --geist-radius → var(--geist-radius, 5px) (5px is the Geist
- * production value; --geist-radius is undefined in oxobz tokens — same
- * convention as Skeleton.module.css). --ds-gray-200 kept as-is (semantic
- * token that flips with the theme, so no .dark-theme block is needed).
+ * STOPS (`.hasStops` + markers): each stop is an absolutely-positioned marker
+ * at `left: calc(<pos>% - 7px)` (7px = half the 14px hit area) containing a
+ * 2px vertical tick (a `--ds-gray-alpha-600` line + a `--ds-background-100`
+ * line) and a tooltip-triggering hit area whose ::after enlarges the hover
+ * zone. DOM lifted verbatim from progress-additional.html.
+ *
+ * Var mapping: --geist-radius → var(--geist-radius, 5px) (Geist production
+ * value; undefined in oxobz tokens — same convention as Skeleton). --ds-gray-200
+ * / --ds-gray-alpha-600 / --ds-background-100 flip with the theme, so no
+ * .dark-theme block is needed.
  */
 
 /* ---- Root native <progress> (progress-module __progress) ---- */
@@ -45,8 +47,7 @@
 
 .progress::-webkit-progress-value {
     background: var(--fg);
-    /* production: radius set then overridden to 0 !important on the value */
-    border-radius: 0 !important;
+    border-radius: var(--geist-radius, 5px);
     transition:
         width 0.1s ease-in,
         background-color 0.1s ease-in;
@@ -55,8 +56,79 @@
 /* ---- Firefox fill ---- */
 .progress::-moz-progress-bar {
     background: var(--fg);
-    border-radius: 0 !important;
+    border-radius: var(--geist-radius, 5px);
     transition:
         width 0.1s ease-in,
         background-color 0.1s ease-in;
+}
+
+/* ---- Stops variant: square the fill (has-progress-bar-stops) ---- */
+.hasStops::-webkit-progress-value {
+    border-radius: 0 !important;
+}
+
+.hasStops::-moz-progress-bar {
+    border-radius: 0 !important;
+}
+
+/* ---- Stops container (relative anchor; shrinks to the bar width) ---- */
+.stopsContainer {
+    position: relative;
+    display: inline-block;
+}
+
+/* ---- One stop marker (positioned inline via left: calc(pos% - 7px)) ---- */
+.stop {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    pointer-events: auto;
+}
+
+/* Tooltip trigger / hit area — overlaps the tick in the same grid cell */
+.stopTrigger {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    height: fit-content;
+}
+
+.stopHit {
+    position: relative;
+    isolation: isolate;
+    z-index: 20;
+    width: 14px;
+    height: 100%;
+}
+
+/* Enlarge the hover zone (Geist: after:-inset-y-2 after:-inset-x-[--x-offset]) */
+.stopHit::after {
+    content: '';
+    position: absolute;
+    inset-block: -8px;
+    inset-inline: calc(-1 * var(--stop-x-offset, 16px));
+}
+
+/* Visible 2px tick: a gray-alpha line + a background line */
+.stopTick {
+    grid-area: 1 / 1;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.stopTickLine {
+    width: 1px;
+    height: 100%;
+    background: var(--ds-gray-alpha-600);
+}
+
+.stopTickLineBg {
+    width: 1px;
+    height: 100%;
+    background: var(--ds-background-100);
 }
