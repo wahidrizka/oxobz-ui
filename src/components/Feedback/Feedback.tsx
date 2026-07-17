@@ -365,6 +365,7 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
 
         const triggerRef = useRef<HTMLButtonElement | null>(null);
         const popoverRef = useRef<HTMLDivElement | null>(null);
+        const inlineRef = useRef<HTMLDivElement | null>(null);
 
         const autoId = useId();
         const textareaId = `feedback-textarea-${autoId}`;
@@ -420,20 +421,34 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
             return () => cancelAnimationFrame(raf);
         }, [isInline, open]);
 
-        // Dismiss on outside pointerdown / Escape while open.
+        // Dismiss on outside pointerdown / Escape while open. Default closes the
+        // popover; inline collapses the expanded form back to the prompt (Geist's
+        // embedded widget behaviour) — but not while the post-submit success view
+        // is showing.
         useEffect(() => {
-            if (isInline || !open) return;
+            const inlineOpen = isInline && rating !== null && !submitted;
+            const popoverOpen = !isInline && open;
+            if (!inlineOpen && !popoverOpen) return;
+
+            const dismiss = () => {
+                if (isInline) setRating(null);
+                else setOpen(false);
+            };
             const onPointerDown = (event: PointerEvent) => {
                 const target = event.target as Node;
-                if (triggerRef.current?.contains(target)) return;
-                if (popoverRef.current?.contains(target)) return;
-                setOpen(false);
+                if (isInline) {
+                    if (inlineRef.current?.contains(target)) return;
+                } else {
+                    if (triggerRef.current?.contains(target)) return;
+                    if (popoverRef.current?.contains(target)) return;
+                }
+                dismiss();
             };
             const onKeyDown = (event: KeyboardEvent) => {
                 if (event.key === 'Escape') {
                     event.stopPropagation();
-                    setOpen(false);
-                    triggerRef.current?.focus();
+                    dismiss();
+                    if (!isInline) triggerRef.current?.focus();
                 }
             };
             document.addEventListener('pointerdown', onPointerDown, true);
@@ -442,7 +457,7 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
                 document.removeEventListener('pointerdown', onPointerDown, true);
                 document.removeEventListener('keydown', onKeyDown, true);
             };
-        }, [isInline, open]);
+        }, [isInline, open, rating, submitted]);
 
         const topicSelect = showTopics ? (
             <Select
@@ -486,7 +501,11 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
                     data-oxobz-feedback=""
                     data-version={dataVersion}
                 >
-                    <div className={styles.card} data-open={isOpen || undefined}>
+                    <div
+                        className={styles.card}
+                        data-open={isOpen || undefined}
+                        ref={inlineRef}
+                    >
                         <div className={styles.prompt}>
                             <p className={cn('text-copy-14', styles.promptText)}>Was this helpful?</p>
                             <EmojiPicker onSelect={handleSelectRating} rating={rating} />

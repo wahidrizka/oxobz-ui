@@ -92,6 +92,34 @@ describe('Feedback', () => {
             expect(card).toHaveAttribute('data-open');
         });
 
+        it('collapses the card when clicking outside', () => {
+            const { container } = render(<Feedback type="inline" />);
+            const card = container.querySelector('[data-oxobz-feedback] > div');
+            fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
+            expect(card).toHaveAttribute('data-open');
+            fireEvent.pointerDown(document.body);
+            expect(card).not.toHaveAttribute('data-open');
+        });
+
+        it('collapses the card on Escape', () => {
+            const { container } = render(<Feedback type="inline" />);
+            const card = container.querySelector('[data-oxobz-feedback] > div');
+            fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
+            expect(card).toHaveAttribute('data-open');
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(card).not.toHaveAttribute('data-open');
+        });
+
+        it('does not collapse when clicking inside the card', () => {
+            const { container } = render(<Feedback type="inline" />);
+            const card = container.querySelector('[data-oxobz-feedback] > div');
+            fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
+            fireEvent.pointerDown(
+                screen.getByPlaceholderText('Your feedback...'),
+            );
+            expect(card).toHaveAttribute('data-open');
+        });
+
         it('renders the feedback textarea with the fixed placeholder', () => {
             render(<Feedback type="inline" />);
             const textarea = screen.getByPlaceholderText('Your feedback...');
