@@ -45,7 +45,7 @@
  * Token translation: --geist-gap-half -> --oxobz-gap-half (12px),
  * --geist-gap-quarter -> --oxobz-gap-quarter (8px).
  * No .dark-theme override exists in the chunk for this module — every color
- * is a --ds-*/--accents-* token that already flips with the theme.
+ * is a --ds- or --accents- token that already flips with the theme.
  */
 
 /* ---- Root wrapper (feedback-module __inlineWrapper) ---- */
