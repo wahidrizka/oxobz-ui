@@ -1,0 +1,37 @@
+/**
+ * Separator — CSS Module
+ *
+ * Production source:
+ * - _nextstatic/component-inspect-element/separator.html
+ *   Snapshot geistcn (Tailwind). No dedicated `separator-module` exists in any
+ *   _nextstatic/chunks/*.css file (grepped `separator` across all chunks —
+ *   zero matches), so this module mirrors the snapshot's Tailwind classes
+ *   verbatim, same treatment as Progress/Kbd/LoadingDots.
+ *   DOM: `<div data-orientation="horizontal|vertical" role="none|separator"
+ *     data-slot="separator" class="bg-gray-200 shrink-0 h-px w-full">`
+ *     (horizontal) or `class="bg-gray-200 shrink-0 w-px h-full"` (vertical).
+ *
+ * Tailwind → CSS mapping:
+ *   bg-gray-200 → var(--ds-gray-200) (semantic token that already flips with
+ *     .dark-theme — same convention as Progress.module.css, no dark override
+ *     block needed).
+ *   shrink-0    → flex-shrink: 0.
+ *   h-px / w-px → 1px.
+ *   w-full / h-full → 100%.
+ */
+
+/* ---- Root (snapshot div[data-slot=separator]) ---- */
+.root {
+    flex-shrink: 0;
+    background: var(--ds-gray-200);
+}
+
+.root[data-orientation='horizontal'] {
+    height: 1px;
+    width: 100%;
+}
+
+.root[data-orientation='vertical'] {
+    width: 1px;
+    height: 100%;
+}

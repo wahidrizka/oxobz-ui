@@ -124,5 +124,29 @@ export type { GaugeProps, GaugeSize, GaugeArcPriority, GaugeColors } from './com
 export { Combobox, ComboboxInput, ComboboxList, ComboboxOption } from './components/Combobox';
 export type { ComboboxProps, ComboboxInputProps, ComboboxListProps, ComboboxOptionProps, ComboboxSize } from './components/Combobox';
 
+export { Breadcrumbs, BreadcrumbsItem } from './components/Breadcrumbs';
+export type { BreadcrumbsProps, BreadcrumbsItemProps, BreadcrumbsVariant } from './components/Breadcrumbs';
+
+export { Card } from './components/Card';
+export type { CardProps, CardType } from './components/Card';
+
+export { Separator } from './components/Separator';
+export type { SeparatorProps, SeparatorOrientation } from './components/Separator';
+
+export { Description } from './components/Description';
+export type { DescriptionProps, DescriptionAlign } from './components/Description';
+
+export { Error } from './components/Error';
+export type { ErrorProps, ErrorActionProps, ErrorSize } from './components/Error';
+
+export { EmptyState, EmptyStateIcon, EmptyStateTitle, EmptyStateDescription } from './components/EmptyState';
+export type { EmptyStateProps, EmptyStateIconProps, EmptyStateTitleProps, EmptyStateDescriptionProps } from './components/EmptyState';
+
+export { Feedback } from './components/Feedback';
+export type { FeedbackProps, FeedbackRating, FeedbackSubmitData } from './components/Feedback';
+
+export { CopyButton } from './components/CopyButton';
+export type { CopyButtonProps } from './components/CopyButton';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

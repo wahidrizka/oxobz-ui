@@ -1,0 +1,66 @@
+/**
+ * Description — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/d2f6d4dcdb88e56d.css
+ *   Module: description-module__J9KQsG — .description, .icon, .right,
+ *   .ellipsis. Only 5 rules exist in the chunk; no hover/focus states, no
+ *   transition or animation, no .dark-theme override (the --ds-gray-900 /
+ *   --ds-gray-1000 tokens already flip with the theme automatically).
+ * - _nextstatic/component-inspect-element/description.html
+ *   Confirms the DOM: <dl data-version><dt data-geist-description-title>
+ *   {title}<icon wrapper (tooltip trigger)></dt>
+ *   <dd data-geist-description-content>{content}</dd></dl>, and the three
+ *   demoed variants — default, text-right (`.right` added on <dl>), and
+ *   ellipsis/truncate (`.ellipsis` added on <dl>).
+ */
+
+/* ---- Root <dl> + reset (description-module __description) ---- */
+.description,
+.description dt,
+.description dd {
+    margin: 0;
+}
+
+.description dt {
+    text-transform: capitalize;
+    white-space: nowrap;
+    min-height: 14px;
+    color: var(--ds-gray-900);
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 14px;
+}
+
+.description dd {
+    color: var(--ds-gray-1000);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 16px;
+}
+
+/* ---- Tooltip icon wrapper (description-module __icon) ---- */
+.icon {
+    vertical-align: -2px;
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    display: inline-block;
+}
+
+/* ---- align="right" (description-module __right) ---- */
+.right {
+    text-align: right;
+}
+
+/* ---- truncate (description-module __ellipsis) ---- */
+.ellipsis {
+    width: 100%;
+}
+
+.ellipsis dt,
+.ellipsis dd {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}

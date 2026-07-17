@@ -1,0 +1,78 @@
+/**
+ * Error — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: error-module__ZeCa4G — .error, .action-link, .label, .text,
+ *   .small, .large.
+ * - _nextstatic/component-inspect-element/error.html
+ *   Snapshot DOM (`data-geist-error=""`, `role="alert"`, `aria-atomic="true"`):
+ *   icon wrapper is plain Tailwind (`flex items-center mr-2 mt-0.5`, or
+ *   `mt-1` for the large size) — NOT part of error-module, so it is
+ *   hand-rolled here as `.icon` / `.large .icon`. Cross-checked against the
+ *   equivalent hand-rolled icon holder in Input.module.css (`.errorIcon`):
+ *   identical values (flex, align-items center, margin-right 8px,
+ *   margin-top 2px).
+ *
+ * Token math: --geist-form-font = .875rem (14px), --geist-form-line-height
+ * = 1.25rem (20px), --geist-form-large-font = 1rem (16px),
+ * --geist-form-large-line-height = 1.5rem (24px), --geist-gap-quarter =
+ * --geist-space-2x = 8px (all read from
+ * _nextstatic/chunks/1c419a75d7e589ae.css `:root`). Folded to literal px/rem
+ * below since oxobz-ui does not carry the `--geist-*` token layer — only
+ * `--ds-red-900` (colors.css) is referenced directly, matching the
+ * StatusDot precedent of keeping legacy Geist tokens live and folding
+ * unavailable ones to their computed value.
+ *
+ * No `.dark-theme` override exists in the chunk — `--ds-red-900` already
+ * flips with the theme automatically.
+ */
+
+/* ---- Root (error-module __error) ---- */
+.error {
+    display: flex;
+    align-items: flex-start;
+    color: var(--ds-red-900);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+/* ---- Size modifiers (error-module __small / __large) ---- */
+.small {
+    font-size: 13px;
+}
+
+.large {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+
+/* ---- Icon holder (hand-rolled — see header) ---- */
+.icon {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-top: 2px;
+}
+
+.large .icon {
+    margin-top: 4px;
+}
+
+/* ---- Text (error-module __text) ---- */
+.text {
+    word-break: break-word;
+}
+
+/* ---- Bold label prefix (error-module __label) ---- */
+.label {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+/* ---- Inline action wrapper (error-module __error __action-link) ---- */
+.action-link {
+    display: inline-block;
+}

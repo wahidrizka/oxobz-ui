@@ -1,0 +1,99 @@
+/**
+ * EmptyState — CSS Module
+ *
+ * Production source: _nextstatic/component-inspect-element/empty-state.html
+ * (geistcn/Tailwind snapshot — this component has no dedicated `*-module`
+ * rules in any _nextstatic/chunks file; grepped for "empty-state" across all
+ * chunks with zero matches, so the Tailwind utility classes on the snapshot
+ * are the only source of truth, same situation as StatusDot).
+ *
+ * Root: `[&>a]:text-sm rounded-lg py-12 gap-6 flex w-full flex-col
+ * items-center border px-[70px] border-[var(--ds-gray-200)]
+ * bg-[var(--ds-background-100)]`.
+ * Icon box: `rounded-lg flex shrink-0 items-center justify-center border
+ * border-[var(--ds-gray-alpha-400)] bg-[var(--ds-background-100)] p-[10px]
+ * text-[var(--ds-gray-900)]!`.
+ * Content group: `gap-2 flex flex-col`.
+ * Title: `text-gray-1000 font-medium mx-auto max-w-[340px] text-center
+ * text-balance text-heading-16` (the `.text-heading-16` global utility class
+ * from src/tokens/typography.css supplies font-size/line-height/
+ * letter-spacing/font-family; `font-medium` here overrides its default
+ * font-weight 600 down to 500 — kept as a module override for that reason).
+ * Description: `text-copy-14 text-gray-900 mx-auto max-w-[340px]
+ * text-center text-balance` (`.text-copy-14` global utility supplies the
+ * base type scale).
+ *
+ * Tailwind → px conversions (Tailwind v4 default scale, verified against
+ * existing conversions in this repo, e.g. Input.module.css / Textarea.module.css):
+ *   rounded-lg = 8px (--ds-radius-md)  py-12 = 48px (--ds-space-12)
+ *   gap-6 = 24px (--ds-space-6)        gap-2 = 8px (--ds-space-2)
+ *   px-[70px] / p-[10px] / max-w-[340px] are Tailwind arbitrary values —
+ *   used as literal px, no token exists for these exact numbers.
+ *
+ * No .dark-theme override exists in the snapshot — every color is a
+ * `--ds-*` token that already flips with the theme.
+ */
+
+/* ---- Root (empty-state-module __root) ---- */
+.root {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 48px 70px;
+    border: 1px solid var(--ds-gray-200);
+    border-radius: 8px;
+    background: var(--ds-background-100);
+}
+
+/* `[&>a]:text-sm` — any direct-child link (e.g. a "Learn more" anchor
+   rendered as an action) is sized down to 14px. */
+.root > a {
+    font-size: 14px;
+}
+
+/* ---- Icon box (empty-state-module __icon) ---- */
+.icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--ds-gray-alpha-400);
+    background: var(--ds-background-100);
+    padding: 10px;
+    /* `text-[var(--ds-gray-900)]!` — the trailing `!` is a Tailwind v4
+       important-modifier, kept as-is so it always wins over icon SVGs that
+       set their own `color`. */
+    color: var(--ds-gray-900) !important;
+}
+
+/* ---- Content group: title + description (empty-state-module __content) ---- */
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ---- Title (empty-state-module __title) ---- */
+.title {
+    /* text-heading-16 global class supplies font-size/line-height/
+       letter-spacing/font-family; font-weight is overridden here to match
+       the snapshot's `font-medium` (500, not text-heading-16's default 600). */
+    font-weight: 500;
+    color: var(--ds-gray-1000);
+    text-align: center;
+    max-width: 340px;
+    margin: 0 auto;
+    text-wrap: balance;
+}
+
+/* ---- Description (empty-state-module __description) ---- */
+.description {
+    color: var(--ds-gray-900);
+    text-align: center;
+    max-width: 340px;
+    margin: 0 auto;
+    text-wrap: balance;
+}

@@ -1,0 +1,155 @@
+/**
+ * Breadcrumbs — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/d2f6d4dcdb88e56d.css
+ *   Module: breadcrumbs-module__S3JLGq__ — .ol, .textItem, .active,
+ *   .disabled, .menuItem, .menuWrapper, .breadcrumbWrapper.
+ * - _nextstatic/component-inspect-element/breadcrumbs.html
+ *   Confirms DOM shape for the "text" variant: `<nav aria-label="Breadcrumb">
+ *   <ol><li>Label<svg/></li></ol></nav>`, with `aria-current="true"`
+ *   (verbatim, not "page") on the active `<li>`. The "menu" variant example
+ *   on the docs page is re-implemented in Tailwind (`flex gap-2
+ *   max-sm:overflow-x-auto` > `button.py-0.5.px-1.5...`), but its values
+ *   match the `.menuWrapper` / `.menuItem` module rules 1:1, so the module
+ *   is treated as the source of truth for that variant's DOM/values.
+ *
+ * Var mapping (Geist → oxobz): every value below is a global --ds-* /
+ * --font-sans token already defined in tokens/colors.css and
+ * tokens/index.css — no --geist-* legacy var appears in this module.
+ *
+ * No .dark-theme override exists in the chunk — every value here is a
+ * --ds-* token that already flips with the theme.
+ */
+
+/* ---- List (text variant) ---- */
+.ol {
+    display: flex;
+    gap: 6px;
+    padding: 0;
+    list-style: none;
+}
+
+/* ---- Item (text variant) ---- */
+.textItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ds-gray-900);
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.textItem a {
+    color: inherit;
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.textItem a:focus-visible {
+    outline: none;
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* Separator chevron: forced gray-900 regardless of hover/active state, and
+   hidden entirely on the last item — verbatim production rules. */
+.textItem svg {
+    color: var(--ds-gray-900) !important;
+}
+
+.textItem:last-of-type svg {
+    display: none;
+}
+
+@media (hover: hover) {
+    .textItem:hover {
+        color: var(--ds-gray-1000);
+    }
+}
+
+.textItem.active {
+    color: var(--ds-gray-1000);
+}
+
+.textItem.disabled {
+    color: var(--ds-gray-700);
+    cursor: not-allowed;
+}
+
+/* ---- Item (menu variant) ---- */
+.menuItem {
+    display: inline-block;
+    overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
+    padding: 2px 6px;
+    border: 1px solid transparent;
+    border-color: var(--ds-gray-alpha-400);
+    border-radius: 4px;
+    background: var(--ds-background-200);
+    color: var(--ds-gray-900);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    white-space: nowrap;
+    word-wrap: normal;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition-property: color, border-color, background;
+    transition-duration: 0.2s;
+}
+
+@media (hover: hover) {
+    .menuItem:hover {
+        background: var(--ds-gray-200);
+        border-color: var(--ds-gray-alpha-500);
+        color: var(--ds-gray-1000);
+    }
+}
+
+.menuItem:focus-visible {
+    outline: none;
+    box-shadow: var(--ds-focus-ring);
+}
+
+.menuItem.active {
+    border-color: var(--ds-gray-600);
+    background: var(--ds-background-100);
+    color: var(--ds-gray-1000);
+}
+
+.menuItem.disabled {
+    border-color: var(--ds-gray-alpha-400);
+    background: var(--ds-gray-alpha-200);
+    color: var(--ds-gray-700);
+    cursor: not-allowed;
+}
+
+/* ---- List (menu variant) ---- */
+.menuWrapper {
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 600px) {
+    .menuWrapper {
+        overflow-x: auto;
+    }
+}
+
+/* ---- Label truncation (both variants) ---- */
+.breadcrumbWrapper {
+    display: inline-block;
+    overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    word-wrap: normal;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+    .breadcrumbWrapper:last-of-type {
+        margin-right: 16px;
+    }
+}

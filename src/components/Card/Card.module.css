@@ -1,0 +1,89 @@
+/**
+ * Card — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/component-inspect-element/card.html
+ *   The Geist docs "Card" page has NO dedicated *-module class (verified: the
+ *   only "card-module" hit in b4b9d0dd5348b0c3.css is the unrelated
+ *   `context-card-module__MV3-Va` tooltip-card, not this component). The
+ *   real production DOM is a plain container styled with raw Tailwind
+ *   utilities straight in the snapshot:
+ *     `list-none bg-[var(--geist-background)] empty:hidden
+ *      shadow-[var(--ds-shadow-border)] rounded-lg flex flex-col p-4`
+ *   (Default section) plus, in the Border / Border Between / Border Between
+ *   Vertical / Secondary sections, an elevated variant:
+ *     `shadow-[0_4px_6px_rgba(0,0,0,0.04)] transition-shadow duration-150
+ *      ease-in-out rounded-lg hover:shadow-[var(--ds-shadow-border),
+ *      0_6px_14px_rgba(0,0,0,0.08)]
+ *      shadow-[var(--ds-shadow-border),0_4px_6px_rgba(0,0,0,0.04)]
+ *      flex flex-col p-4`
+ *   This module folds that Tailwind soup into `.card` (base) + `.hover`
+ *   (the elevated/interactive variant) + `.secondary` (background swap).
+ * - _nextstatic/chunks/2dd69db0a79ce415.css
+ *   Resolves the arbitrary Tailwind classes to real px values (scoped under
+ *   `.tailwind`): `.rounded-lg{border-radius:12px}` (NOT the vanilla
+ *   Tailwind 8px), `.p-4{padding:1rem}` → 16px. Mapped here to the existing
+ *   design tokens `--ds-radius-lg` (12px) and `--oxobz-space-4x` (16px).
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   `--ds-shadow-border` token (border-look shadow, used verbatim). The two
+ *   elevation shadows (`0 4px 6px rgba(0,0,0,.04)` resting / `0 6px 14px
+ *   rgba(0,0,0,.08)` hover) are NOT design tokens — they are Tailwind
+ *   arbitrary-value literals lifted verbatim from the snapshot class list.
+ *
+ * Var mapping: --geist-background (docs legacy alias, #fff light / #000
+ * dark) → --ds-background-100 (the DS-token equivalent already in
+ * colors.css; no --geist-background token exists in @oxobz/ui).
+ * --ds-background-200 kept as-is for the "secondary" background (Secondary
+ * section: `bg-[var(--ds-background-200)]`).
+ *
+ * Deviation note (documented per "0% assumption" — flagged, not hidden):
+ * the docs build the elevated look up progressively across sections. The
+ * lone "Hover" section shows `hover:` shadow with NO resting elevation and
+ * NO transition; the "Border" / "Border Between" / "Border Between
+ * Vertical" / "Secondary" sections (4 of 5 non-Default sections) all share
+ * one identical, more complete class bundle (resting elevation + 150ms
+ * ease-in-out transition + bigger hover elevation). That repeated bundle is
+ * treated here as the real `hover` variant; the outlier "Hover" section is
+ * read as an intermediate teaching step in the docs' step-by-step recipe,
+ * not a separate shipped variant.
+ *
+ * No .dark-theme override exists for the two elevation shadow literals in
+ * the snapshot (no `dark:` prefixed utility appears on the card element) —
+ * they stay black-based rgba() in dark mode as authored, unchanged here.
+ */
+
+/* ---- Root ---- */
+.card {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    border-radius: var(--ds-radius-lg);
+    padding: var(--oxobz-space-4x);
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border);
+    box-sizing: border-box;
+}
+
+/* Matches the Tailwind `empty:hidden` utility present on every example */
+.card:empty {
+    display: none;
+}
+
+/* ---- type="secondary" (Secondary section: bg-[var(--ds-background-200)]) ---- */
+.secondary {
+    background: var(--ds-background-200);
+}
+
+/* ---- hover (Border / Border Between / Border Between Vertical / Secondary sections) ---- */
+.hover {
+    box-shadow:
+        var(--ds-shadow-border),
+        0 4px 6px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 150ms ease-in-out;
+}
+
+.hover:hover {
+    box-shadow:
+        var(--ds-shadow-border),
+        0 6px 14px rgba(0, 0, 0, 0.08);
+}

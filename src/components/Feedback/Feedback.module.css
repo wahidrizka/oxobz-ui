@@ -1,0 +1,247 @@
+/**
+ * Feedback — CSS Module (inline variant)
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: feedback-module__j8fpJW__* — .inlineWrapper, .inlineTriggerWrapper,
+ *   .trigger, .emojisWrapper, .emoji (+ [aria-checked=true] / :hover / :focus-visible),
+ *   .formWrapper, .textarea, .markdown-mark, .markdown-tip, .actions,
+ *   .successWrapper (+ @keyframes appear), .popover (dialog variant, cited
+ *   below only where it supplies a value the inline rules don't).
+ * - _nextstatic/component-inspect-element/feedback.html
+ *   "Inline" example, `data-feedback-inline=""` subtree — source of truth for
+ *   DOM order/classes/inline styles (Tailwind v4 utility snapshot).
+ *
+ * Scope: only the *inline* variant (`data-feedback-inline` in the snapshot)
+ * is built. The default variant is a Button that opens this same widget in a
+ * Radix popover/dialog (`aria-haspopup="dialog"`, `.popover` module rules) —
+ * that needs a Popover/Dialog primitive this design system doesn't have yet,
+ * so it is out of scope for this component (see Feedback.tsx doc comment).
+ *
+ * Values NOT present in the chunk (documented, cited deviations):
+ * - `.card` open-state radius: the chunk has no rule for the inline card's
+ *   *expanded* radius, only its collapsed 30px (`.inlineWrapperUpwards` /
+ *   snapshot inline style `border-radius:30px`). Reused `--ds-radius-lg`
+ *   (12px) — the exact literal the SAME feedback-module's `.popover` rule
+ *   uses for the dialog rendering of this identical widget.
+ * - `.card` open/close height: production computes this via JS-measured
+ *   pixel height (the snapshot's `style="height:48px"` is an instance value,
+ *   not an authored token, and no expanded-height rule exists in the chunk).
+ *   Reproduced with the CSS `grid-template-rows: 0fr -> 1fr` auto-height
+ *   technique instead of a ResizeObserver dependency — same visual result,
+ *   no invented pixel number. Duration 0.2s reused from the chunk's own
+ *   `.inlineTriggerWrapper{transition:background .2s}` for consistency.
+ * - `.actions` justify-content: the module default is `space-between`
+ *   (reserved for a second/left-side action this component doesn't render).
+ *   The snapshot's actual instance overrides it inline to `flex-end` for the
+ *   single-button (Send-only) layout — reproduced as the base rule since
+ *   every render of this component is single-button.
+ * - `.successWrapper` content (icon/copy) is invented: the chunk only ships
+ *   the *shape* (flex column, gap 8px, two `<p>` + `<svg>` with staggered
+ *   `appear` keyframes at .1s/.3s/.4s delay) — no success markup was ever
+ *   captured in a snapshot. Icon color reuses `--ds-blue-700`, matching the
+ *   blue accent already used for the selected-emoji state in this widget.
+ *
+ * Token translation: --geist-gap-half -> --oxobz-gap-half (12px),
+ * --geist-gap-quarter -> --oxobz-gap-quarter (8px).
+ * No .dark-theme override exists in the chunk for this module — every color
+ * is a --ds-*/--accents-* token that already flips with the theme.
+ */
+
+/* ---- Root wrapper (feedback-module __inlineWrapper) ---- */
+.inlineWrapper {
+    display: flex;
+    justify-content: center;
+}
+
+/* ---- Card (feedback-module __inlineTriggerWrapper) ----
+ * Collapsed: background var(--ds-background-100), box-shadow
+ * var(--ds-shadow-border-small), width fit-content, overflow hidden,
+ * border-radius 30px (snapshot inline style) — a "pill" shape.
+ */
+.card {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    max-width: 100%;
+    overflow: hidden;
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border-small);
+    border-radius: 30px;
+    transition: background 0.2s, border-radius 0.2s;
+}
+
+/* Expanded (form open / success shown): radius eases to the same 12px the
+ * feedback-module's own `.popover` rule uses for this widget's dialog form. */
+.card[data-open] {
+    border-radius: var(--ds-radius-lg);
+}
+
+/* ---- Prompt row (feedback-module __trigger) ---- */
+.prompt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 8px 8px 16px;
+}
+
+.promptText {
+    color: var(--ds-gray-900);
+    white-space: nowrap;
+}
+
+/* ---- Emoji picker (feedback-module __emojisWrapper / __emoji) ---- */
+.emojisWrapper {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    color: var(--ds-gray-900);
+}
+
+.emoji {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--ds-gray-900);
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.emoji svg path {
+    transition: all 0.2s;
+}
+
+.emoji[aria-checked='true'] {
+    background: var(--ds-blue-300);
+    border-color: var(--ds-blue-300);
+}
+
+.emoji[aria-checked='true'] svg path {
+    fill: var(--ds-blue-900);
+}
+
+@media (hover: hover) {
+    .emoji:hover {
+        background: var(--ds-blue-300);
+        border-color: var(--ds-blue-300);
+    }
+
+    .emoji:hover svg path {
+        fill: var(--ds-blue-900);
+    }
+}
+
+.emoji:focus-visible {
+    outline: none;
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* ---- Collapse (open/close motion — see header note) ---- */
+.collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.2s ease;
+}
+
+.collapse[data-open] {
+    grid-template-rows: 1fr;
+}
+
+.collapseInner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ---- Form (feedback-module __formWrapper) ---- */
+.formWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+/* ---- Markdown hint (feedback-module __markdown-tip / __markdown-mark) ---- */
+.markdownTip {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 0;
+    color: var(--ds-gray-900);
+}
+
+.markdownMark {
+    display: inline-block !important;
+    margin: 0 var(--oxobz-gap-quarter) 0 0 !important;
+    opacity: 0.4;
+}
+
+:global(.dark-theme) .markdownMark {
+    filter: invert();
+}
+
+/* ---- Actions bar (feedback-module __actions) ----
+ * `space-between` in the module is reserved for a second/left action this
+ * component never renders — see header note; flex-end matches the captured
+ * single-button instance.
+ */
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--oxobz-gap-half);
+    background: var(--accents-1);
+    border-top: 1px solid var(--accents-2);
+}
+
+/* ---- Success (feedback-module __successWrapper + @keyframes appear) ---- */
+.successWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.successWrapper svg,
+.successWrapper p {
+    opacity: 0;
+    transform: translateY(4px);
+    animation: appear 0.5s forwards;
+}
+
+.successWrapper svg {
+    animation-delay: 0.1s;
+}
+
+.successWrapper p:first-of-type {
+    animation-delay: 0.3s;
+}
+
+.successWrapper p:last-of-type {
+    animation-delay: 0.4s;
+}
+
+.successDescription {
+    color: var(--ds-gray-900);
+}
+
+@keyframes appear {
+    0% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}

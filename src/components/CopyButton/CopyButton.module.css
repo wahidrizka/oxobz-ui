@@ -1,0 +1,132 @@
+/**
+ * CopyButton — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ *   Module: copy-button-module__8qN89q — .copyButtonIcon, .initial, .icon,
+ *   .visible, .hidden, @keyframes fadeIn/fadeOut. This is the single source
+ *   of truth for the icon cross-fade timing/easing (0.15s ease-out,
+ *   opacity 0/1 + scale .5/1, `animation-fill-mode: forwards`).
+ * - _nextstatic/chunks/9be0a455333005ab.css
+ *   Module: button-module__QyrFCa (+ reset-module__ylizOa) — the root button
+ *   is styled as a `secondary`, `shape="square"`, `size="medium"` Button
+ *   (verified token-for-token against Button.module.css in this package):
+ *   bordered background-100 button, box-shadow border, gray-100/200 hover.
+ * - _nextstatic/component-inspect-element/copy-button.html
+ *   Snapshot: `data-geist-button` on the root confirms the Button-based
+ *   composition; `data-testid="copy/button"` demo page renders the stack as
+ *   a "relative size-4" (16px) wrapper around two absolutely-positioned
+ *   16px icon layers — reproduced here as `.iconStack` (not a hashed
+ *   production class; the module only styles the layers themselves).
+ *
+ * Var mapping: --geist-form-height → --oxobz-form-height, --geist-focus-ring
+ * → --ds-focus-ring-outline (already the token name in this package).
+ */
+
+/* ---- Root button (button-module secondary + shape="square" + medium) ---- */
+.copyButtonIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transform: translateZ(0);
+    box-sizing: border-box;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    outline: none;
+    text-decoration: none;
+
+    width: var(--oxobz-form-height);
+    height: var(--oxobz-form-height);
+    border-radius: 6px;
+
+    --themed-bg: var(--ds-background-100);
+    --themed-hover-bg: var(--ds-gray-alpha-200);
+    --themed-fg: var(--ds-gray-1000);
+    --themed-border: var(--ds-gray-400);
+
+    color: var(--themed-fg);
+    background: var(--themed-bg);
+    box-shadow: 0 0 0 1px var(--themed-border);
+
+    transition-property: border-color, background, color, transform, box-shadow;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+}
+
+.copyButtonIcon:focus-visible {
+    outline: var(--ds-focus-ring-outline);
+    outline-offset: 2px;
+}
+
+.copyButtonIcon:hover:not(:disabled) {
+    background: var(--ds-gray-100);
+}
+
+:global(.dark-theme) .copyButtonIcon:hover:not(:disabled) {
+    background: var(--ds-gray-200);
+}
+
+.copyButtonIcon:disabled {
+    cursor: not-allowed;
+    color: var(--ds-gray-700);
+    background: var(--ds-gray-100);
+    --themed-border: var(--ds-gray-400);
+}
+
+/* ---- Icon stack wrapper (snapshot: "relative size-4") ---- */
+.iconStack {
+    position: relative;
+    width: 16px;
+    height: 16px;
+}
+
+/* ---- copy-button-module__8qN89q ---- */
+.icon {
+    position: absolute;
+    display: flex;
+}
+
+/* Resting hidden state applied before any interaction — no entrance
+   animation plays on mount (matches production: only .visible/.hidden
+   trigger the keyframe animations). */
+.initial {
+    opacity: 0;
+    scale: 0.5;
+}
+
+.visible {
+    animation: 0.15s ease-out forwards fadeIn;
+}
+
+.hidden {
+    animation: 0.15s ease-out forwards fadeOut;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        scale: 0.5;
+    }
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+        scale: 1;
+    }
+    to {
+        opacity: 0;
+        scale: 0.5;
+    }
+}
