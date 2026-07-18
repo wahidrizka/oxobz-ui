@@ -1,0 +1,119 @@
+/**
+ * SplitButton — CSS Module
+ *
+ * Source: _nextstatic/component-inspect-element/split-button.html (geistcn
+ * Tailwind snapshot; literal utility classes translated to concrete CSS).
+ * The two buttons and the popover already get their variant / size / hover /
+ * focus / motion styling from Button.module.css and Menu.module.css — this
+ * module adds only the "joined pair" seam chrome that is specific to
+ * SplitButton: the flex wrapper, the seam-side corner removal, the shared
+ * outline, and the hairline divider between the two buttons.
+ *
+ * Verified per-instance in the snapshot (default vs secondary variant, every
+ * size, the icon-only example, and the icon-label example all agree):
+ *   - both buttons get `box-shadow: none` + `border: 1px solid var(--ds-gray-400)`
+ *     regardless of variant (overriding Button's own secondary box-shadow-border).
+ *   - primary: rounded-r-none, border-right: 0.
+ *   - toggle: rounded-l-none, border-left: 0, plus a 1px divider pseudo-element.
+ *   - divider color is a real production quirk, reproduced as-is:
+ *     the `default` variant paints the seam with a static color
+ *     (`#404040` light / `#cdcdcd` dark) — the `--divider-color` custom
+ *     property is declared on the wrapper but left UNUSED for this variant —
+ *     while the `secondary` variant actually consumes it, resolving to
+ *     `var(--ds-gray-300)`.
+ *
+ * needsRecapture: `.menuItem` / `.itemTitle` / `.itemDescription` are NOT a
+ * 1:1 translation of a captured DOM — every SplitButton instance in the
+ * snapshot has its dropdown closed (aria-expanded="false" /
+ * data-is-open="false"). These three classes are a best-effort composition
+ * of Menu's own `.item` row (b4b9d0dd5348b0c3.css) plus the title/description
+ * typography already verified for ChoiceboxGroup
+ * (1c419a75d7e589ae.css — 14px font-size, 20px line-height).
+ */
+
+/* ---- Wrapper (joins the two buttons; --divider-color is consumed only by
+   the secondary-variant seam, see .toggleSecondary below) ---- */
+.wrapper {
+    display: flex !important;
+    position: relative;
+}
+
+/* ---- Shared seam chrome ---- */
+.primary,
+.toggle {
+    position: relative;
+    z-index: 1;
+    box-shadow: none !important;
+    border: 1px solid var(--ds-gray-400) !important;
+}
+
+.primary:focus-visible,
+.toggle:focus-visible {
+    z-index: 2;
+}
+
+/* ---- Primary: seam on the right ---- */
+.primary {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-right: 0 !important;
+}
+
+/* ---- Toggle: seam on the left, plus the divider hairline ---- */
+.toggle {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-left: 0 !important;
+}
+
+.toggle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -1px;
+    height: 100%;
+    width: 1px;
+    background: #404040;
+}
+
+:global(.dark-theme) .toggle::before {
+    background: #cdcdcd;
+}
+
+.toggle[disabled]::before {
+    opacity: 0.1;
+}
+
+/* Secondary variant: the divider is the themed gray-300 token instead of the
+   static default-variant color above. */
+.toggleSecondary::before,
+:global(.dark-theme) .toggleSecondary::before {
+    background: var(--ds-gray-300);
+}
+
+/* ---- Dropdown item (needsRecapture — see header note) ---- */
+.menuItem {
+    height: auto;
+    padding: 8px 12px;
+    /* Icon (prefix) stays top-aligned against the two stacked text lines,
+       instead of Menu's default vertical centering for single-line items. */
+    align-items: flex-start;
+}
+
+/* Both are `display: block` (not part of a flex column — MenuItem only
+   exposes a single wrapping <span> around its children, so title and
+   description stack via normal block flow inside it). */
+.itemTitle {
+    display: block;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+}
+
+.itemDescription {
+    display: block;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    color: var(--ds-gray-900);
+}

@@ -199,5 +199,32 @@ export type { ScrollerProps, ScrollerOverflow } from './components/Scroller';
 export { ThemeSwitcher } from './components/ThemeSwitcher';
 export type { ThemeSwitcherProps } from './components/ThemeSwitcher';
 
+export {
+    TableRoot, Table, TableColgroup, TableCol, TableHeader,
+    TableRow, TableHead, TableBody, TableCell, TableFooter,
+} from './components/Table';
+export type {
+    TableRootProps, TableProps, TableColgroupProps, TableColProps, TableHeaderProps,
+    TableRowProps, TableHeadProps, TableBodyProps, TableCellProps, TableFooterProps,
+} from './components/Table';
+
+export { FileTree, Tree, Folder, File } from './components/FileTree';
+export type { TreeProps, FolderProps, FileProps, FileType } from './components/FileTree';
+
+export { JsonView, makeJsonViewHighlightPattern } from './components/JsonView';
+export type { JsonViewProps, JsonValue } from './components/JsonView';
+
+export { Phone } from './components/Phone';
+export type { PhoneProps } from './components/Phone';
+
+export { Video } from './components/Video';
+export type { VideoProps } from './components/Video';
+
+export { SplitButton, SplitButtonMenuItem } from './components/SplitButton';
+export type { SplitButtonProps, SplitButtonMenuItemProps, SplitButtonVariant, SplitButtonMenuAlignment } from './components/SplitButton';
+
+export { Calendar } from './components/Calendar';
+export type { CalendarProps, CalendarSize, DateValue, RangeValue, WeekDayIndex } from './components/Calendar';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

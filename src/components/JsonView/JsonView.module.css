@@ -1,0 +1,191 @@
+/**
+ * JsonView — CSS Module
+ *
+ * Source: geistcn Tailwind snapshot (_nextstatic/component-inspect-element/
+ * JSON-view.html). No component-module CSS hash exists for this component —
+ * geistcn renders it with plain Tailwind v4 utility classes (arbitrary values
+ * like `pl-[18px]`, `size-4`, `group/json-child`), so every value below is
+ * resolved directly from the Tailwind utilities in the snapshot, cross-checked
+ * against the resolved utility values in chunk 20v_289ahbeyd.css (the new
+ * geistcn Tailwind chunk — e.g. `.rounded{border-radius:.25rem}`).
+ *
+ * Structure: `.wrapper` (typography sizing) > `.tree` (role="tree") >
+ * recursive `.treeItem` (role="treeitem") > `.row`/`.rowToggle` (the
+ * clickable/focusable inner line) + `.group` (role="group", children) +
+ * `.closingLine` (closing bracket + trailing comma).
+ *
+ * Colors are all `--ds-*` tokens (colors.css); dark values are NOT the
+ * automatic dark-theme flip of the same token — production swaps to a
+ * different step/family per kind (e.g. string values: gray-900 in light,
+ * confirmed as green-900 vs blue-700, not green-700), so each is a
+ * `:global(.dark-theme)` override, matching the snapshot's
+ * `[[data-theme='dark']_&]:*` classes exactly.
+ */
+
+/* ---- Outer sizing wrapper (inline-block max-w-full w-max align-top font-mono leading-5 text-copy-13) ---- */
+.wrapper {
+    display: inline-block;
+    max-width: 100%;
+    width: max-content;
+    vertical-align: top;
+    font-family: var(--font-mono, var(--font-mono-fallback)), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 13px;
+    line-height: 20px;
+    /* Not present as an explicit class in the snapshot (color is inherited
+       from the docs page body there) — set here so the component is legible
+       when dropped anywhere on its own. */
+    color: var(--ds-gray-1000);
+}
+
+/* ---- Tree root (role="tree"; m-0 block max-w-full w-max bg-transparent p-0 leading-5 whitespace-pre-wrap [overflow-wrap:anywhere]) ---- */
+.tree {
+    display: block;
+    margin: 0;
+    max-width: 100%;
+    width: max-content;
+    background: transparent;
+    padding: 0;
+    line-height: 20px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* ---- Tree item (role="treeitem"; m-0 block py-0 pr-0 pl-2 outline-none) ---- */
+.treeItem {
+    display: block;
+    margin: 0;
+    padding: 0 0 0 8px;
+    outline: none;
+}
+
+/* ---- Children wrapper (role="group"; m-0 block p-0) ---- */
+.group {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---- Inner row (box-border inline-block min-h-5 -ml-3 rounded pl-[18px] align-top) ---- */
+.row {
+    box-sizing: border-box;
+    display: inline-block;
+    min-height: 20px;
+    margin-left: -12px;
+    border-radius: 4px;
+    padding-left: 18px;
+    vertical-align: top;
+}
+
+/* Focus ring lands on the outer .treeItem (it carries tabindex); production
+   applies the visible ring/background to the inner .row via Tailwind's
+   `group-focus-visible/json-child:*` — replicated as a descendant rule. */
+.treeItem:focus-visible .row {
+    outline: 2px solid var(--ds-blue-700);
+    outline-offset: 1px;
+}
+
+/* ---- Toggle-only modifier (containers with children: cursor-pointer touch-manipulation hover:bg-gray-alpha-100) ---- */
+.rowToggle {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.rowToggle:hover {
+    background: var(--ds-gray-alpha-100);
+}
+
+.treeItem:focus-visible .rowToggle {
+    background: var(--ds-gray-alpha-100);
+}
+
+/* ---- Disclosure icon (aria-hidden; mr-0.5 -ml-[18px] inline-flex size-4 flex-[0_0_16px] translate-y-0.5 items-center justify-center align-top text-gray-500) ---- */
+.icon {
+    display: inline-flex;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 2px;
+    margin-left: -18px;
+    transform: translateY(2px);
+    vertical-align: top;
+    color: var(--ds-gray-500);
+}
+
+.rowToggle:hover .icon,
+.treeItem:focus-visible .icon {
+    color: var(--ds-gray-1000);
+}
+
+:global(.dark-theme) .icon {
+    color: var(--ds-gray-700);
+}
+
+:global(.dark-theme) .rowToggle:hover .icon,
+:global(.dark-theme) .treeItem:focus-visible .icon {
+    color: var(--ds-gray-500);
+}
+
+/* ---- Key name (font-normal text-pink-900) ---- */
+.key {
+    font-weight: 400;
+    color: var(--ds-pink-900);
+}
+
+:global(.dark-theme) .key {
+    color: var(--ds-pink-700);
+}
+
+/* ---- Primitive values ---- */
+.valueString {
+    color: var(--ds-green-900);
+}
+
+:global(.dark-theme) .valueString {
+    color: var(--ds-blue-700);
+}
+
+.valueNumber {
+    color: var(--ds-blue-900);
+}
+
+:global(.dark-theme) .valueNumber {
+    color: var(--ds-blue-700);
+}
+
+.valueBoolean {
+    color: var(--ds-amber-900);
+}
+
+:global(.dark-theme) .valueBoolean {
+    color: var(--ds-amber-700);
+}
+
+.valueNull {
+    color: var(--ds-gray-900);
+}
+
+:global(.dark-theme) .valueNull {
+    color: var(--ds-gray-700);
+}
+
+/* ---- Collapsed-node ellipsis (text-gray-900) ---- */
+.ellipsis {
+    color: var(--ds-gray-900);
+}
+
+:global(.dark-theme) .ellipsis {
+    color: var(--ds-gray-700);
+}
+
+/* ---- Closing bracket line (class="block") ---- */
+.closingLine {
+    display: block;
+}
+
+/* ---- Search highlight mark (bg-[var(--geist-highlight-yellow)] text-black) ---- */
+.mark {
+    background: var(--oxobz-highlight-yellow);
+    color: #000;
+}

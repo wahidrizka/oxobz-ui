@@ -1,0 +1,224 @@
+/**
+ * Video — CSS Module
+ *
+ * Production source: _nextstatic/component-inspect-element/video.html
+ * (geistcn / Tailwind-v4 snapshot — this component has no legacy
+ * "*-module__" class in b4b9d0dd5348b0c3.css; every value below is folded
+ * from the raw Tailwind utility/arbitrary-value classes on the figure /
+ * video / controls-bar markup, cross-checked against
+ * _nextstatic/chunks/20v_289ahbeyd.css for shared tokens: rounded-md = .375rem
+ * (--radius-md), transition-all default duration = .15s
+ * (--default-transition-duration), --ds-shadow-tooltip from
+ * _nextstatic/chunks/1c419a75d7e589ae.css.
+ *
+ * Three captured variants (Default, No Loop, No Controls) share one DOM
+ * shape; "No Controls" simply omits the .controlsBar block entirely.
+ *
+ * Deviations from the raw snapshot, called out explicitly:
+ * - The controls bar's mobile override includes `scale-y-0` alongside
+ *   `opacity-100`, which would visually collapse the bar's height at the
+ *   same time it's made fully opaque — almost certainly dead/inconsistent
+ *   Tailwind carried over from a shared popover-animation recipe. Reproducing
+ *   it would render the "always visible on mobile" bar invisible, so it is
+ *   intentionally NOT replicated; the bar simply gets opacity: 1 with no
+ *   transform below 992px.
+ * - `peer-has-hover:` (the scrub-dot reveal) is a non-standard/plugin
+ *   Tailwind variant with no resolvable rule in the shipped chunks. It is
+ *   approximated with a plain `:hover` on the progress track wrapper, which
+ *   is functionally equivalent (reveal the scrub handle while hovering the
+ *   scrub area).
+ *
+ * Var mapping: --geist-foreground / --geist-background (legacy Geist tokens,
+ * undefined in oxobz tokens) keep the same fallback convention used in
+ * Progress.module.css for --geist-radius: var(--geist-foreground,
+ * var(--ds-gray-1000)) / var(--geist-background, var(--ds-background-100)).
+ * --ds-gray-900 / --ds-gray-1000 / --ds-gray-200 / --ds-shadow-tooltip /
+ * --ds-focus-ring flip with the theme automatically — no .dark-theme block
+ * needed.
+ */
+
+/* ---- Root <figure> (figure.block.text-center.my-[var(--video-margin)].mx-0) ---- */
+.figure {
+    display: block;
+    text-align: center;
+    margin: var(--video-margin) 0;
+}
+
+/* ---- Aspect wrapper (relative.my-0.mx-auto.w-[var(--video-width)].max-w-full) ---- */
+.aspectWrapper {
+    position: relative;
+    margin: 0 auto;
+    width: var(--video-width);
+    max-width: 100%;
+}
+
+/* ---- Aspect box (flex.justify-center.relative, padding-bottom set inline per width/height) ---- */
+.aspectBox {
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+/* ---- <video> (h-full.absolute.left-0.top-0.w-full.cursor-pointer + fullscreen utilities) ---- */
+.video {
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    cursor: pointer;
+}
+
+.video:-webkit-full-screen {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    z-index: 99999999;
+}
+
+.video:fullscreen {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    z-index: 99999999;
+}
+
+/* ---- Controls bar (absolute.bottom-[5%]...opacity-0.rounded-md.w-[85%]...transition-all) ---- */
+.controlsBar {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--geist-background, var(--ds-background-100));
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    opacity: 0;
+    border-radius: 6px;
+    width: 85%;
+    box-shadow: var(--ds-shadow-tooltip);
+    transition: opacity 0.15s ease-in-out;
+}
+
+.aspectWrapper:hover .controlsBar,
+.aspectWrapper:focus-within .controlsBar {
+    opacity: 1;
+}
+
+/* Always visible on touch / narrow layouts (max-[992px]:opacity-100) */
+@media (max-width: 992px) {
+    .controlsBar {
+        opacity: 1;
+    }
+}
+
+/* ---- Play/pause button (bg-transparent.border-0.size-10.flex...p-0) ---- */
+.playButton {
+    background: transparent;
+    border: 0;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--geist-foreground, var(--ds-gray-1000));
+}
+
+.playButton:focus-visible {
+    border-radius: 2px;
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* ---- Time labels (text-[13px].leading-10.py-0...tabular-nums.w-[60px]) ---- */
+.timeCurrent,
+.timeDuration {
+    font-size: 13px;
+    line-height: 40px;
+    padding: 0 12px;
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    width: 60px;
+    color: var(--ds-gray-900);
+}
+
+/* Current time is flush against the play button (pl-0 overrides px-3) */
+.timeCurrent {
+    padding-left: 0;
+}
+
+/* ---- Progress track (relative.flex.items-center.flex-[1_0_auto].-mt-px) ---- */
+.progressTrack {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 0 auto;
+    margin-top: -1px;
+    cursor: pointer;
+}
+
+/* Click hit-area sitting over the thin visual progress bar (w-full.h-[18px]) */
+.hitArea {
+    width: 100%;
+    height: 18px;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Native <progress> (peer.bg-gray-1000.h-1.w-full.absolute...rounded-[5px]) ---- */
+.progress {
+    appearance: none;
+    position: absolute;
+    top: calc(50% - 1px);
+    left: 0;
+    width: 100%;
+    height: 4px;
+    border-radius: 5px;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--geist-foreground, var(--ds-gray-1000));
+    border: none;
+}
+
+.progress::-webkit-progress-bar {
+    background: var(--ds-gray-200);
+    border-radius: 5px;
+}
+
+.progress::-webkit-progress-value {
+    background: var(--geist-foreground, var(--ds-gray-1000));
+    border-radius: 5px;
+}
+
+.progress::-moz-progress-bar {
+    background: var(--geist-foreground, var(--ds-gray-1000));
+    border-radius: 5px;
+}
+
+/* ---- Scrub dot (absolute.size-2.5.rounded-[50%]...scale-0.transition-[...].duration-100) ---- */
+.scrubDot {
+    position: absolute;
+    top: calc(50% - 5px);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--geist-foreground, var(--ds-gray-1000));
+    transform: translate(4px, 1px) scale(0);
+    transition:
+        width 0.1s ease-in-out,
+        height 0.1s ease-in-out,
+        border-radius 0.1s ease-in-out,
+        transform 0.1s ease-in-out,
+        background-color 0.1s ease-in-out;
+    pointer-events: none;
+}
+
+/* peer-has-hover approximation — see header note */
+.progressTrack:hover .scrubDot {
+    transform: translate(4px, 1px) scale(1);
+}

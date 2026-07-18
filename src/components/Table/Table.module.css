@@ -1,0 +1,151 @@
+/**
+ * Table — CSS Module
+ *
+ * Source: `_nextstatic/component-inspect-element/table.html` — geistcn
+ * Tailwind snapshot (source of truth), all 6 documented examples (Basic,
+ * Striped, Bordered, Interactive, Full Featured, Virtualized). No
+ * `[data-slot]`-scoped rule exists in `_nextstatic/chunks/` for this
+ * component (geistcn ships Table as plain Tailwind utilities, not a CSS
+ * module) — every declaration below is a literal translation of the
+ * Tailwind classes captured in the snapshot, cross-checked against the
+ * resolved utility values in chunk 20v_289ahbeyd.css / 3qv8jvk0udmxc.css
+ * (Tailwind v4 utilities: `--text-sm`, `--font-weight-medium`,
+ * `.rounded-sm`, `.transition-colors`, `.px-2`, `.h-3`, ...).
+ *
+ * Not implemented (documented, not fabricated):
+ * - `virtualize` on TableBody has no distinguishing Tailwind class anywhere
+ *   in the snapshot — Geist's production render windows thousands of rows
+ *   with dynamic-height spacer `<tr>`s, which is pure runtime/JS behavior,
+ *   not CSS. A live scroll-interaction capture of the "Virtualized Table"
+ *   example (not a static DOM snapshot) would be needed to derive the
+ *   exact windowing algorithm. See {@link TableBodyProps.virtualize}.
+ * - No sortable-header, sticky-header, or checkbox-selection example is
+ *   present in table.html (the "Behavior" prose recommends composing a
+ *   plain `<button>` inside TableHead for sorting, and a Checkbox inside
+ *   TableCell/TableHead for selection — both already supported structurally
+ *   below via the `:has([role="checkbox"])` / last-column rules, with no
+ *   dedicated Table prop in production to replicate).
+ */
+
+/* ---- TableRoot (table-root) ---- */
+.root {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* ---- Table (table) ---- */
+.table {
+    width: 100%;
+    caption-side: bottom;
+    /* Tailwind `text-sm`: font-size .875rem; line-height calc(1.25 / .875),
+       a unitless ratio (chunk 20v_289ahbeyd.css `--text-sm` / `--text-sm--line-height`). */
+    font-size: 0.875rem;
+    line-height: 1.4286;
+    color: var(--ds-gray-900);
+}
+
+/* ---- TableColgroup / TableCol (table-colgroup / table-col) ----
+ * No default styling — column widths are supplied via TableCol's className
+ * (production usage: `<TableCol className="w-[44%]" />`). */
+
+/* ---- TableHeader (table-header) ---- */
+.header tr {
+    border-bottom: 1px solid var(--ds-gray-400);
+}
+
+/* ---- TableRow (table-row) ---- */
+.row {
+    transition-property: color, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+/* ---- TableHead (table-head) ---- */
+.head {
+    height: var(--oxobz-space-medium, 40px);
+    border-color: var(--ds-gray-400);
+    padding-inline: 0.5rem;
+    font-weight: 500;
+    color: var(--ds-gray-900);
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.head:last-child {
+    text-align: right;
+}
+
+/* ---- TableBody (table-body) ---- */
+
+/* Hidden spacer tbody rendered immediately before the real one — a 12px gap
+   between the header hairline and the first row, present in every example. */
+.spacer {
+    display: block;
+    height: 0.75rem;
+}
+
+.body td:first-child {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.body td:last-child {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+}
+
+/* `striped` — tint odd rows (table.html "Striped Table"). */
+.striped tr:nth-child(odd) {
+    background: var(--ds-background-200);
+}
+
+/* `bordered` — 1px hairline between rows, omitted after the last row
+   (table.html "Bordered Table"). */
+.bordered tr:not(:last-child) {
+    border-bottom: 1px solid var(--ds-gray-400);
+}
+
+/* `interactive` — tint the hovered row (table.html "Interactive Table"). */
+.interactive tr:hover {
+    background: var(--ds-gray-100);
+}
+
+/* ---- TableCell (table-cell) ---- */
+.cell {
+    padding: 0.625rem 0.5rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.cell:last-child {
+    text-align: right;
+}
+
+/* Full-cell link pattern: a `data-cell-link="true"` descendant removes all
+   cell padding so the link fills the cell. */
+.cell:has([data-cell-link='true']) {
+    padding: 0;
+}
+
+/* ---- Shared: TableHead + TableCell checkbox adjustments ---- */
+.head:has([role='checkbox']),
+.cell:has([role='checkbox']) {
+    padding-inline-end: 0;
+}
+
+.head > [role='checkbox'],
+.cell > [role='checkbox'] {
+    transform: translateY(2px);
+}
+
+/* ---- TableFooter (table-footer) ---- */
+.footer {
+    border-top: 1px solid var(--ds-gray-400);
+    font-weight: 500;
+}
+
+.footer > tr:last-child {
+    border-bottom: 0;
+}

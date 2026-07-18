@@ -1,0 +1,200 @@
+/* ========================================
+ *  Phone — CSS Modules
+ *
+ *  Translated 1:1 from Geist production Tailwind
+ *  Source: _nextstatic/component-inspect-element/phone.html
+ * ======================================== */
+
+/* Container query wrapper — container-type: inline-size */
+.containerQuery {
+    container-type: inline-size;
+}
+
+/* Bezel / case — relative w-full outline-[2px] rounded-[52px] p-[2.5%]
+   [&]:rounded-[15cqw] bg-[#000] outline-[#333]
+   (the [&] variant overrides the fixed 52px radius with a container-relative one) */
+.bezel {
+    position: relative;
+    width: 100%;
+    outline: 2px solid #333;
+    border-radius: 15cqw;
+    padding: 2.5%;
+    background-color: #000;
+}
+
+/* Screen — rounded-[44px] overflow-hidden aspect-[9/19.5] relative
+   [&]:rounded-[calc(15cqw-6px)] */
+.screen {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 9 / 19.5;
+    border-radius: calc(15cqw - 6px);
+}
+
+/* Screen content slot — absolute inset-0 bg-[#878787] (fallback backdrop
+   shown when no screenshot/children is supplied) */
+.screenBackdrop {
+    position: absolute;
+    inset: 0;
+    background-color: #878787;
+}
+
+/* Bottom scrim — absolute bottom-0 left-0 w-full h-[18%]
+   bg-gradient-to-b from-transparent via-[#000]/20 to-[#000]/70
+   (keeps the status bar legible over bright screenshots) */
+.scrim {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 18%;
+    background: linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.2) 50%, rgb(0 0 0 / 0.7) 100%);
+}
+
+/* Dynamic island / notch — absolute top-[2.5%] left-1/2 -translate-x-1/2
+   w-[30%] h-[4%] bg-[#000] rounded-full */
+.notch {
+    position: absolute;
+    top: 2.5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 4%;
+    background-color: #000;
+    border-radius: 9999px;
+}
+
+/* Home indicator — bg-[#fff] w-[34%] h-[0.6%] rounded-full absolute
+   bottom-[3%] left-1/2 -translate-x-1/2 */
+.homeIndicator {
+    position: absolute;
+    bottom: 3%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 34%;
+    height: 0.6%;
+    background-color: #fff;
+    border-radius: 9999px;
+}
+
+/* Status bar row — absolute bottom-[6%] left-0 w-full flex items-center
+   justify-between px-[6%] gap-2 */
+.statusBar {
+    position: absolute;
+    bottom: 6%;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 6%;
+    padding-right: 6%;
+    gap: 8px;
+}
+
+/* Shared pill chrome — text-[#fff]/80 bg-[rgba(15,15,15,0.32)]
+   backdrop-blur-sm rounded-full flex items-center justify-center shadow-[...] */
+.pillIcon,
+.pillAddress {
+    color: rgb(255 255 255 / 0.8);
+    background-color: rgb(15 15 15 / 0.32);
+    backdrop-filter: blur(4px);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0px 0px 1.5px rgba(0, 0, 0, 0.1),
+        0px 0.65px 5px rgba(0, 0, 0, 0.12),
+        inset 0.65px 0.65px 1px -0.65px rgba(255, 255, 255, 0.8),
+        inset -0.65px -0.65px 2px -0.65px rgba(255, 255, 255, 0.4);
+}
+
+/* Icon pill (back / more) — w-[12cqw] h-[12cqw] */
+.pillIcon {
+    width: 12cqw;
+    height: 12cqw;
+    flex-shrink: 0;
+}
+
+/* Address pill — h-[12cqw] w-auto flex-1 text-label-13 min-w-0 */
+.pillAddress {
+    height: 12cqw;
+    width: auto;
+    flex: 1 1 0%;
+    min-width: 0;
+    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    line-height: 16px;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+/* Address text — text-[#fff] w-full block truncate px-4 text-center text-[4.5cqw] */
+.addressText {
+    color: #fff;
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 16px;
+    padding-right: 16px;
+    text-align: center;
+    font-size: 4.5cqw;
+}
+
+/* Back icon — -ml-0.5 w-[5cqw] h-[5cqw] */
+.backIcon {
+    margin-left: -2px;
+    width: 5cqw;
+    height: 5cqw;
+}
+
+/* More icon — w-[5cqw] h-[5cqw] */
+.moreIcon {
+    width: 5cqw;
+    height: 5cqw;
+}
+
+/* Side buttons — shared: absolute w-0.5 bg-[#333] */
+.sideButton {
+    position: absolute;
+    width: 2px;
+    background-color: #333;
+}
+
+/* Mute switch — top-[15%] -left-1 h-[3.5%] rounded-tl-full rounded-bl-full */
+.buttonMute {
+    top: 15%;
+    left: -4px;
+    height: 3.5%;
+    border-top-left-radius: 9999px;
+    border-bottom-left-radius: 9999px;
+}
+
+/* Volume up — top-[23.4%] -left-1 h-[7.1%] rounded-tl-full rounded-bl-full */
+.buttonVolumeUp {
+    top: 23.4%;
+    left: -4px;
+    height: 7.1%;
+    border-top-left-radius: 9999px;
+    border-bottom-left-radius: 9999px;
+}
+
+/* Volume down — top-[32.4%] -left-1 h-[7.1%] rounded-tl-full rounded-bl-full */
+.buttonVolumeDown {
+    top: 32.4%;
+    left: -4px;
+    height: 7.1%;
+    border-top-left-radius: 9999px;
+    border-bottom-left-radius: 9999px;
+}
+
+/* Power button — top-[28.2%] -right-1 h-[11%] rounded-tr-full rounded-br-full */
+.buttonPower {
+    top: 28.2%;
+    right: -4px;
+    height: 11%;
+    border-top-right-radius: 9999px;
+    border-bottom-right-radius: 9999px;
+}
