@@ -1,0 +1,264 @@
+/**
+ * CalendarGrid — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   Module: calendar-module__lCNR3G — .contentWrapper, .currentMonth,
+ *   .caretButton, .table (thead/tbody/tr/th/td/span), and the day-state
+ *   classes .selected, .highlight, .focused, .inRange, .firstInRange,
+ *   .lastInRange, .disabled, .outsideMonth, .weekend, .hovered.
+ * - _nextstatic/component-inspect-element/calendar-popovers.html
+ *   geistcn/Tailwind rendered day-grid (source of truth on conflicts). Where
+ *   the module and the snapshot disagree the snapshot wins: range endpoint /
+ *   band radius is 4px (snapshot rounded-l-[4px]) not the module's 6px, and
+ *   the range band is var(--ds-gray-300) (snapshot aria-selected:bg-gray-300)
+ *   not the module's var(--accents-2).
+ *
+ * Legacy --geist-space-2x / --geist-gap-half are not defined as oxobz tokens,
+ * so their production value (8px) is inlined. Dark theme needs no override:
+ * every color is a --ds- token that already flips with .dark-theme.
+ *
+ * Renamed from Calendar.module.css when the grid was made internal
+ * (CalendarGrid) and the public `Calendar` chrome took over the
+ * Calendar.tsx / Calendar.module.css file pair. Class names below are
+ * unchanged from the original module — do not edit them without re-checking
+ * against the production sources above.
+ */
+
+/* ---- Panel wrapper (calendar-module __contentWrapper) ---- */
+.contentWrapper {
+    --padding: 8px;
+    position: relative;
+    padding: var(--padding);
+    border-radius: 6px;
+    background-image:
+        linear-gradient(
+            to right,
+            var(--ds-background-100),
+            transparent var(--padding),
+            transparent 30%,
+            transparent calc(100% - var(--padding)),
+            var(--ds-background-100)
+        ),
+        linear-gradient(to top, var(--ds-background-100), transparent var(--padding));
+    width: fit-content;
+}
+
+/* ---- Header row: month title + prev/next carets ---- */
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.monthTitleWrap {
+    flex: 1 1 0%;
+    overflow: hidden;
+}
+
+/* ---- Month/year label (calendar-module __currentMonth) ---- */
+.currentMonth {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    color: var(--ds-gray-1000);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* ---- Prev / Next caret buttons (calendar-module __caretButton) ---- */
+.caretButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    width: 24px;
+    height: 24px;
+    padding: 2px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ds-gray-700);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+
+.caretButton:hover:not(:disabled) {
+    color: var(--ds-gray-1000);
+}
+
+.caretButton:active:not(:disabled) {
+    background: var(--ds-gray-300);
+}
+
+.caretButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ds-gray-700);
+}
+
+.caretButton:disabled {
+    color: var(--ds-gray-700);
+    cursor: not-allowed;
+}
+
+/* ---- Grid table (calendar-module __table) ---- */
+.table {
+    position: relative;
+    display: block;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.table thead,
+.table tbody {
+    display: block;
+}
+
+.table tbody {
+    margin-top: 14.5px;
+}
+
+.table tr {
+    display: flex;
+    flex-wrap: nowrap;
+    margin: 8px 0;
+}
+
+.table tr:last-of-type {
+    margin-bottom: 0;
+}
+
+/* ---- Weekday header cell (__table th) ---- */
+.weekday {
+    flex: 1;
+    padding: 0;
+    color: var(--ds-gray-900);
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* ---- Day cell wrapper (__table td) ---- */
+.cell {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Range band: any cell inside the selected range (aria-selected=true). */
+.cell[aria-selected='true'] {
+    background: var(--ds-gray-300);
+}
+
+.cell[aria-selected='true']:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.cell[aria-selected='true']:last-child {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+/* Range start: round the left, mask the left half so the band starts centered. */
+.firstInRange {
+    position: relative;
+    border-radius: 4px 0 0 4px;
+}
+
+.firstInRange::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    z-index: 0;
+    display: block;
+    width: 50%;
+    height: 100%;
+    background: var(--ds-background-100);
+}
+
+/* Range end: round the right, mask the right half. */
+.lastInRange {
+    position: relative;
+    border-radius: 0 4px 4px 0;
+}
+
+.lastInRange::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    z-index: 0;
+    display: block;
+    width: 50%;
+    height: 100%;
+    background: var(--ds-background-100);
+}
+
+/* ---- Day button (__table td span) ---- */
+.day {
+    z-index: 1;
+    display: block;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    outline: none;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 30px;
+    text-align: center;
+}
+
+.weekend {
+    color: var(--ds-gray-900);
+}
+
+.outsideMonth {
+    color: var(--ds-gray-700);
+}
+
+.disabled {
+    color: var(--ds-gray-700);
+    cursor: not-allowed;
+}
+
+.inRange {
+    color: var(--ds-gray-1000);
+}
+
+/* Hover preview on an eligible day (not disabled / selected / today). */
+.hovered:not(.disabled):not(.selected):not(.highlight) {
+    color: var(--ds-gray-1000);
+    border-color: var(--ds-gray-500);
+}
+
+/* Range endpoints / single selection. */
+.selected {
+    background: var(--ds-gray-1000);
+    color: var(--ds-background-100);
+}
+
+/* Today. */
+.highlight {
+    background: var(--ds-blue-900);
+    color: var(--ds-background-100);
+}
+
+.highlight.focused {
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* Roving keyboard focus ring. */
+.focused {
+    box-shadow:
+        0 0 0 1px var(--ds-background-100),
+        0 0 0 2.5px var(--ds-gray-1000);
+}

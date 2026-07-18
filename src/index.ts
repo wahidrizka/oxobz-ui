@@ -223,17 +223,15 @@ export type { VideoProps } from './components/Video';
 export { SplitButton, SplitButtonMenuItem } from './components/SplitButton';
 export type { SplitButtonProps, SplitButtonMenuItemProps, SplitButtonVariant, SplitButtonMenuAlignment } from './components/SplitButton';
 
-export { Calendar, CalendarPopover, getDefaultCalendarPresets } from './components/Calendar';
+export { Calendar } from './components/Calendar';
 export type {
     CalendarProps,
     CalendarSize,
+    CalendarPresets,
+    CalendarPresetEntry,
     DateValue,
     RangeValue,
     WeekDayIndex,
-    CalendarPopoverProps,
-    CalendarPopoverSize,
-    CalendarPreset,
-    CalendarTimezone,
 } from './components/Calendar';
 
 // Tokens CSS export — users import via:

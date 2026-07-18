@@ -243,31 +243,67 @@ describe('File', () => {
         expect(link?.tagName).toBe('A');
     });
 
-    // Every value documented in file-tree-open.html's Show-code JSX (the
-    // `main.tsx` / `dashboard.tsx` examples nested under the `app` folder).
+    // Every value documented in file-tree-expanded.html's Show-code JSX
+    // (`main.tsx` / `dashboard.tsx` examples nested under the `app` folder,
+    // captured with that folder actually open this time).
     const fileTypeInfo: ReadonlyArray<readonly [FileType, string]> = [
         ['edge-function', 'main.tsx'],
         ['lambda', 'dashboard.tsx'],
         ['middleware', 'dashboard.tsx'],
     ];
 
-    it.each(fileTypeInfo)(
-        'forwards type="%s" as data-type and still renders the generic file icon',
-        (type, name) => {
-            render(
-                <Tree>
-                    <File name={name} type={type} />
-                </Tree>,
-            );
-            const link = screen.getByText(name).closest('a');
-            expect(link).toHaveAttribute('data-type', type);
-            // file-tree-open.html's `app` folder (which holds these typed
-            // examples) is still collapsed in that snapshot's rendered DOM,
-            // so no per-type icon/badge swap is verified — every type keeps
-            // rendering the same generic file icon (see FileTree.tsx TODO).
-            expect(link?.querySelector('svg')).toBeInTheDocument();
-        },
-    );
+    it.each(fileTypeInfo)('forwards type="%s" as data-type', (type, name) => {
+        render(
+            <Tree>
+                <File name={name} type={type} />
+            </Tree>,
+        );
+        const link = screen.getByText(name).closest('a');
+        expect(link).toHaveAttribute('data-type', type);
+    });
+
+    // Per-type icon swap, verified path-for-path against
+    // file-tree-expanded.html's rendered rows (see FileTree.tsx's
+    // FILE_TYPE_ICONS doc comment for the full match evidence). Replaces
+    // the earlier "still renders the generic file icon" assertion now that
+    // a snapshot with the `app` folder actually expanded exists.
+    it('renders FunctionEdgeColor (two-tone, purple accent) for type="edge-function"', () => {
+        render(
+            <Tree>
+                <File name="main.tsx" type="edge-function" />
+            </Tree>,
+        );
+        const svg = screen.getByText('main.tsx').closest('a')?.querySelector('svg');
+        const paths = svg?.querySelectorAll('path') ?? [];
+        expect(paths).toHaveLength(2);
+        expect(paths[1]).toHaveAttribute('fill', 'var(--ds-purple-700)');
+    });
+
+    it('renders FunctionSquare (single-color, rounded-square frame) for type="lambda"', () => {
+        render(
+            <Tree>
+                <File name="dashboard.tsx" type="lambda" />
+            </Tree>,
+        );
+        const svg = screen.getByText('dashboard.tsx').closest('a')?.querySelector('svg');
+        const paths = svg?.querySelectorAll('path') ?? [];
+        expect(paths).toHaveLength(1);
+        expect(paths[0]).toHaveAttribute('fill', 'currentColor');
+        // Coordinate unique to FunctionSquare's frame/glyph path among this
+        // file's icon set — not present in FunctionEdgeColor's or
+        // FunctionMiddleware's path data.
+        expect(paths[0]?.getAttribute('d')).toContain('10.2462');
+    });
+
+    it('renders FunctionMiddleware (clipPath-wrapped glyph) for type="middleware"', () => {
+        render(
+            <Tree>
+                <File name="dashboard.tsx" type="middleware" />
+            </Tree>,
+        );
+        const svg = screen.getByText('dashboard.tsx').closest('a')?.querySelector('svg');
+        expect(svg?.querySelector('clipPath')).toBeInTheDocument();
+    });
 
     it('renders without a data-type attribute when type is omitted (default)', () => {
         render(
@@ -277,6 +313,17 @@ describe('File', () => {
         );
         const link = screen.getByText('index.js').closest('a');
         expect(link).not.toHaveAttribute('data-type');
+    });
+
+    it('renders the generic single-path FileIcon (no clipPath) when type is omitted', () => {
+        render(
+            <Tree>
+                <File name="index.js" />
+            </Tree>,
+        );
+        const svg = screen.getByText('index.js').closest('a')?.querySelector('svg');
+        expect(svg?.querySelectorAll('path')).toHaveLength(1);
+        expect(svg?.querySelector('clipPath')).not.toBeInTheDocument();
     });
 
     it('appends a custom className after the module class', () => {

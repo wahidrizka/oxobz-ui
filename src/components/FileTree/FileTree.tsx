@@ -5,10 +5,19 @@ import {
     useContext,
     useState,
     type AnchorHTMLAttributes,
+    type ComponentType,
     type HTMLAttributes,
     type ReactNode,
 } from 'react';
-import { File as FileIcon, FolderClosed, FolderOpen } from '@oxobz/icons';
+import {
+    File as FileIcon,
+    FolderClosed,
+    FolderOpen,
+    FunctionEdgeColor,
+    FunctionMiddleware,
+    FunctionSquare,
+    type IconProps,
+} from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import styles from './FileTree.module.css';
 
@@ -153,20 +162,15 @@ Folder.displayName = 'Folder';
 /* ------------------------------------------------------------------ */
 
 /**
- * Function-runtime badge shown on a deployed file. Accepted and forwarded
- * as `data-type` only. Re-verified against file-tree-open.html (Show-code
- * expanded): the three documented values below are confirmed 1:1 from the
- * Show-code JSX (`main.tsx` / `dashboard.tsx` examples under the `app`
- * folder), but the `app` folder itself is *still* collapsed in that
- * snapshot's actual rendered DOM (no `title="main.tsx"` or similar appears
- * outside the Show-code text) — so the icon/badge/color treatment for a
- * typed File row remains unverified, exactly as before. Do not guess it.
- *
- * Candidates exist in `@oxobz/icons` for a future pass once a snapshot with
- * the `app` folder actually expanded is captured: `FunctionEdge` /
- * `FunctionEdgeColor` (edge-function), `Lambda` / `LambdaRectangle` /
- * `LambdaRectangleFill` (lambda), `Middleware` / `FunctionMiddleware`
- * (middleware). None are wired up — see the fallback note on `File` below.
+ * Function-runtime badge shown on a deployed file. Verified path-for-path
+ * against file-tree-expanded.html — the `app` folder was captured actually
+ * open this time — via its Show-code JSX:
+ * `<File name="main.tsx" type="edge-function" />`,
+ * `<File name="dashboard.tsx" type="lambda" />`,
+ * `<File name="dashboard.tsx" type="middleware" />` (lines 19-21), matched
+ * 1:1 in that order against the three rendered rows under `app`. Each swaps
+ * the row's icon to a distinct `@oxobz/icons` component — see
+ * FILE_TYPE_ICONS below for the per-type mapping and match evidence.
  */
 export type FileType = 'edge-function' | 'lambda' | 'middleware';
 
@@ -175,9 +179,37 @@ export interface FileProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>,
     name: string;
     /** Optional link target. When omitted, the row renders as a plain (non-navigating) row, matching `index.js` in the snapshot. */
     href?: string;
-    /** Function runtime this file deploys as. Visual treatment unverified — see FileType doc comment. */
+    /** Function runtime this file deploys as — swaps the row's icon. See FILE_TYPE_ICONS. */
     type?: FileType;
 }
+
+/**
+ * `type` -> icon, verified path-for-path against file-tree-expanded.html
+ * (arc-vs-cubic-bezier notation, 2-decimal rounding, collinear-point
+ * removal, and path start-point rotation only — same shapes/colors; all
+ * expected artifacts of the production build's SVGO pass over the same
+ * source icon, the same kind of diff already seen confirming `main.tsx`):
+ *  - "edge-function" -> FunctionEdgeColor. Two-tone: base glyph path in
+ *    currentColor, accent path in var(--ds-purple-700) — matches
+ *    `main.tsx`'s two <path> elements exactly, accent color included.
+ *  - "lambda"        -> FunctionSquare. Single-color (currentColor only)
+ *    rounded-square frame + brace glyph — matches the first
+ *    `dashboard.tsx` row.
+ *  - "middleware"    -> FunctionMiddleware. Same rounded-square frame as
+ *    FunctionSquare, "m"-shaped glyph, wrapped in a <clipPath> — matches
+ *    the second `dashboard.tsx` row.
+ *
+ * `Lambda` / `LambdaRectangle` / `LambdaRectangleFill` (a literal Greek
+ * lambda glyph) and `Middleware` (a circular sync-arrows glyph) were the
+ * naively name-matched candidates but do NOT match either rendered icon —
+ * ruled out by comparing `d=` path data coordinate-by-coordinate, not by
+ * name association.
+ */
+const FILE_TYPE_ICONS: Record<FileType, ComponentType<IconProps>> = {
+    'edge-function': FunctionEdgeColor,
+    lambda: FunctionSquare,
+    middleware: FunctionMiddleware,
+};
 
 /**
  * File — a leaf row. Renders an `<a>` (matching file-tree.html exactly,
@@ -197,14 +229,15 @@ export interface FileProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>,
  * the anchor shrink to start right after the last guide, so hovering a
  * nested file only highlights from its icon onward, matching production.
  *
- * TODO(needs-recapture): `type` currently only forwards `data-type` and
- * always renders the generic `FileIcon` regardless of value. Re-verify once
- * a snapshot exists with the `app` folder actually expanded (click it open,
- * *then* inspect+copy) so the real per-type icon/badge markup is in the DOM.
+ * The icon swaps per `type` via FILE_TYPE_ICONS, falling back to the
+ * generic `FileIcon` when `type` is omitted — matching `index.js` /
+ * `.vc-config.json` in the snapshot. Both cases share the same wrapper
+ * span/classes (`.icon.fileIcon`); only the inner `<svg>` differs.
  */
 const File = forwardRef<HTMLAnchorElement, FileProps>(
     ({ name, href, type, className, ...rest }, ref) => {
         const depth = useContext(TreeDepthContext);
+        const TypeIcon = type ? FILE_TYPE_ICONS[type] : undefined;
 
         return (
             <li className={styles.item} title={name} data-oxobz-file-tree-file="">
@@ -217,7 +250,7 @@ const File = forwardRef<HTMLAnchorElement, FileProps>(
                     data-type={type}
                 >
                     <span className={cn(styles.icon, styles.fileIcon)}>
-                        <FileIcon size={14} />
+                        {TypeIcon ? <TypeIcon size={14} /> : <FileIcon size={14} />}
                     </span>
                     <span className={styles.label}>{name}</span>
                 </a>

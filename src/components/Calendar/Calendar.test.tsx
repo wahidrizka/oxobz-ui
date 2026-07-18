@@ -1,8 +1,8 @@
 import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
-import { Calendar } from './Calendar';
-import { CalendarPopover, getDefaultCalendarPresets } from './CalendarPopover';
+import { CalendarGrid } from './CalendarGrid';
+import { Calendar, type CalendarPresets } from './Calendar';
 
 /** July 2026 as the pinned visible month (July 1 is a Wednesday). */
 const JULY_2026 = new Date(2026, 6, 1);
@@ -15,11 +15,11 @@ function day(container: HTMLElement, iso: string) {
     return container.querySelector<HTMLSpanElement>(`[data-date="${iso}"]`);
 }
 
-describe('Calendar', () => {
+describe('CalendarGrid', () => {
     // ── Rendering ──
 
     it('renders a root with data-oxobz-calendar and data-version="v1"', () => {
-        const { container } = render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root).toHaveAttribute('data-version', 'v1');
@@ -28,18 +28,18 @@ describe('Calendar', () => {
 
     it('allows a custom data-version', () => {
         const { container } = render(
-            <Calendar data-version="v2" defaultFocusedMonth={JULY_2026} />,
+            <CalendarGrid data-version="v2" defaultFocusedMonth={JULY_2026} />,
         );
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
 
     it('renders the month/year title', () => {
-        render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         expect(screen.getByText('July 2026')).toBeInTheDocument();
     });
 
     it('renders a 7-column weekday header (Sunday first by default)', () => {
-        const { container } = render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         const ths = container.querySelectorAll('thead th');
         expect(ths).toHaveLength(7);
         expect(ths[0].textContent).toBe('S');
@@ -49,7 +49,7 @@ describe('Calendar', () => {
 
     it('honors weekStartsOn=1 (Monday first)', () => {
         const { container } = render(
-            <Calendar defaultFocusedMonth={JULY_2026} weekStartsOn={1} />,
+            <CalendarGrid defaultFocusedMonth={JULY_2026} weekStartsOn={1} />,
         );
         const ths = container.querySelectorAll('thead th');
         expect(ths[0]).toHaveAttribute('abbr', 'Monday');
@@ -57,7 +57,7 @@ describe('Calendar', () => {
     });
 
     it('renders a grid with all days of the visible month', () => {
-        const { container } = render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         expect(day(container, '2026-07-01')).toBeInTheDocument();
         expect(day(container, '2026-07-31')).toBeInTheDocument();
         // leading/trailing days from adjacent months are marked outsideMonth
@@ -67,7 +67,7 @@ describe('Calendar', () => {
     });
 
     it('sets role=grid and aria-multiselectable on the table', () => {
-        const { container } = render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         const table = container.querySelector('table');
         expect(table).toHaveAttribute('role', 'grid');
         expect(table).toHaveAttribute('aria-multiselectable', 'true');
@@ -76,7 +76,7 @@ describe('Calendar', () => {
     // ── Month navigation ──
 
     it('navigates to the next and previous month', () => {
-        const { container } = render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         fireEvent.click(container.querySelector('[aria-label="Next"]')!);
         expect(screen.getByText('August 2026')).toBeInTheDocument();
         fireEvent.click(container.querySelector('[aria-label="Previous"]')!);
@@ -92,7 +92,7 @@ describe('Calendar', () => {
             2,
             '0',
         )}-${`${now.getDate()}`.padStart(2, '0')}`;
-        const { container } = render(<Calendar />);
+        const { container } = render(<CalendarGrid />);
         expect(day(container, iso)?.className).toContain('highlight');
     });
 
@@ -101,7 +101,7 @@ describe('Calendar', () => {
     it('anchors on the first click without firing onChange', () => {
         const onChange = vi.fn();
         const { container } = render(
-            <Calendar defaultFocusedMonth={JULY_2026} onChange={onChange} />,
+            <CalendarGrid defaultFocusedMonth={JULY_2026} onChange={onChange} />,
         );
         fireEvent.click(day(container, '2026-07-10')!);
         expect(onChange).not.toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('Calendar', () => {
     it('commits the range and fires onChange on the second click', () => {
         const onChange = vi.fn();
         const { container } = render(
-            <Calendar defaultFocusedMonth={JULY_2026} onChange={onChange} />,
+            <CalendarGrid defaultFocusedMonth={JULY_2026} onChange={onChange} />,
         );
         fireEvent.click(day(container, '2026-07-10')!);
         fireEvent.click(day(container, '2026-07-15')!);
@@ -127,7 +127,7 @@ describe('Calendar', () => {
     it('orders the range regardless of click direction', () => {
         const onChange = vi.fn();
         const { container } = render(
-            <Calendar defaultFocusedMonth={JULY_2026} onChange={onChange} />,
+            <CalendarGrid defaultFocusedMonth={JULY_2026} onChange={onChange} />,
         );
         fireEvent.click(day(container, '2026-07-20')!);
         fireEvent.click(day(container, '2026-07-12')!);
@@ -138,7 +138,7 @@ describe('Calendar', () => {
 
     it('paints the range band (aria-selected) across the committed range', () => {
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 value={{
                     start: new Date(2026, 6, 10),
@@ -161,7 +161,7 @@ describe('Calendar', () => {
 
     it('disables days before minValue and after maxValue', () => {
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 minValue={new Date(2026, 6, 10)}
                 maxValue={new Date(2026, 6, 20)}
@@ -175,7 +175,7 @@ describe('Calendar', () => {
     it('does not select a disabled day', () => {
         const onChange = vi.fn();
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 minValue={new Date(2026, 6, 10)}
                 onChange={onChange}
@@ -188,7 +188,7 @@ describe('Calendar', () => {
 
     it('marks days unavailable via isDateUnavailable', () => {
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 isDateUnavailable={(d) => d.getDate() === 14}
             />,
@@ -200,7 +200,7 @@ describe('Calendar', () => {
 
     it('disables the whole calendar and both nav buttons', () => {
         const { container } = render(
-            <Calendar defaultFocusedMonth={JULY_2026} isDisabled />,
+            <CalendarGrid defaultFocusedMonth={JULY_2026} isDisabled />,
         );
         expect(getRoot(container)).toHaveAttribute('data-disabled', 'true');
         expect(container.querySelector('[aria-label="Next"]')).toBeDisabled();
@@ -212,7 +212,7 @@ describe('Calendar', () => {
 
     it('moves focus with arrow keys', () => {
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 defaultValue={{
                     start: new Date(2026, 6, 10),
@@ -229,7 +229,7 @@ describe('Calendar', () => {
 
     it('jumps a month with PageDown', () => {
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 defaultValue={{
                     start: new Date(2026, 6, 10),
@@ -245,7 +245,7 @@ describe('Calendar', () => {
     it('selects the focused day with Enter', () => {
         const onChange = vi.fn();
         const { container } = render(
-            <Calendar
+            <CalendarGrid
                 defaultFocusedMonth={JULY_2026}
                 defaultValue={{
                     start: new Date(2026, 6, 10),
@@ -267,7 +267,7 @@ describe('Calendar', () => {
     // ── Roving tabindex ──
 
     it('exposes exactly one tabbable day (roving tabindex)', () => {
-        const { container } = render(<Calendar defaultFocusedMonth={JULY_2026} />);
+        const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         const tabbable = container.querySelectorAll(
             '[data-date][tabindex="0"]',
         );
@@ -278,7 +278,7 @@ describe('Calendar', () => {
 
     it('reflects the size prop as data-size', () => {
         const { container } = render(
-            <Calendar defaultFocusedMonth={JULY_2026} size="small" />,
+            <CalendarGrid defaultFocusedMonth={JULY_2026} size="small" />,
         );
         expect(getRoot(container)).toHaveAttribute('data-size', 'small');
     });
@@ -287,7 +287,7 @@ describe('Calendar', () => {
 
     it('appends a custom className after the module class', () => {
         const { container } = render(
-            <Calendar className="custom-cal" defaultFocusedMonth={JULY_2026} />,
+            <CalendarGrid className="custom-cal" defaultFocusedMonth={JULY_2026} />,
         );
         const root = getRoot(container);
         expect(root?.className).toContain('contentWrapper');
@@ -298,7 +298,7 @@ describe('Calendar', () => {
 
     it('forwards ref to the root element', () => {
         const ref = createRef<HTMLDivElement>();
-        render(<Calendar ref={ref} defaultFocusedMonth={JULY_2026} />);
+        render(<CalendarGrid ref={ref} defaultFocusedMonth={JULY_2026} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
         expect(ref.current).toHaveAttribute('data-oxobz-calendar');
     });
@@ -306,12 +306,12 @@ describe('Calendar', () => {
     // ── displayName ──
 
     it('has the correct displayName', () => {
-        expect(Calendar.displayName).toBe('Calendar');
+        expect(CalendarGrid.displayName).toBe('CalendarGrid');
     });
 });
 
 /* ================================================================== */
-/*  CalendarPopover — trigger + popover chrome                        */
+/*  Calendar — trigger + popover chrome                                */
 /* ================================================================== */
 
 const JUL_RANGE = {
@@ -319,37 +319,65 @@ const JUL_RANGE = {
     end: new Date(2026, 6, 18),
 };
 
+/** A single-entry preset used to seed an uncontrolled initial range via presetIndex. */
+const JUL_RANGE_PRESETS: CalendarPresets = {
+    jul: { text: 'July Range', start: JUL_RANGE.start, end: JUL_RANGE.end },
+};
+
+const PRESETS: CalendarPresets = {
+    'last-3-days': { text: 'Last 3 Days', start: new Date(2026, 6, 16), end: new Date(2026, 6, 18) },
+    'last-7-days': { text: 'Last 7 Days', start: new Date(2026, 6, 12), end: new Date(2026, 6, 18) },
+    'last-14-days': { text: 'Last 14 Days', start: new Date(2026, 6, 5), end: new Date(2026, 6, 18) },
+    'last-month': { text: 'Last Month', start: new Date(2026, 5, 1), end: new Date(2026, 5, 30) },
+};
+
 function trigger() {
     return screen.getByTestId('calendar/trigger/button');
 }
 
-describe('CalendarPopover', () => {
+describe('Calendar', () => {
     // ── Trigger rendering ──
 
     it('renders a root with data-oxobz-calendar-popover and data-version="v1"', () => {
-        const { container } = render(<CalendarPopover />);
+        const { container } = render(<Calendar />);
         const root = container.querySelector('[data-oxobz-calendar-popover]');
         expect(root).toBeInTheDocument();
         expect(root).toHaveAttribute('data-version', 'v1');
     });
 
-    it('renders the placeholder label and dialog trigger attributes', () => {
-        render(<CalendarPopover />);
+    it('renders the "Select Date Range" placeholder and dialog trigger attributes', () => {
+        render(<Calendar />);
         const btn = trigger();
         expect(btn).toHaveTextContent('Select Date Range');
         expect(btn).toHaveAttribute('aria-haspopup', 'dialog');
         expect(btn).toHaveAttribute('aria-expanded', 'false');
     });
 
-    it('shows the committed range as the trigger label', () => {
-        render(<CalendarPopover defaultValue={JUL_RANGE} />);
+    it('shows the committed range as the trigger label (seeded via presetIndex)', () => {
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         expect(trigger()).toHaveTextContent('Jul 4 - 18');
+    });
+
+    it('commits a range picked in the grid and updates the trigger label', () => {
+        const onChange = vi.fn();
+        render(<Calendar onChange={onChange} />);
+        fireEvent.click(trigger());
+        // Day numbers 15/20 are always inside the visible month (never part of
+        // the adjacent-month leading/trailing padding), so this is safe
+        // regardless of which month is "today" when the suite runs.
+        fireEvent.click(screen.getByTestId('calendar/cell/date-15'));
+        fireEvent.click(screen.getByTestId('calendar/cell/date-20'));
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
+        expect(arg.start.getDate()).toBe(15);
+        expect(arg.end.getDate()).toBe(20);
+        expect(trigger()).not.toHaveTextContent('Select Date Range');
     });
 
     // ── Open / close ──
 
     it('opens the popover on trigger click', () => {
-        render(<CalendarPopover />);
+        render(<Calendar />);
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         fireEvent.click(trigger());
         expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -357,70 +385,65 @@ describe('CalendarPopover', () => {
     });
 
     it('closes the popover on a second trigger click', () => {
-        render(<CalendarPopover />);
+        render(<Calendar />);
         fireEvent.click(trigger());
         fireEvent.click(trigger());
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('closes the popover on Escape', () => {
-        render(<CalendarPopover />);
+        render(<Calendar />);
         fireEvent.click(trigger());
         fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('closes the popover on outside click', () => {
-        render(<CalendarPopover />);
+        render(<Calendar />);
         fireEvent.click(trigger());
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         fireEvent.pointerDown(document.body);
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('fires onOpenChange when toggled', () => {
-        const onOpenChange = vi.fn();
-        render(<CalendarPopover onOpenChange={onOpenChange} />);
-        fireEvent.click(trigger());
-        expect(onOpenChange).toHaveBeenCalledWith(true);
-    });
-
-    // ── Presets ──
+    // ── Presets (Record<string, { text, start, end }>) ──
 
     it('renders a preset combobox only when presets are provided', () => {
-        const { rerender } = render(<CalendarPopover />);
+        const { rerender } = render(<Calendar />);
         expect(screen.queryByTestId('calendar/combobox-input')).not.toBeInTheDocument();
-        rerender(<CalendarPopover presets={getDefaultCalendarPresets(new Date(2026, 6, 18))} />);
+        rerender(<Calendar presets={PRESETS} />);
         expect(screen.getByTestId('calendar/combobox-input')).toBeInTheDocument();
     });
 
-    it('opens the preset listbox and sets the range + fires onChange on pick', () => {
+    it('opens the preset listbox, shows Title Case labels in insertion order, and fires onChange on pick', () => {
         const onChange = vi.fn();
-        const presets = getDefaultCalendarPresets(new Date(2026, 6, 18));
-        render(<CalendarPopover presets={presets} onChange={onChange} />);
+        render(<Calendar presets={PRESETS} onChange={onChange} />);
         fireEvent.click(screen.getByTestId('calendar/combobox-input'));
         expect(screen.getByRole('listbox')).toBeInTheDocument();
-        fireEvent.click(screen.getByTestId('calendar/preset/Last 7 Days'));
+        for (const label of ['Last 3 Days', 'Last 7 Days', 'Last 14 Days', 'Last Month']) {
+            expect(screen.getByText(label)).toBeInTheDocument();
+        }
+        fireEvent.click(screen.getByTestId('calendar/preset/last-7-days'));
         expect(onChange).toHaveBeenCalledTimes(1);
         const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
-        expect(arg).toEqual(presets[1].value);
+        expect(arg).toEqual({
+            start: PRESETS['last-7-days'].start,
+            end: PRESETS['last-7-days'].end,
+        });
         // The preset selection closes the listbox.
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
-    it('renders each preset with its Title Case label', () => {
-        const presets = getDefaultCalendarPresets(new Date(2026, 6, 18));
-        render(<CalendarPopover presets={presets} />);
-        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
-        for (const label of ['Last 3 Days', 'Last 7 Days', 'Last 14 Days', 'Last Month']) {
-            expect(screen.getByText(label)).toBeInTheDocument();
-        }
+    it('seeds the initial range from presetIndex (index into insertion order) when uncontrolled', () => {
+        render(<Calendar presets={PRESETS} presetIndex={2} />);
+        // index 2 -> 'last-14-days' -> Jul 5 - 18
+        expect(trigger()).toHaveTextContent('Jul 5 - 18');
     });
 
-    // ── Time inputs ──
+    // ── Time inputs (showTimeInput, default true) ──
 
-    it('renders time inputs and lets them change when showTimePicker', () => {
-        render(<CalendarPopover showTimePicker defaultValue={JUL_RANGE} />);
+    it('shows time inputs by default (showTimeInput defaults to true)', () => {
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         fireEvent.click(trigger());
         const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
         expect(startTime).toBeInTheDocument();
@@ -430,72 +453,80 @@ describe('CalendarPopover', () => {
     });
 
     it('renders date inputs reflecting the selected range', () => {
-        render(<CalendarPopover showTimePicker defaultValue={JUL_RANGE} />);
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         fireEvent.click(trigger());
         const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
         expect(startDate.value).toBe('Jul 04, 2026');
     });
 
-    // ── Timezone ──
-
-    it('renders a timezone select with the supplied options', () => {
-        render(
-            <CalendarPopover
-                timezones={[
-                    { value: 'UTC', label: 'UTC' },
-                    { value: 'Asia/Jakarta', label: 'Local (Asia/Jakarta)' },
-                ]}
-            />,
-        );
+    it('hides only the time sub-inputs when showTimeInput={false}, keeping the date row', () => {
+        render(<Calendar showTimeInput={false} />);
         fireEvent.click(trigger());
-        const select = screen.getByTestId('calendar/timezone-select');
-        expect(select).toBeInTheDocument();
-        expect(screen.getByRole('option', { name: 'Local (Asia/Jakarta)' })).toBeInTheDocument();
+        expect(screen.queryByTestId('calendar/input/start-time')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('calendar/input/end-time')).not.toBeInTheDocument();
+        expect(screen.getByTestId('calendar/input/start-date')).toBeInTheDocument();
+        expect(screen.getByTestId('calendar/input/end-date')).toBeInTheDocument();
     });
 
-    it('renders pinnedTimezone as read-only text (no select)', () => {
-        render(<CalendarPopover pinnedTimezone="UTC" />);
+    // ── Timezone (built-in UTC/Local select, or pinnedTimezone) ──
+
+    it('always renders the built-in UTC / Local timezone select when no pinnedTimezone is given', () => {
+        render(<Calendar />);
         fireEvent.click(trigger());
-        expect(screen.getByTestId('calendar/pinned-timezone')).toHaveTextContent('UTC');
+        expect(screen.getByTestId('calendar/timezone-select')).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'UTC' })).toBeInTheDocument();
+        const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        expect(screen.getByRole('option', { name: `Local (${localTz})` })).toBeInTheDocument();
+    });
+
+    it('still renders the timezone select when showTimeInput is false (horizontalLayout demo)', () => {
+        render(<Calendar horizontalLayout showTimeInput={false} />);
+        fireEvent.click(trigger());
+        expect(screen.getByTestId('calendar/timezone-select')).toBeInTheDocument();
+        expect(screen.queryByTestId('calendar/input/start-time')).not.toBeInTheDocument();
+    });
+
+    it('renders pinnedTimezone as read-only text instead of the select', () => {
+        render(<Calendar pinnedTimezone="America/Los_Angeles" />);
+        fireEvent.click(trigger());
+        expect(screen.getByTestId('calendar/pinned-timezone')).toHaveTextContent(
+            'America/Los_Angeles',
+        );
         expect(screen.queryByTestId('calendar/timezone-select')).not.toBeInTheDocument();
     });
 
     // ── allowClear ──
 
     it('renders a clear button that empties the selection', () => {
-        render(<CalendarPopover defaultValue={JUL_RANGE} allowClear />);
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} allowClear />);
         expect(trigger()).toHaveTextContent('Jul 4 - 18');
         fireEvent.click(screen.getByTestId('calendar/clear'));
         expect(trigger()).toHaveTextContent('Select Date Range');
     });
 
     it('does not render a clear button without a value', () => {
-        render(<CalendarPopover allowClear />);
+        render(<Calendar allowClear />);
         expect(screen.queryByTestId('calendar/clear')).not.toBeInTheDocument();
     });
 
     // ── Layouts ──
 
     it('applies the compact layout class', () => {
-        const { container } = render(
-            <CalendarPopover compact presets={getDefaultCalendarPresets()} />,
-        );
+        const { container } = render(<Calendar compact presets={PRESETS} />);
         expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
             'compact',
         );
     });
 
     it('applies the stacked layout class', () => {
-        const { container } = render(
-            <CalendarPopover stacked presets={getDefaultCalendarPresets()} />,
-        );
+        const { container } = render(<Calendar stacked presets={PRESETS} />);
         expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
             'stacked',
         );
     });
 
     it('applies the horizontal content-wrapper class inside the popover', () => {
-        const { container } = render(<CalendarPopover horizontalLayout showTimePicker />);
+        const { container } = render(<Calendar horizontalLayout />);
         fireEvent.click(trigger());
         const wrapper = container.querySelector(
             '[class*="calendarContentWrapperHorizontal"]',
@@ -504,17 +535,33 @@ describe('CalendarPopover', () => {
     });
 
     it('uses the vertical content-wrapper class by default', () => {
-        const { container } = render(<CalendarPopover />);
+        const { container } = render(<Calendar />);
         fireEvent.click(trigger());
         expect(
             container.querySelector('[class*="calendarContentWrapperHorizontal"]'),
         ).not.toBeInTheDocument();
     });
 
+    // ── popoverAlignment ──
+
+    it('defaults popoverAlignment to start (no center-alignment class)', () => {
+        const { container } = render(<Calendar />);
+        fireEvent.click(trigger());
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog?.className).not.toContain('popoverCenter');
+    });
+
+    it('applies a center-alignment class when popoverAlignment="center"', () => {
+        const { container } = render(<Calendar popoverAlignment="center" />);
+        fireEvent.click(trigger());
+        const dialog = container.querySelector('[role="dialog"]');
+        expect(dialog?.className).toContain('popoverCenter');
+    });
+
     // ── size ──
 
     it('reflects the size prop as data-size', () => {
-        const { container } = render(<CalendarPopover size="small" />);
+        const { container } = render(<Calendar size="small" />);
         expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
             'data-size',
             'small',
@@ -524,14 +571,14 @@ describe('CalendarPopover', () => {
     // ── disabled ──
 
     it('disables the trigger', () => {
-        render(<CalendarPopover disabled />);
+        render(<Calendar disabled />);
         expect(trigger()).toBeDisabled();
     });
 
     // ── Custom className / ref / displayName ──
 
     it('appends a custom className after the module class', () => {
-        const { container } = render(<CalendarPopover className="custom-pop" />);
+        const { container } = render(<Calendar className="custom-pop" />);
         const root = container.querySelector('[data-oxobz-calendar-popover]');
         expect(root?.className).toContain('calendar');
         expect(root?.className.endsWith('custom-pop')).toBe(true);
@@ -539,12 +586,12 @@ describe('CalendarPopover', () => {
 
     it('forwards ref to the root element', () => {
         const ref = createRef<HTMLDivElement>();
-        render(<CalendarPopover ref={ref} />);
+        render(<Calendar ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
         expect(ref.current).toHaveAttribute('data-oxobz-calendar-popover');
     });
 
     it('has the correct displayName', () => {
-        expect(CalendarPopover.displayName).toBe('CalendarPopover');
+        expect(Calendar.displayName).toBe('Calendar');
     });
 });

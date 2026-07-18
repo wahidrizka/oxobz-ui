@@ -1,258 +1,326 @@
 /**
- * Calendar — CSS Module
+ * Calendar — CSS Module (the "chrome" around the CalendarGrid panel).
+ *
+ * Renamed from CalendarPopover.module.css when the public component became
+ * `Calendar` (chrome) and the grid moved to CalendarGrid.tsx / .module.css.
  *
  * Production sources:
  * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   Module: calendar-module__lCNR3G — .contentWrapper, .currentMonth,
- *   .caretButton, .table (thead/tbody/tr/th/td/span), and the day-state
- *   classes .selected, .highlight, .focused, .inRange, .firstInRange,
- *   .lastInRange, .disabled, .outsideMonth, .weekend, .hovered.
- * - _nextstatic/component-inspect-element/calendar-popovers.html
- *   geistcn/Tailwind rendered day-grid (source of truth on conflicts). Where
- *   the module and the snapshot disagree the snapshot wins: range endpoint /
- *   band radius is 4px (snapshot rounded-l-[4px]) not the module's 6px, and
- *   the range band is var(--ds-gray-300) (snapshot aria-selected:bg-gray-300)
- *   not the module's var(--accents-2).
+ *   Module: calendar-module__lCNR3G — every chrome class is taken verbatim from
+ *   here: .calendar/.hasSelect/.compact/.stacked (trigger layouts), .popover,
+ *   .calendarContentWrapper(+Horizontal), .inputsWrapper/.inputRow/.timeInput,
+ *   .comboboxWrapper(+Small)/.comboboxInput(+Small)/.comboboxInputPrefix/Suffix,
+ *   .comboboxPopover/.suggestions/.comboboxItem, .clearButton(+Small).
+ * - _nextstatic/component-inspect-element/calendar-open.html
+ *   geistcn OPEN-popover snapshots. Source of truth for the popover inner
+ *   padding (--padding: 12px), the 32px (h-8) input height, `data-align`
+ *   (.popoverCenter — only "start"/default and "center" are evidenced), and
+ *   the timezone control: no visible "Timezone" caption in production (just
+ *   the select or the pinned span, centered) — .timezoneRow/.pinnedTimezone
+ *   below were adjusted from an earlier guess to match.
  *
- * Legacy --geist-space-2x / --geist-gap-half are not defined as oxobz tokens,
- * so their production value (8px) is inlined. Dark theme needs no override:
- * every color is a --ds- token that already flips with .dark-theme.
+ * Legacy geist tokens absent from oxobz are inlined at their production value:
+ *   --geist-radius 6px, --geist-gap-half 8px, --geist-space-2x 8px,
+ *   --geist-space-4x 16px, --geist-gap-quarter 4px, --ds-size-small 32px,
+ *   --ds-size-medium 40px. Dark theme needs no override: every color is a
+ *   --ds- / --accents- token that already flips with .dark-theme.
  */
 
-/* ---- Panel wrapper (calendar-module __contentWrapper) ---- */
-.contentWrapper {
-    --padding: 8px;
+/* ---- Outer wrapper (calendar-module __calendar) ---- */
+.calendar {
     position: relative;
-    padding: var(--padding);
-    border-radius: 6px;
-    background-image:
-        linear-gradient(
-            to right,
-            var(--ds-background-100),
-            transparent var(--padding),
-            transparent 30%,
-            transparent calc(100% - var(--padding)),
-            var(--ds-background-100)
-        ),
-        linear-gradient(to top, var(--ds-background-100), transparent var(--padding));
-    width: fit-content;
-}
-
-/* ---- Header row: month title + prev/next carets ---- */
-.header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.monthTitleWrap {
-    flex: 1 1 0%;
-    overflow: hidden;
-}
-
-/* ---- Month/year label (calendar-module __currentMonth) ---- */
-.currentMonth {
-    width: fit-content;
-    max-width: 100%;
-    margin: 0;
-    color: var(--ds-gray-1000);
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-/* ---- Prev / Next caret buttons (calendar-module __caretButton) ---- */
-.caretButton {
     display: inline-flex;
+    width: fit-content;
+}
+
+/* When a preset combobox sits next to the trigger the wrapper is a flex row. */
+.hasSelect {
+    display: flex;
+}
+
+/* Compact: button + combobox on one row, button rounded-left, combobox rounded-right. */
+.compact {
     align-items: center;
-    justify-content: center;
-    aspect-ratio: 1;
-    width: 24px;
-    height: 24px;
-    padding: 2px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--ds-gray-700);
-    cursor: pointer;
-    transition: color 0.15s, background 0.15s;
 }
 
-.caretButton:hover:not(:disabled) {
-    color: var(--ds-gray-1000);
+/* Stacked: combobox on top, trigger button below. */
+.stacked {
+    flex-direction: column;
+    display: inline-flex;
 }
 
-.caretButton:active:not(:disabled) {
-    background: var(--ds-gray-300);
-}
-
-.caretButton:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--ds-gray-700);
-}
-
-.caretButton:disabled {
-    color: var(--ds-gray-700);
-    cursor: not-allowed;
-}
-
-/* ---- Grid table (calendar-module __table) ---- */
-.table {
-    position: relative;
-    display: block;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-
-.table thead,
-.table tbody {
-    display: block;
-}
-
-.table tbody {
-    margin-top: 14.5px;
-}
-
-.table tr {
+/* ---- Trigger button (reuses <Button variant="secondary">) ---- */
+.trigger {
     display: flex;
-    flex-wrap: nowrap;
-    margin: 8px 0;
-}
-
-.table tr:last-of-type {
-    margin-bottom: 0;
-}
-
-/* ---- Weekday header cell (__table th) ---- */
-.weekday {
-    flex: 1;
-    padding: 0;
-    color: var(--ds-gray-900);
-    font-size: 0.75rem;
+    justify-content: space-between;
+    text-align: left;
     font-weight: 400;
-    text-align: center;
-    text-transform: uppercase;
+    width: var(--width, 250px);
 }
 
-/* ---- Day cell wrapper (__table td) ---- */
-.cell {
+.triggerIcon {
+    color: var(--ds-gray-700);
+}
+
+.calendar[data-disabled='true'] .trigger {
+    cursor: not-allowed;
+    color: var(--ds-gray-700);
+}
+
+/* ---- Preset combobox selector (calendar-module __comboboxWrapper) ---- */
+.comboboxWrapper {
+    position: relative;
     display: flex;
-    flex: 1;
-    justify-content: center;
-    width: 32px;
+    height: 40px;
+}
+
+.comboboxWrapperSmall {
     height: 32px;
-    padding: 0;
-    text-align: center;
-    cursor: pointer;
 }
 
-/* Range band: any cell inside the selected range (aria-selected=true). */
-.cell[aria-selected='true'] {
-    background: var(--ds-gray-300);
-}
-
-.cell[aria-selected='true']:first-child {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-}
-
-.cell[aria-selected='true']:last-child {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-}
-
-/* Range start: round the left, mask the left half so the band starts centered. */
-.firstInRange {
+/* The clickable input-like control (calendar-module __comboboxInput). */
+.comboboxInput {
     position: relative;
-    border-radius: 4px 0 0 4px;
-}
-
-.firstInRange::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    z-index: 0;
-    display: block;
-    width: 50%;
-    height: 100%;
-    background: var(--ds-background-100);
-}
-
-/* Range end: round the right, mask the right half. */
-.lastInRange {
-    position: relative;
-    border-radius: 0 4px 4px 0;
-}
-
-.lastInRange::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    z-index: 0;
-    display: block;
-    width: 50%;
-    height: 100%;
-    background: var(--ds-background-100);
-}
-
-/* ---- Day button (__table td span) ---- */
-.day {
-    z-index: 1;
-    display: block;
-    width: 32px;
-    height: 32px;
-    margin: 0;
-    border: 1px solid transparent;
-    border-radius: 4px;
+    width: var(--width, 165px);
+    height: 40px;
+    padding: 0 40px;
+    border: none;
+    border-radius: 6px;
     outline: none;
+    background: var(--ds-background-100);
+    background-clip: padding-box;
+    box-shadow: 0 0 0 1px var(--ds-gray-400);
+    color: var(--ds-gray-1000);
+    font-family: var(--font-sans, inherit);
     font-size: 14px;
     font-weight: 400;
-    line-height: 30px;
-    text-align: center;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s,
+        background 0.15s;
 }
 
-.weekend {
-    color: var(--ds-gray-900);
+.comboboxInputSmall {
+    height: 32px;
+    padding: 0 36px;
 }
 
-.outsideMonth {
-    color: var(--ds-gray-700);
+.comboboxInput:hover:not(:disabled) {
+    background: var(--ds-gray-100);
+    box-shadow: 0 0 0 1px var(--ds-gray-500);
 }
 
-.disabled {
-    color: var(--ds-gray-700);
-    cursor: not-allowed;
-}
-
-.inRange {
-    color: var(--ds-gray-1000);
-}
-
-/* Hover preview on an eligible day (not disabled / selected / today). */
-.hovered:not(.disabled):not(.selected):not(.highlight) {
-    color: var(--ds-gray-1000);
-    border-color: var(--ds-gray-500);
-}
-
-/* Range endpoints / single selection. */
-.selected {
-    background: var(--ds-gray-1000);
-    color: var(--ds-background-100);
-}
-
-/* Today. */
-.highlight {
-    background: var(--ds-blue-900);
-    color: var(--ds-background-100);
-}
-
-.highlight.focused {
+.comboboxInput:focus-visible {
     box-shadow: var(--ds-focus-ring);
 }
 
-/* Roving keyboard focus ring. */
-.focused {
-    box-shadow:
-        0 0 0 1px var(--ds-background-100),
-        0 0 0 2.5px var(--ds-gray-1000);
+/* Compact: combobox is the right-hand element, so round only its right side. */
+.compact .comboboxInput {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-left: 12px;
+}
+
+/* Stacked: combobox is on top, square its bottom edge against the button. */
+.stacked .comboboxInput {
+    border-bottom: none;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.comboboxInputPrefix {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 10;
+    pointer-events: none;
+    color: var(--ds-gray-700);
+}
+
+.comboboxWrapperSmall .comboboxInputPrefix {
+    top: 8px;
+    left: 9px;
+}
+
+.comboboxInputSuffix {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    z-index: 10;
+    pointer-events: none;
+    color: var(--ds-gray-700);
+    transform: translateY(-50%);
+    transition: transform 0.2s;
+}
+
+.comboboxWrapperSmall .comboboxInputSuffix {
+    right: 8px;
+}
+
+.comboboxWrapper[data-open='true'] .comboboxInputSuffix {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* ---- Preset dropdown (calendar-module __comboboxPopover / __suggestions) ---- */
+.comboboxPopover {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 99999999;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-menu);
+}
+
+.suggestions {
+    padding: 8px;
+    min-width: 165px;
+}
+
+.comboboxItem {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 8px;
+    border-radius: 6px;
+    scroll-margin: 8px;
+    color: var(--ds-gray-1000);
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.comboboxItem[aria-selected='true'] {
+    background-color: var(--ds-gray-300);
+}
+
+/* ---- Clear button (calendar-module __clearButton) ---- */
+.clearButton {
+    position: absolute;
+    top: 50%;
+    right: -0.25rem;
+    z-index: 50;
+    display: flex;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--ds-gray-700);
+    cursor: pointer;
+    transition: color 0.2s;
+    transform: translate(-50%, -50%);
+}
+
+.clearButton:hover {
+    color: var(--ds-gray-1000);
+}
+
+.clearButtonSmall {
+    right: -0.5rem;
+}
+
+/* ---- Popover (calendar-module __popover) ---- */
+.popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 99999999;
+    overflow: hidden;
+    outline: none;
+    border-radius: 12px;
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-menu);
+}
+
+/* popoverAlignment="center" (data-align="center" in the snapshot) — the only
+   other evidenced alignment besides the "start"/default (left: 0) above. */
+.popoverCenter {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.content {
+    --padding: 12px;
+    padding: var(--padding);
+}
+
+/* ---- Content layout (calendar-module __calendarContentWrapper) ---- */
+.calendarContentWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* horizontalLayout: inputs column beside the grid. */
+.calendarContentWrapperHorizontal {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 20px;
+}
+
+/* ---- Date / time inputs (calendar-module __inputsWrapper / __inputRow) ---- */
+.inputsWrapper {
+    margin-bottom: 12px;
+    margin-left: -12px;
+    margin-right: -12px;
+    padding: 0 12px 12px;
+    border-bottom: 1px solid var(--ds-gray-100);
+}
+
+/* In horizontal layout the inputs sit in their own column, no full-bleed border. */
+.calendarContentWrapperHorizontal .inputsWrapper {
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+}
+
+.inputGroupLabel {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--ds-gray-900);
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.inputGroupLabel:not(:first-child) {
+    margin-top: 10px;
+}
+
+.inputRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.inputRowSingle {
+    grid-template-columns: 1fr;
+}
+
+.inputRow input {
+    padding: 0 8px;
+    color: var(--ds-gray-1000);
+}
+
+.timeInput input {
+    text-transform: uppercase;
+}
+
+/*
+ * Timezone control row (built-in select, or pinned read-only text). The
+ * snapshot has no visible "Timezone" caption — just this centered control,
+ * so unlike Start/End this row does not pair with an .inputGroupLabel.
+ */
+.timezoneRow {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.pinnedTimezone {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    color: var(--ds-gray-800);
+    font-size: 0.75rem;
 }
