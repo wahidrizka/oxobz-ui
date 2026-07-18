@@ -169,5 +169,35 @@ export type { CodeProps } from './components/Code';
 export { MiddleTruncate } from './components/MiddleTruncate';
 export type { MiddleTruncateProps } from './components/MiddleTruncate';
 
+export { Entity, EntityContent, EntityList } from './components/Entity';
+export type { EntityProps, EntityAs, EntityContentProps, EntityListProps } from './components/Entity';
+
+export { Banner } from './components/Banner';
+export type { BannerProps, BannerButton } from './components/Banner';
+
+export { ProjectBanner } from './components/ProjectBanner';
+export type { ProjectBannerProps, ProjectBannerVariant, ProjectBannerCallToAction } from './components/ProjectBanner';
+
+export { ErrorCard } from './components/ErrorCard';
+export type { ErrorCardProps } from './components/ErrorCard';
+
+export {
+    Fieldset, FieldsetContent, FieldsetTitle, FieldsetSubtitle,
+    FieldsetFooter, FieldsetFooterStatus, FieldsetFooterActions, FieldsetFooterAction,
+    ErrorText, WarningText, DisabledWall,
+} from './components/Fieldset';
+export type {
+    FieldsetProps, FieldsetType, FieldsetContentProps, FieldsetTitleProps,
+    FieldsetSubtitleProps, FieldsetFooterProps, FieldsetFooterStatusProps,
+    FieldsetFooterActionsProps, FieldsetFooterActionProps,
+    ErrorTextProps, WarningTextProps, DisabledWallProps,
+} from './components/Fieldset';
+
+export { Scroller } from './components/Scroller';
+export type { ScrollerProps, ScrollerOverflow } from './components/Scroller';
+
+export { ThemeSwitcher } from './components/ThemeSwitcher';
+export type { ThemeSwitcherProps } from './components/ThemeSwitcher';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

@@ -1,0 +1,174 @@
+/**
+ * ProjectBanner — CSS Module
+ *
+ * No dedicated "project-banner-module" exists in any _nextstatic/chunks/*.css
+ * file (grepped "[a-zA-Z0-9_-]*banner[a-zA-Z0-9_-]*-module" — no hits). The
+ * production markup is built entirely from geistcn/Tailwind utility classes,
+ * so this module translates those utilities directly from
+ * _nextstatic/component-inspect-element/project-banner.html (source of
+ * truth), resolving arbitrary values against Tailwind's documented defaults
+ * (md breakpoint = 768px) and against 2dd69db0a79ce415.css for plain
+ * utilities (e.g. .rounded-xs{border-radius:2px}, .z-30{z-index:30}).
+ *
+ * Per-variant colors and the `--banner-focus-color` inline style were read
+ * off each of the four documented examples (Default/Success/Warning/Error).
+ */
+
+/* ---- Root (snapshot <aside>) ---- */
+.banner {
+    display: flex;
+    z-index: 30;
+    column-gap: 8px;
+    justify-content: center;
+    align-items: center;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    line-height: 20px;
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+    min-height: 40px;
+    transform: translateY(-1px);
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* ---- Variants (snapshot: text-*-900 bg-*-100 border-*-400) ---- */
+.default {
+    color: var(--ds-gray-900);
+    background: var(--ds-gray-100);
+    border-color: var(--ds-gray-400);
+}
+
+.success {
+    color: var(--ds-blue-900);
+    background: var(--ds-blue-100);
+    border-color: var(--ds-blue-400);
+}
+
+.warning {
+    color: var(--ds-amber-900);
+    background: var(--ds-amber-100);
+    border-color: var(--ds-amber-400);
+}
+
+.error {
+    color: var(--ds-red-900);
+    background: var(--ds-red-100);
+    border-color: var(--ds-red-400);
+}
+
+/* ---- Inner (snapshot: flex flex-col gap-2 px-6 w-full md:justify-center md:flex-row md:items-center) ---- */
+.inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 24px;
+    padding-right: 24px;
+    width: 100%;
+}
+
+@media screen and (min-width: 768px) {
+    .inner {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+/* ---- Message group (snapshot: flex gap-2 items-center) ---- */
+.message {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ---- Icon wrapper (snapshot: aria-hidden div, "shrink-0") ---- */
+.icon {
+    flex-shrink: 0;
+    display: flex;
+}
+
+.text {
+    margin: 0;
+}
+
+/* ---- Call-to-action wrapper (snapshot: ml-6 md:ml-0) ---- */
+.ctaWrap {
+    margin-left: 24px;
+}
+
+@media screen and (min-width: 768px) {
+    .ctaWrap {
+        margin-left: 0;
+    }
+}
+
+/* ---- Call-to-action link/button (snapshot CTA classes, shared by <a> and <button>) ---- */
+.cta {
+    cursor: pointer;
+    background: transparent;
+    padding: 4px 0;
+    font-family:
+        var(--font-sans, var(--font-sans-fallback)),
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        sans-serif;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    border: none;
+    outline: none;
+    border-radius: 2px;
+    height: 24px;
+    margin-top: -1px;
+    margin-bottom: -1px;
+}
+
+.cta:focus-visible {
+    box-shadow:
+        0 0 0 2px var(--ds-background-100),
+        0 0 0 4px var(--banner-focus-color, var(--ds-focus-color));
+    outline: none;
+}
+
+/* Underline + text color per variant (snapshot: decoration-*-400/500, text-*-1000, hover:text-*-900) */
+.default .cta {
+    color: var(--ds-gray-1000);
+    text-decoration-color: var(--ds-gray-500);
+}
+
+.default .cta:hover {
+    color: var(--ds-gray-900);
+    text-decoration-color: var(--ds-gray-500);
+}
+
+.success .cta {
+    color: var(--ds-blue-1000);
+    text-decoration-color: var(--ds-blue-400);
+}
+
+.success .cta:hover {
+    color: var(--ds-blue-900);
+    text-decoration-color: var(--ds-blue-500);
+}
+
+.warning .cta {
+    color: var(--ds-amber-1000);
+    text-decoration-color: var(--ds-amber-400);
+}
+
+.warning .cta:hover {
+    color: var(--ds-amber-900);
+    text-decoration-color: var(--ds-amber-500);
+}
+
+.error .cta {
+    color: var(--ds-red-1000);
+    text-decoration-color: var(--ds-red-400);
+}
+
+.error .cta:hover {
+    color: var(--ds-red-900);
+    text-decoration-color: var(--ds-red-500);
+}

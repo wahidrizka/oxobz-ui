@@ -1,0 +1,193 @@
+/**
+ * Fieldset — CSS Module
+ *
+ * Sources:
+ * - `_nextstatic/component-inspect-element/fieldset.html` — Tailwind /
+ *   geistcn snapshot, all 11 documented examples (Default, Disabled, With
+ *   Long Content, Multiple Fieldsets, Without Footer, Without Title, With
+ *   Error Text, With Warning Text, With Disabled Wall, Error Type, Warning
+ *   Type). Arbitrary-value Tailwind classes translated to plain CSS below.
+ * - `.material-base` preset: chunk 20v_289ahbeyd.css / 2dd69db0a79ce415.css.
+ * - `--geist-radius` (6px) / `--geist-gap` (24px, via `--geist-space-gap`):
+ *   chunk 1c419a75d7e589ae.css (`:root` tokens).
+ * - `.geist-disabled` / `.geist-disabled-wall` remaps: chunk
+ *   1c419a75d7e589ae.css / 20v_289ahbeyd.css (NOT the 76a5400c.../8cfa8a6...
+ *   duplicates).
+ * - `text-sm` / `leading-6` / `rounded-bl` / `rounded-br` / `mx-2` / `px-6` /
+ *   `py-3` / `min-h-[57px]` utility values: chunk 20v_289ahbeyd.css.
+ *
+ * Not implemented (documented, not fabricated):
+ * - The footer-actions Tailwind container-query variant (`max-w-3xl:ml-0`)
+ *   is a `@container` rule scoped to an ancestor not present in isolation;
+ *   only the plain `sm:` (min-width: 640px) breakpoint is replicated.
+ * - FieldsetSubtitle's extra bare `.disabled` class in production has no
+ *   matching rule in any reference chunk (likely a geistcn-internal CSS
+ *   module class outside our snapshot collection) — the dimmed color is
+ *   still correct via inheritance from `.content.disabled`.
+ */
+
+/* ---- Root ---- */
+
+.fieldset {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background-color: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border);
+}
+
+/* `type="error" | "warning"`: border replaces the hairline shadow. */
+.typeError {
+    border: 1px solid var(--ds-red-400);
+    box-shadow: none;
+}
+
+.typeWarning {
+    border: 1px solid var(--ds-amber-400);
+    box-shadow: none;
+}
+
+/* ---- Content ---- */
+
+.content {
+    position: relative;
+    background-color: var(--ds-background-100);
+    padding: var(--geist-gap, 24px);
+    border-top-left-radius: var(--geist-radius, 6px);
+    border-top-right-radius: var(--geist-radius, 6px);
+}
+
+/* No FieldsetFooter sibling → content is also the last child (rounds bottom). */
+.content:last-child {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.content.disabled {
+    color: var(--ds-gray-700);
+    --geist-foreground: var(--ds-gray-900);
+    --ds-gray-1000: var(--ds-gray-900);
+    --accents-8: var(--accents-5);
+    --accents-7: var(--accents-5);
+    --accents-6: var(--accents-4);
+    --accents-5: var(--accents-4);
+    --accents-4: var(--accents-3);
+}
+
+.content.disabled svg,
+.content.disabled img {
+    filter: grayscale();
+}
+
+/* ---- Title / Subtitle ---- */
+
+.title {
+    display: inline-flex;
+    align-items: center;
+    scroll-margin-top: 24px;
+    word-break: break-word;
+}
+
+.subtitle {
+    line-height: 24px;
+    padding-block: 12px;
+}
+
+/* ---- Footer ---- */
+
+.footer {
+    position: relative;
+    min-height: 57px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 12px 24px;
+    border-top: 1px solid var(--ds-gray-400);
+    background-color: var(--ds-background-200);
+    color: var(--ds-gray-900);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.footer.highlight {
+    background-color: var(--bg, #f5f5f5);
+}
+
+/* `Fieldset type="error" | "warning"` tints the footer (Tailwind
+   `group-data-[fieldset-type=…]/fieldset:*`). Footer is always FieldsetContent's
+   sibling, hence a direct-child selector off the root. */
+.fieldset[data-fieldset-type='error'] > .footer {
+    border-top-color: var(--ds-red-400);
+    background-color: var(--ds-red-100);
+    color: var(--ds-red-900);
+}
+
+.fieldset[data-fieldset-type='warning'] > .footer {
+    border-top-color: var(--ds-amber-400);
+    background-color: var(--ds-amber-100);
+    color: var(--ds-amber-900);
+}
+
+/* ---- Footer status ---- */
+
+.footerStatus {
+    display: flex;
+    align-items: center;
+    max-width: 100%;
+}
+
+/* ---- Footer actions ---- */
+
+.footerActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+@media (min-width: 640px) {
+    .footerActions {
+        justify-content: space-between;
+    }
+}
+
+.footerAction {
+    margin-inline: 8px;
+}
+
+.footerAction:first-child {
+    margin-left: 0;
+}
+
+.footerAction:last-child {
+    margin-right: 0;
+}
+
+@media (min-width: 640px) {
+    .footerAction {
+        text-align: center;
+        width: 100%;
+    }
+}
+
+/* ---- ErrorText / WarningText ---- */
+
+.errorText {
+    color: var(--ds-red-900);
+}
+
+.warningText {
+    color: var(--ds-amber-900);
+}
+
+/* ---- DisabledWall ---- */
+
+.disabledWall {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    cursor: not-allowed;
+    user-select: none;
+}

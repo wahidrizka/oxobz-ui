@@ -1,0 +1,152 @@
+/**
+ * Entity — CSS Module
+ *
+ * Production source: Entity ships from `@vercel/geistcn/components` — a
+ * plain-DOM, Tailwind-v4-utility component, NOT one of the legacy scoped
+ * "entity-module__..." CSS Modules (there is no such hash anywhere in
+ * _nextstatic/chunks/ — grep confirms it). Every visual rule below is folded
+ * from the raw Tailwind classes captured in the snapshot, since this project
+ * has no Tailwind (workspace CLAUDE.md).
+ *
+ * Verified against:
+ * - _nextstatic/component-inspect-element/entity.html — Show-code JSX +
+ *   rendered Tailwind classes for all 5 examples: Default, Entity with
+ *   Skeleton, Entity with List, Entity with List and Checkbox, Entity with
+ *   Fill, Entity with Column ClassNames.
+ * - _nextstatic/chunks/20v_289ahbeyd.css — Tailwind v4 utility resolution
+ *   for p-4 (1rem), gap-4 (1rem), rounded-[5px] (literal), flex-initial
+ *   (flex: 0 auto), transition-colors/duration-100/ease-in-out
+ *   (cubic-bezier(.4, 0, .2, 1)).
+ * - _nextstatic/chunks/1c419a75d7e589ae.css — the --ds-shadow-border
+ *   composite primitive used by EntityList's card shadow.
+ *
+ * Token mapping: the snapshot's `bg-[var(--geist-background)]` on
+ * `EntityList` references Geist's legacy page-background alias
+ * (`--geist-background: #fff` light / `#000` dark in production) — this
+ * project has no such token, so it is folded to the equivalent
+ * `--ds-background-100`. Every other color (--accents-1, --accents-2,
+ * --ds-gray-900, --ds-gray-alpha-400) is an existing oxobz token and already
+ * flips with `.dark-theme` — no dark override block is needed here.
+ */
+
+/* ==================================================================== */
+/*  EntityList — <ul>                                                   */
+/* ==================================================================== */
+
+.list {
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border), 0 4px 6px rgba(0, 0, 0, 0.04);
+    border-radius: 5px;
+    overflow: hidden;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Divider between rows; last row keeps no border (Tailwind's
+   `[&>li:not(:last-child)]:border-b` / `[&>button:not(:last-child)]:border-b`). */
+.list > li:not(:last-child),
+.list > button:not(:last-child) {
+    border-bottom: 1px solid var(--accents-2);
+}
+
+/* ==================================================================== */
+/*  Entity — <li> (default) or <button> (as="button")                   */
+/* ==================================================================== */
+
+.entity {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    flex: 0 auto;
+}
+
+/* as="button": interactive row treatment layered on top of .entity. */
+.button {
+    background-color: inherit;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition-property: color, background-color, border-color, outline-color,
+        text-decoration-color, fill, stroke;
+    transition-duration: 100ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button:hover {
+    background-color: var(--accents-1);
+}
+
+/* Row: holds the left and right columns side by side. */
+.section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Left column: the `left` prop node followed by `children`. Always rendered,
+   even with no `left` prop (see the Skeleton example). */
+.left {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+/* Right column: the `right` prop node. Only rendered when `right` is set. */
+.right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+}
+
+/* ==================================================================== */
+/*  EntityContent                                                        */
+/* ==================================================================== */
+
+.content {
+    /* Snapshot: `[--width:initial] w-[var(--width, initial)]` — a width
+       escape hatch left unused across every documented example, applied
+       here via the same custom-property mechanism (see rule: dynamic
+       values through CSS variables). */
+    --width: initial;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: var(--width);
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+/* `fill` prop: grow to consume the remaining row width. */
+.contentFill {
+    flex: 1 1 auto;
+}
+
+.inner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* text-copy-14 (global typography class) supplies font-size/line-height;
+   this module only adds weight + truncation. */
+.title {
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.description {
+    color: var(--ds-gray-900);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}

@@ -1,0 +1,113 @@
+/**
+ * Banner — CSS Module
+ *
+ * Source: _nextstatic/component-inspect-element/banner.html ("Default" example).
+ * geistcn Tailwind snapshot — no dedicated "banner-module" exists in the older
+ * component chunks (b4b9d0dd5348b0c3.css / 1c419a75d7e589ae.css); this component
+ * is styled purely with global Tailwind utility classes, resolved against the
+ * newer geistcn chunk _nextstatic/chunks/20v_289ahbeyd.css (Tailwind v4
+ * utilities). That chunk overrides the "lg" breakpoint to 961px
+ * (--breakpoint-lg: 961px), matching every @media below.
+ *
+ * Utility -> value lookup (20v_289ahbeyd.css):
+ *   .rounded-lg{border-radius:.5rem}       -> 8px  (root `rounded-lg`)
+ *   .rounded-full{border-radius:3.40282e38px} -> fully round (mobile CTA `!rounded-full`)
+ *   .p-6{padding:1.5rem}                    -> 24px (`.content`)
+ *   .p-4{padding:1rem}                      -> 16px (`.message`)
+ *   .gap-3{gap:.75rem}                      -> 12px (`.message`)
+ *   .border-gray-alpha-400{border-color:var(--ds-gray-alpha-400)}
+ *   .bg-background-100{background-color:var(--ds-background-100)}
+ *   .text-gray-900{color:var(--ds-gray-900)}
+ * Note: 2dd69db0a79ce415.css also defines `.rounded-lg{border-radius:12px}` but
+ * that rule lives under a `.tailwind` scope used by an unrelated table/card
+ * component (not an ancestor of Banner's root in the snapshot) — the unscoped
+ * 20v_289ahbeyd.css value (8px) is the one that applies here.
+ *
+ * `.text-copy-16` (message paragraph) is the existing oxobz-ui global
+ * typography utility (tokens/typography.css) — not redefined here.
+ *
+ * `.mobileCta` / the desktop CTA are ButtonLink (variant="secondary" size="small",
+ * `shape="rounded"` on mobile only) — reused as-is, not restyled here.
+ */
+
+/* ---- Root (banner-module __banner) ---- */
+.banner {
+    position: relative;
+    border: 1px solid var(--ds-gray-alpha-400);
+    background: var(--ds-background-100);
+    border-radius: 8px;
+}
+
+/* ---- Horizontal-scroll wrapper (banner-module __scroll) ---- */
+.scroll {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+    .scroll {
+        overflow: visible;
+    }
+}
+
+/* ---- Content wrapper (banner-module __content) ---- */
+.content {
+    width: 100%;
+    padding: 24px;
+}
+
+/* ---- Mobile CTA pill: whole message is the link label below "lg" ---- */
+.mobileCta {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    z-index: 1;
+}
+
+@media (min-width: 961px) {
+    .mobileCta {
+        display: none;
+    }
+}
+
+/* ---- Desktop message row: text + separate CTA at/above "lg" ---- */
+.message {
+    display: none;
+    width: 100%;
+    max-width: 1080px;
+    gap: 12px;
+    padding: 16px;
+}
+
+@media (min-width: 961px) {
+    .message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/*
+ * No `button` prop: there is no mobile pill to collapse into, so the
+ * message row is shown at every width instead of only "lg" and above.
+ * Not present in the snapshot (its only example always passes `button`) —
+ * a deliberate, minimal fallback for the documented optional prop.
+ */
+.message.solo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---- Message text ---- */
+.text {
+    color: var(--ds-gray-900);
+    margin: 0;
+}
+
+.text b {
+    font-weight: 600;
+    color: var(--ds-gray-1000);
+}

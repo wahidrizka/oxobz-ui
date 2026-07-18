@@ -1,0 +1,151 @@
+/**
+ * Scroller — CSS Module
+ *
+ * Production source: _nextstatic/chunks/0ir705xyqq90d.css
+ * Module: scroller-module__aGa9CG — .overlayContainer, .isHorizontal,
+ * .overlay, .top, .right, .bottom, .left, .scroller, .buttons.
+ *
+ * The snapshot DOM classes (scroller-module__aGa9CG__*) match this chunk's
+ * hash exactly; b4b9d0dd5348b0c3.css and d2f6d4dcdb88e56d.css do not define a
+ * scroller module at all, so 0ir705xyqq90d.css is the sole source (no
+ * conflict to resolve).
+ *
+ * The chunk also defines a `.mobileGrid` helper (a 470-670px responsive
+ * grid breakpoint) that no documented Scroller prop exposes — omitted here
+ * as dead surface rather than guessed at.
+ *
+ * Dark theme: the chunk ships both `.dark-theme` and `.design-dark-theme`
+ * selectors for the gradient color swap; only `.dark-theme` is relevant here
+ * (the class this workspace's theming uses), reached via CSS Modules'
+ * :global().
+ */
+
+/* ---- Root (scroller-module__overlayContainer) ---- */
+.overlayContainer {
+    --shadow-width-left: 40px;
+    --shadow-width-right: 40px;
+    --scroller-0: #fffffff2;
+    --scroller-1: #ffffffb3;
+    --scroller-2: #ffffff73;
+    --scroller-3: #fff3;
+    --scroller-4: #fff0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ---- Buttons row (scroller-module__buttons) ---- */
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 1px;
+}
+
+/* Horizontal scrollers left-align the button row that follows them instead
+   of centering it. */
+.overlayContainer.isHorizontal + .buttons {
+    justify-content: flex-start;
+}
+
+/* ---- Scrollable container (scroller-module__scroller) ---- */
+.scroller {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.scroller[data-overflow='x'] {
+    overflow: auto hidden;
+}
+
+.scroller[data-overflow='y'] {
+    overflow: hidden auto;
+}
+
+.scroller[data-overflow='both'] {
+    overflow: auto;
+}
+
+/* Direct children container: stacked column by default, row when the
+   scroller only scrolls horizontally. */
+.scroller > * {
+    display: flex;
+    flex-direction: column;
+}
+
+.overlayContainer.isHorizontal .scroller > * {
+    flex-direction: row;
+}
+
+.scroller::-webkit-scrollbar {
+    display: none;
+}
+
+/* ---- Edge-fade overlay (scroller-module__overlay) ---- */
+.overlay {
+    pointer-events: none;
+    touch-action: none;
+    z-index: 2;
+    --scroller-gradient: #fff 0, #ffffffb3 8px, #ffffff73 14px, #ffffff4d 19px,
+        #ffffff42 21px, #ffffff30 25px, #ffffff1f 29px, #ffffff0f 32px,
+        #ffffff08 34px, #ffffff05 36px, #ffffff02 38px, #ffffff01 39px,
+        #fff0 40px;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    overflow: hidden;
+    transform: scale(1.01);
+}
+
+.overlay:before,
+.overlay:after {
+    content: '';
+    will-change: background;
+    background-repeat: no-repeat;
+    background-size: 200% 200%;
+    width: 100%;
+    height: 100%;
+    transition: background-position 0.3s;
+    position: absolute;
+    transform: translateZ(0);
+}
+
+.overlay:before {
+    background: linear-gradient(to bottom, var(--scroller-gradient)),
+        linear-gradient(to right, var(--scroller-gradient));
+    background-position: -40px -40px;
+}
+
+.overlay:after {
+    background: linear-gradient(to top, var(--scroller-gradient)),
+        linear-gradient(to left, var(--scroller-gradient));
+    background-position: calc(100% + 40px) calc(100% + 40px);
+}
+
+.overlay.top:before {
+    background-position-y: top;
+}
+
+.overlay.left:before {
+    background-position-x: left;
+}
+
+.overlay.right:after {
+    background-position-x: right;
+}
+
+.overlay.bottom:after {
+    background-position-y: bottom;
+}
+
+:global(.dark-theme) .overlay {
+    --scroller-gradient: #000 0, #000000b3 8px, #00000073 14px,
+        #0000004d 19px, #00000042 21px, #00000030 25px, #0000001f 29px,
+        #0000000f 32px, #00000008 34px, #00000005 36px, #00000002 38px,
+        #00000001 39px, #0000 40px;
+}

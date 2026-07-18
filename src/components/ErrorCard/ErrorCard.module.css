@@ -1,0 +1,63 @@
+/**
+ * ErrorCard — CSS Module
+ *
+ * Production source: _nextstatic/component-inspect-element/error-card.html
+ * (geistcn Tailwind snapshot — grepped "error-card" across every file in
+ * _nextstatic/chunks/ with zero matches, so the Tailwind utility classes on
+ * the snapshot are the only source of truth, same situation as EmptyState
+ * and StatusDot).
+ *
+ * Root: `list-none bg-[var(--geist-background)] empty:hidden
+ * shadow-[var(--ds-shadow-border)] rounded-lg flex flex-col p-4
+ * !bg-[var(--ds-red-200)] shadow-none border border-[var(--ds-red-400)]
+ * text-[var(--ds-red-900)]`. The trailing five classes are the "error" look
+ * overriding a shared list-item base (the `!` important-modifier on the
+ * background and the `shadow-none` reset both win over the base bg/shadow),
+ * and this snapshot only ever shows that overridden error look — so only
+ * the resolved end values are kept below, not the base ones they replace.
+ * Content group: `flex flex-col items-center gap-2`.
+ * Title: `text-copy-16 text-inherit text-center` (the `.text-copy-16`
+ * global utility class from src/tokens/typography.css supplies font-size/
+ * line-height/font-family; `text-inherit` means the title takes the root's
+ * `color: var(--ds-red-900)` instead of setting its own).
+ *
+ * Tailwind → px conversions (Tailwind v4 default scale, verified against
+ * existing conversions in this repo, e.g. EmptyState.module.css):
+ *   rounded-lg = 8px   p-4 = 16px   gap-2 = 8px   border = 1px solid (default).
+ *
+ * No .dark-theme override exists in the snapshot — every color is a
+ * --ds- token that already flips with the theme.
+ */
+
+/* ---- Root (error-card-module __root) ---- */
+.root {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--ds-red-400);
+    background: var(--ds-red-200);
+    color: var(--ds-red-900);
+}
+
+/* `empty:hidden` — hides the card outright if ever rendered with no
+   content. Kept for DOM/behaviour parity even though `title` is required
+   and the icon is always present, so this is not normally reachable. */
+.root:empty {
+    display: none;
+}
+
+/* ---- Content group: icon + title (error-card-module __content) ---- */
+.content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---- Title (error-card-module __title) ---- */
+.title {
+    color: inherit;
+    text-align: center;
+}

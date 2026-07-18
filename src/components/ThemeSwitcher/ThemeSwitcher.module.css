@@ -1,0 +1,111 @@
+/*
+ * ThemeSwitcher — segmented System / Light / Dark control.
+ *
+ * Source: _nextstatic/component-inspect-element/theme-switcher.html.
+ * There is no dedicated theme-switcher-module chunk — Geist's newer
+ * "geistcn" components (import { ThemeSwitcher } from '@vercel/geistcn/components')
+ * ship as Tailwind v4 utility classes resolved directly in the snapshot's
+ * DOM, not as a CSS-module bundle. Every value below (radii, sizes, colors,
+ * shadow tokens) is read verbatim from those inline utility classes, e.g.
+ * the fieldset's `shadow-[var(--ds-shadow-border)] rounded-full h-8 w-fit`
+ * and the label's `peer-checked:shadow-[0_0_0_1px_var(--ds-gray-400),
+ * 0px_1px_2px_0px_var(--ds-gray-alpha-100)]`.
+ */
+
+.fieldset {
+    isolation: isolate;
+    display: flex;
+    box-shadow: var(--ds-shadow-border);
+    border-radius: 9999px;
+    height: 32px;
+    width: fit-content;
+    padding: 0;
+    border: 0;
+    margin: 0;
+}
+
+.fieldset[data-small] {
+    height: 24px;
+}
+
+.itemWrapper {
+    height: 100%;
+}
+
+/* appearance-none p-0 m-0 outline-none absolute peer, plus oxobz-sr-only
+   (applied alongside in the .tsx) fully hides the native control — the
+   visible label below is the real interactive surface. */
+.input {
+    appearance: none;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    position: absolute;
+}
+
+.label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: none;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    position: relative;
+    border-radius: 9999px;
+    cursor: pointer;
+    color: var(--ds-gray-700);
+    transition: box-shadow 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.label[data-small] {
+    width: 24px;
+    height: 24px;
+}
+
+.label:hover {
+    color: var(--ds-gray-1000);
+}
+
+/* peer-checked / peer-focus-visible — guarded with :not(.disabled) because
+   the disabled example in the snapshot renders every label with a single
+   flat gray-500 + cursor-not-allowed style, no checked/focus distinction. */
+.input:checked + .label:not(.disabled) {
+    box-shadow:
+        0 0 0 1px var(--ds-gray-400),
+        0px 1px 2px 0px var(--ds-gray-alpha-100);
+    color: var(--ds-gray-1000);
+    background-color: var(--ds-background-100);
+}
+
+.input:checked + .label:not(.disabled) .iconWrapper svg {
+    color: var(--accents-8) !important;
+}
+
+.input:focus-visible + .label:not(.disabled) {
+    box-shadow: var(--ds-focus-ring);
+    color: var(--ds-gray-1000);
+}
+
+.input:focus-visible + .label:not(.disabled) .iconWrapper svg {
+    color: var(--accents-8) !important;
+}
+
+.label.disabled {
+    cursor: not-allowed;
+    color: var(--ds-gray-500);
+}
+
+.label.disabled:hover {
+    color: var(--ds-gray-500);
+}
+
+.iconWrapper {
+    position: relative;
+    z-index: 1;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
