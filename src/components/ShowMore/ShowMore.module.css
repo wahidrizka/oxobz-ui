@@ -1,0 +1,87 @@
+/**
+ * ShowMore — CSS Module
+ *
+ * Production source: _nextstatic/chunks/b4b9d0dd5348b0c3.css
+ * Module: show-more-module__KMLeHG — .expandToggle, .buttonContainer,
+ * .noBorder, .line, .chevron, .chevron.expanded. Extracted rules:
+ *   .expandToggle{align-items:center;width:calc(100% - 40px);min-height:30px;
+ *     margin-top:20px;margin-left:20px;display:flex}
+ *   .buttonContainer{background:var(--geist-background);border-radius:99px}
+ *   .noBorder .line{opacity:0}
+ *   .chevron{margin-left:4px;transition:transform .2s ease-in-out;display:inline-flex}
+ *   .chevron.expanded{transform:rotate(180deg)}
+ *   .line{background-color:var(--ds-gray-alpha-400);flex-grow:1;height:1px;
+ *     transform:translate(-1px)}
+ *   .line:last-of-type{transform:translate(1px)}
+ *
+ * _nextstatic/component-inspect-element/show-more.html (Tailwind/geistcn
+ * snapshot) agrees on every value via its utility classes (w-[calc(100% -
+ * 40px)] mt-5 ml-5 flex items-center min-h-[30px], h-px grow
+ * -translate-x-px/last-of-type:translate-x-px, ml-1 transform duration-200
+ * ease-in-out/rotate-180, rounded-[99px]).
+ *
+ * --geist-background has no oxobz token yet; mapped to --ds-background-100
+ * (page background) — same role: the trigger's pill "erases" the divider
+ * line running behind it.
+ *
+ * The trigger button itself is NOT reimplemented here — ShowMore.tsx reuses
+ * the existing Button component (variant="default" size="small"
+ * shape="rounded"), which already matches the snapshot's
+ * [--x-padding:6px] [--height:32px] !rounded-full themed button exactly.
+ * Only the label row layout (production inline
+ * style="display:flex;align-items:center") is folded into `.label` here,
+ * per this codebase's "no inline styles for static values" convention.
+ *
+ * No .dark-theme override exists in the chunk — --ds-gray-alpha-400 and
+ * --ds-background-100 already flip with the theme automatically.
+ */
+
+/* ---- Root row (show-more-module __expandToggle) ---- */
+.expandToggle {
+    display: flex;
+    align-items: center;
+    width: calc(100% - 40px);
+    min-height: 30px;
+    margin-top: 20px;
+    margin-left: 20px;
+}
+
+/* ---- Divider lines (show-more-module __line) ---- */
+.line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: var(--ds-gray-alpha-400);
+    transform: translate(-1px);
+}
+
+.line:last-of-type {
+    transform: translate(1px);
+}
+
+/* ---- noBorder modifier — hides both lines, keeps the row's layout ---- */
+.noBorder .line {
+    opacity: 0;
+}
+
+/* ---- Button wrapper (show-more-module __buttonContainer) ---- */
+.buttonContainer {
+    background: var(--ds-background-100);
+    border-radius: 99px;
+}
+
+/* ---- Label row (production inline style, folded into a class) ---- */
+.label {
+    display: flex;
+    align-items: center;
+}
+
+/* ---- Chevron (show-more-module __chevron) ---- */
+.chevron {
+    display: inline-flex;
+    margin-left: 4px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.chevron.expanded {
+    transform: rotate(180deg);
+}

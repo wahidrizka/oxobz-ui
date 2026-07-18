@@ -1,0 +1,61 @@
+/**
+ * Code — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/component-inspect-element/code.html
+ *   geistcn/Tailwind snapshot (source of truth): the root <pre> is
+ *   `border border-[var(--accents-2)] rounded-[5px] p-6 my-8 mx-0
+ *    whitespace-pre touch-pan-y color-[var(--geist-foreground)]`, plus the
+ *   `syntax` prop value appended as a raw class (e.g. "javascript") — kept
+ *   as component behavior in Code.tsx, not baked into this stylesheet.
+ *   Scale utilities resolved against the geistcn Tailwind chunk
+ *   (20v_289ahbeyd.css): p-6 = padding 1.5rem (24px), my-8 = margin-block
+ *   2rem (32px), mx-0 = margin-inline 0 — standard Tailwind v4 scale, no
+ *   Geist-specific override found for these particular utilities.
+ *   touch-pan-y composes `--tw-pan-x/--tw-pinch-zoom` custom properties in
+ *   Tailwind's own cascade layer; since this module doesn't use Tailwind,
+ *   it is flattened to its effective value: `touch-action: pan-y`.
+ * - _nextstatic/chunks/0ir705xyqq90d.css
+ *   Module: syntax-theme-module__2RP9MG — base `.code` rule only (color,
+ *   font, line-height, tab-size, font-feature-settings from the snapshot's
+ *   inline style). The same module also ships a large Prism token palette
+ *   (.token.keyword, .lineNumber, .row[data-highlighted], etc.), but the
+ *   snapshot's rendered <Code> never emits tokenized spans or line
+ *   numbers — those belong to the separate CodeBlock component
+ *   (oxobz-ui/src/components/CodeBlock), which already owns that palette.
+ *   Not duplicated here to avoid dead, untriggerable CSS.
+ *
+ * Var mapping: --geist-foreground -> --oxobz-foreground (existing
+ * convention — see Input/Textarea/Combobox/Pagination module headers).
+ *
+ * No .dark-theme override exists in the chunk for this module — every
+ * value is a --ds- or --oxobz- or --accents- token that already flips with
+ * the theme.
+ */
+
+/* ---- Root (code-module __pre) ---- */
+.pre {
+    border: 1px solid var(--accents-2);
+    border-radius: 5px;
+    padding: 24px;
+    margin: 32px 0;
+    white-space: pre;
+    touch-action: pan-y;
+    color: var(--oxobz-foreground);
+}
+
+/* ---- Code text (syntax-theme-module __code, base rule only) ---- */
+.code {
+    color: var(--ds-gray-1000);
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    font-size: 13px;
+    line-height: 20px;
+    font-family: var(--font-mono, var(--font-mono-fallback));
+    tab-size: 4;
+    -webkit-hyphens: none;
+    hyphens: none;
+    font-feature-settings: "liga" 0;
+}

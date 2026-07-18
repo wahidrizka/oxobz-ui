@@ -1,0 +1,36 @@
+/**
+ * LoadMoreButton — CSS Module
+ *
+ * No dedicated `-module` class exists for this component in the legacy
+ * chunks — production ships it as plain Tailwind utility classes from
+ * `@vercel/geistcn/components` (geistcn Tailwind from snapshot).
+ *
+ * Source: _nextstatic/component-inspect-element/load-more-button.html
+ * The rendered button is Button's `secondary` variant (medium size) plus
+ * three utility classes layered on top, verified across all 5 example
+ * sections (Default / Loading / No Gap / No Border Radius / Custom Text):
+ *   - `w-full`          → width: 100% (every example, every variant)
+ *   - `mt-4`            → margin-top: 16px, i.e. `--ds-gap` (spacing.css) —
+ *                         present by default, `mt-0` in the "No Gap" example
+ *   - `rounded-md`      → border-radius: 6px (Button's own default, already
+ *                         supplied by the `secondary` variant) — `rounded-none`
+ *                         in the "No Border Radius" example
+ *
+ * Override selectors below repeat the `[data-oxobz-button]` attribute to
+ * match/exceed Button's own selector specificity (its `.button[data-oxobz-button]`
+ * rule sets `border-radius: 6px`), so these reliably win regardless of CSS
+ * import order.
+ */
+
+.loadMoreButton {
+    width: 100%;
+    margin-top: var(--ds-gap);
+}
+
+.loadMoreButton.noGap[data-oxobz-button] {
+    margin-top: 0;
+}
+
+.loadMoreButton.noBorderRadius[data-oxobz-button] {
+    border-radius: 0;
+}

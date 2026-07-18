@@ -1,0 +1,191 @@
+/* ================================================================
+ * SearchInput — CSS Module
+ *
+ * SearchInput composes the existing Input component (its wrapper owns the
+ * magnifying-glass / spinner prefix background, the shadow/focus ring, the
+ * disabled state, etc. — see Input.module.css). This module only styles
+ * the parts Input does not already own: the root marker div, the cmdk
+ * shortcut hint, and the plain clear button.
+ *
+ * Sources:
+ * - _nextstatic/component-inspect-element/search-input.html
+ *   geistcn Tailwind snapshot — Default / With Cmdk / Disabled / Loading /
+ *   Custom prefix icon sections. No dedicated component-module chunk exists
+ *   for SearchInput in production (it composes Input + Kbd internally), so
+ *   every rule below is "geistcn Tailwind from snapshot", translated 1:1.
+ * - _nextstatic/chunks/20v_289ahbeyd.css
+ *   `.clearable-input{--duration:.56104s;--timing:linear(...)}` — the exact
+ *   spring easing driving the cmdk hint's Esc <-> (Cmd K) morph, reused
+ *   verbatim (Tailwind's arbitrary `ease-[easing-function:var(--timing)]`).
+ *
+ * Known gap: the hint's inner "Esc" span slides in behind a `--padding`
+ * custom property that is not defined in scope anywhere in the captured
+ * chunks (only unrelated modal/toast padding tokens share the name — 12px,
+ * 20px). We approximate the reveal offset with 4px, matching the smallest
+ * same-named token seen elsewhere, and flag it here rather than silently in
+ * the JSX. Re-capture the focused DOM state of search-input.html
+ * (data-animate="true") to confirm the real value if it matters.
+ * ================================================================ */
+
+/* ---- Root marker (no box of its own — Input's own wrapper does the
+ * layout/sizing; this div only carries the data attribute + className). ---- */
+.root {
+    display: contents;
+}
+
+/* ---- cmdk hint wrapper -----------------------------------------------------
+ * Snapshot: "max-[960px]:hidden flex gap-1 justify-center pr-2.5
+ * font-medium group clearable-input"
+ * ------------------------------------------------------------------------ */
+.cmdkHint {
+    --duration: 0.56104s;
+    --timing: linear(
+        0 0%, 0.00484 1%, 0.018323 2%, 0.039014 3%, 0.065627 4%, 0.097013 5%,
+        0.132156 6%, 0.170155 7%, 0.210219 8%, 0.251659 9%, 0.293875 10%,
+        0.336353 11%, 0.378653 12%, 0.420402 13%, 0.461292 14%, 0.501066 15%,
+        0.53952 16%, 0.57649 17%, 0.611853 18%, 0.645519 19%, 0.677428 20%,
+        0.707546 21%, 0.735859 22%, 0.762374 23%, 0.787113 24%, 0.810113 25%,
+        0.83142 26%, 0.851089 27%, 0.869183 28%, 0.88577 29%, 0.900923 30%,
+        0.914714 31%, 0.927222 32%, 0.938521 33%, 0.948689 34%, 0.957801 35%,
+        0.965931 36%, 0.973151 37%, 0.979531 38%, 0.985137 39%, 0.990035 40%,
+        0.994286 41%, 0.997947 42%, 1.00107 43%, 1.00372 44%, 1.00592 45%,
+        1.00774 46%, 1.00921 47%, 1.01037 48%, 1.01126 49%, 1.0119 50%,
+        1.01234 51%, 1.01259 52%, 1.01269 53%, 1.01265 54%, 1.0125 55%,
+        1.01226 56%, 1.01193 57%, 1.01155 58%, 1.01111 59%, 1.01063 60%,
+        1.01013 61%, 1.0096 62%, 1.00907 63%, 1.00853 64%, 1.00799 65%,
+        1.00746 66%, 1.00694 67%, 1.00643 68%, 1.00594 69%, 1.00547 70%,
+        1.00501 71%, 1.00458 72%, 1.00417 73%, 1.00379 74%, 1.00342 75%,
+        1.00308 76%, 1.00276 77%, 1.00247 78%, 1.00219 79%, 1.00194 80%,
+        1.00171 81%, 1.00149 82%, 1.00129 83%, 1.00112 84%, 1.00095 85%,
+        1.00081 86%, 1.00068 87%, 1.00056 88%, 1.00045 89%, 1.00036 90%,
+        1.00028 91%, 1.0002 92%, 1.00014 93%, 1.00008 94%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding-right: 10px;
+    font-weight: 500;
+}
+
+/* Snapshot: max-[960px]:hidden — hidden below the 960px breakpoint. */
+@media (max-width: 960px) {
+    .cmdkHint {
+        display: none;
+    }
+}
+
+/* ---- kbd1: carries the "Esc" / "⌘" inner spans, grows + slides right
+ * while focused (snapshot's group-data-[animate=true] variants) ----
+ * Base: "!flex !overflow-hidden relative ... transition-transform
+ * duration-[time:var(--duration)] ease-[easing-function:var(--timing)]"
+ * ------------------------------------------------------------------------ */
+.escCmdKbd {
+    position: relative;
+    display: flex !important;
+    overflow: hidden;
+    transition-property: transform, width;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .escCmdKbd {
+    width: 28px;
+    transform: translateX(26px);
+}
+
+/* ---- kbd2: the "K" key, slides right while focused (revealed once kbd1
+ * has grown over it) ---- Base: "!flex ... transition-[translate] ..." ---- */
+.kKbd {
+    display: flex !important;
+    transition-property: translate;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .kKbd {
+    translate: 33px 0;
+}
+
+/* ---- Inner sliding labels inside kbd1 --------------------------------------
+ * Esc: "translate-x-8 absolute left-1 ... group-data-[animate=true]:
+ *       -translate-x-[calc(var(--padding)*-1)]"
+ * Cmd: "!ml-0 absolute right-1 transition-transform ...
+ *       group-data-[animate='true']:-translate-x-6"
+ * ------------------------------------------------------------------------ */
+.escLabel {
+    position: absolute;
+    left: 4px;
+    transform: translateX(32px);
+    transition-property: transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .escLabel {
+    /* --padding not resolvable in scope from the captured chunks — see the
+       file header note. 4px approximates the reveal offset. */
+    transform: translateX(4px);
+}
+
+.cmdLabel {
+    position: absolute;
+    right: 4px;
+    margin-left: 0 !important;
+    transition-property: transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .cmdLabel {
+    transform: translateX(-24px);
+}
+
+/* ---- Plain clear button (no cmdk, non-empty value) -------------------------
+ * Snapshot: "pointer-coarse:hidden flex items-center cursor-pointer
+ * bg-transparent border-0 px-2.5 rounded-r-md h-full max-w-full
+ * transition-[color,box-shadow,border-color] duration-150 ease-[ease]
+ * hover:text-[var(--geist-foreground)] focus-visible:outline-2
+ * focus-visible:outline-[var(--ds-focus-color)]
+ * focus-visible:-outline-offset-1 disabled:cursor-not-allowed"
+ * ------------------------------------------------------------------------ */
+.clearButton {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    max-width: 100%;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 0 6px 6px 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: color, box-shadow, border-color;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+}
+
+.clearButton:hover {
+    color: var(--oxobz-foreground);
+}
+
+.clearButton:focus-visible {
+    outline: 2px solid var(--ds-focus-color);
+    outline-offset: -1px;
+}
+
+.clearButton:disabled {
+    cursor: not-allowed;
+}
+
+/* Hidden on touch devices — no on-screen keyboard "Esc" to press. */
+@media (pointer: coarse) {
+    .clearButton {
+        display: none;
+    }
+}
+
+.clearKbd {
+    font-weight: 500;
+}

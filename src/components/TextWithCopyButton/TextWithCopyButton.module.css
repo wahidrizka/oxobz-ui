@@ -1,0 +1,142 @@
+/**
+ * TextWithCopyButton — CSS Module (geistcn Tailwind from snapshot)
+ *
+ * Production sources:
+ * - _nextstatic/component-inspect-element/text-with-copy-button.html
+ *   Both captured examples ("Default", "With Small and Tertiary") render
+ *   the IDENTICAL button classes below — no `*-module__hash` component
+ *   module exists for this control; it is built entirely from Tailwind
+ *   utility classes, so this file's source of truth is that class list,
+ *   not a `-module` chunk:
+ *     button: `cursor-pointer w-full transition-colors duration-100
+ *       ease-in-out p-0 items-center justify-start flex outline-0
+ *       border-none bg-none text-[var(--accents-7)]
+ *       hover:text-[var(--geist-foreground)]
+ *       hover:[&_svg]:!text-[var(--geist-foreground)]
+ *       [&_svg]:!text-[var(--accents-5)] [&_svg]:transition-colors
+ *       [&_svg]:duration-100 [&_svg]:ease-in-out`
+ *     content row: `w-full [&_svg]:min-w-4 flex items-center gap-1.5`
+ *     label: `geist-ellipsis text-inherit whitespace-nowrap` (only present
+ *       in both captures, which both pass `ellipsis` — see `.labelEllipsis`)
+ *     icon box: `relative` sized 16x16 inline; inner layer `absolute inset-0`.
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   `.geist-ellipsis{text-overflow:ellipsis;white-space:nowrap;
+ *   word-wrap:normal;min-width:0;max-width:100%;display:inline-block;
+ *   overflow:hidden}` — reproduced verbatim as `.labelEllipsis`.
+ * - Colors: `--accents-7` (label default) / `--accents-5` (icon default) /
+ *   `--geist-foreground` (both, on hover) resolved from the same chunk's
+ *   `:root`/dark-theme values; already present in this package as
+ *   `--accents-7`, `--accents-5`, `--oxobz-foreground` (geist-foreground ->
+ *   oxobz-foreground per the standard token rename) — no new tokens needed.
+ *
+ * Icon cross-fade (`.icon`/`.initial`/`.visible`/`.hidden`): NOT verified
+ * for this control — the snapshot only ever captures the pre-click resting
+ * frame (`opacity:1; transform:none`, no scale listed). Reused from
+ * CopyButton's `copy-button-module__8qN89q` timing (0.15s ease-out) for
+ * consistency across this package's copy-feedback controls, but WITHOUT
+ * the scale keyframe CopyButton uses — the absence of a `scale` value in
+ * the captured resting frame rules that out here, so this fades opacity
+ * only (documented deviation, not a literal chunk value).
+ */
+
+/* ---- Root button ---- */
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 0;
+    border: none;
+    outline: 0;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+
+    color: var(--accents-7);
+    transition: color 0.1s ease-in-out;
+}
+
+.button:hover {
+    color: var(--oxobz-foreground);
+}
+
+/* ---- Content row (label + icon) ---- */
+.content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+/* ---- Label ---- */
+.label {
+    color: inherit;
+    white-space: nowrap;
+    margin: 0;
+}
+
+/* geist-ellipsis (chunk 1c419a75d7e589ae.css), applied only when `ellipsis` is set */
+.labelEllipsis {
+    display: inline-block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: normal;
+}
+
+/* ---- Icon box (snapshot: "relative", inline style width/height 16px) ---- */
+.iconWrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--accents-5);
+    transition: color 0.1s ease-in-out;
+}
+
+.button:hover .iconWrap {
+    color: var(--oxobz-foreground);
+}
+
+/* ---- Icon layer (absolutely stacked Copy/Check, cross-faded) ---- */
+.icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Resting hidden state before any interaction — no entrance animation
+   plays on mount (matches CopyButton's convention). */
+.initial {
+    opacity: 0;
+}
+
+.visible {
+    animation: 0.15s ease-out forwards fadeIn;
+}
+
+.hidden {
+    animation: 0.15s ease-out forwards fadeOut;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

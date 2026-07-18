@@ -1,0 +1,292 @@
+/* ==========================================================================
+ * ClearableInput.module.css
+ *
+ * ClearableInput reuses Input's own container/input/suffix CSS in full (no
+ * duplication here — see Input.module.css) and only adds the two suffix
+ * contents it introduces: the plain clear button, and the "cmdk" shortcut
+ * hint. Both are geistcn Tailwind snapshots (no dedicated production
+ * component-module exists for this component):
+ * - _nextstatic/component-inspect-element/clearable-input.html
+ *   "Disabled" example (value filled): the clear-button suffix.
+ *   "With Cmdk" example: the two-kbd shortcut hint, at rest (data-animate
+ *   ="false" — the only state the snapshot captures).
+ *
+ * ---- Clear button (label > button > Kbd) --------------------------------
+ * Snapshot: pointer-coarse:hidden flex items-center cursor-pointer
+ * bg-transparent border-0 px-2.5 rounded-r-md h-full max-w-full
+ * transition-[color,box-shadow,border-color] duration-150 ease box-border
+ * font-inherit text-base no-underline [tap-highlight-color:transparent]
+ * hover:text-[var(--geist-foreground)] focus-visible:outline-2
+ * focus-visible:outline-[var(--ds-focus-color)]
+ * focus-visible:-outline-offset-1 disabled:cursor-not-allowed
+ * tabindex="-1" (no `disabled` HTML attribute even in the Disabled example —
+ * the button stays keyboard-unreachable and aria-hidden regardless; clicking
+ * is guarded in JS instead of via the disabled attribute, matching the
+ * captured markup exactly).
+ * Inner Kbd (small) matches Kbd.module.css's `.kbd.small` verbatim, with two
+ * !important overrides captured in the same class list:
+ * !text-[var(--ds-gray-900)] font-medium (Kbd's own default is gray-1000 /
+ * regular weight).
+ *
+ * ---- Cmdk hint ------------------------------------------------------------
+ * Snapshot outer div: max-[960px]:hidden flex gap-1 justify-center pr-2.5
+ * font-medium group clearable-input (the literal ".clearable-input" class is
+ * what defines --duration/--timing in production; folded locally here
+ * instead of depending on a global class from geistcn).
+ * --duration / --timing verified in _nextstatic/chunks/20v_289ahbeyd.css,
+ * rule ".clearable-input{--duration:.56104s;--timing:linear(...)}" — a
+ * spring-like curve, copied verbatim below.
+ *
+ * First kbd (the Esc/⌘ swap) overrides vs Kbd.small: !flex !overflow-hidden
+ * relative !text-[var(--ds-gray-900)] transition-transform duration/ease
+ * (above vars); at rest width stays Kbd.small's 20px; group-data-[animate=
+ * true]:w-7 (28px) + translate-x-[26px] when animate.
+ * Inside it, two absolutely-positioned spans:
+ *  - Esc span: translate-x-8 (32px, hidden past the 20px-wide kbd) absolute
+ *    left-1; animate target `-translate-x-[calc(var(--padding)*-1)]` — the
+ *    reference never defines `--padding` anywhere (grep across every chunk
+ *    found only the generic, unused `[--padding:12px]` utility-generator
+ *    rule, never applied to any element in this snapshot). An undefined
+ *    custom property inside calc() is invalid at computed-value time, so the
+ *    `translate` shorthand it feeds falls back to its initial value (`none`)
+ *    — reproduced literally below as `transform: none`, not guessed.
+ *  - Cmd (⌘) span: static at rest (absolute right-1); animate target
+ *    -translate-x-6 (-24px).
+ * Second kbd ("K") is static content that just slides: transition-[translate]
+ * duration/ease (same vars), group-data-[animate=true]:translate-x-[33px].
+ *
+ * NEEDS RECAPTURE (not guessed, left as the closest grounded reproduction):
+ * the focused/typed interaction that sets data-animate="true" was never
+ * captured (the snapshot only shows the idle, unfocused state) — this
+ * module drives it from focus/blur as the only reasonable trigger available,
+ * and the Esc span's animate-true position is a spec-mandated fallback
+ * (`translate:none`) rather than a captured value. Recapture with the field
+ * focused (or the ancestor that sets `--padding`) to confirm both.
+ * ========================================================================== */
+
+/* ---- Clear button (non-cmdk) -------------------------------------------- */
+.clearButton {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 10px;
+    border: 0;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: color, box-shadow, border-color;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+}
+
+@media (pointer: coarse) {
+    .clearButton {
+        display: none;
+    }
+}
+
+@media (hover: hover) {
+    .clearButton:hover {
+        color: var(--oxobz-foreground);
+    }
+}
+
+.clearButton:focus-visible {
+    outline: 2px solid var(--ds-focus-color);
+    outline-offset: -1px;
+}
+
+.clearButton:disabled {
+    cursor: not-allowed;
+}
+
+/* Kbd "Esc" inside the clear button — small size from Kbd.module.css, plus
+ * the two !important overrides captured on this specific usage. */
+.clearKbd {
+    color: var(--ds-gray-900) !important;
+    font-weight: 500;
+}
+
+/* ---- Cmdk hint ------------------------------------------------------------ */
+.cmdkHint {
+    /* Verbatim from _nextstatic/chunks/20v_289ahbeyd.css `.clearable-input` */
+    --duration: 0.56104s;
+    --timing: linear(
+        0 0%,
+        0.00484 1%,
+        0.018323 2%,
+        0.039014 3%,
+        0.065627 4%,
+        0.097013 5%,
+        0.132156 6%,
+        0.170155 7%,
+        0.210219 8%,
+        0.251659 9%,
+        0.293875 10%,
+        0.336353 11%,
+        0.378653 12%,
+        0.420402 13%,
+        0.461292 14%,
+        0.501066 15%,
+        0.53952 16%,
+        0.57649 17%,
+        0.611853 18%,
+        0.645519 19%,
+        0.677428 20%,
+        0.707546 21%,
+        0.735859 22%,
+        0.762374 23%,
+        0.787113 24%,
+        0.810113 25%,
+        0.83142 26%,
+        0.851089 27%,
+        0.869183 28%,
+        0.88577 29%,
+        0.900923 30%,
+        0.914714 31%,
+        0.927222 32%,
+        0.938521 33%,
+        0.948689 34%,
+        0.957801 35%,
+        0.965931 36%,
+        0.973151 37%,
+        0.979531 38%,
+        0.985137 39%,
+        0.990035 40%,
+        0.994286 41%,
+        0.997947 42%,
+        1.00107 43%,
+        1.00372 44%,
+        1.00592 45%,
+        1.00774 46%,
+        1.00921 47%,
+        1.01037 48%,
+        1.01126 49%,
+        1.0119 50%,
+        1.01234 51%,
+        1.01259 52%,
+        1.01269 53%,
+        1.01265 54%,
+        1.0125 55%,
+        1.01226 56%,
+        1.01193 57%,
+        1.01155 58%,
+        1.01111 59%,
+        1.01063 60%,
+        1.01013 61%,
+        1.0096 62%,
+        1.00907 63%,
+        1.00853 64%,
+        1.00799 65%,
+        1.00746 66%,
+        1.00694 67%,
+        1.00643 68%,
+        1.00594 69%,
+        1.00547 70%,
+        1.00501 71%,
+        1.00458 72%,
+        1.00417 73%,
+        1.00379 74%,
+        1.00342 75%,
+        1.00308 76%,
+        1.00276 77%,
+        1.00247 78%,
+        1.00219 79%,
+        1.00194 80%,
+        1.00171 81%,
+        1.00149 82%,
+        1.00129 83%,
+        1.00112 84%,
+        1.00095 85%,
+        1.00081 86%,
+        1.00068 87%,
+        1.00056 88%,
+        1.00045 89%,
+        1.00036 90%,
+        1.00028 91%,
+        1.0002 92%,
+        1.00014 93%,
+        1.00008 94%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding-right: 10px;
+    font-weight: 500;
+}
+
+/* max-[960px]:hidden */
+@media (max-width: 960px) {
+    .cmdkHint {
+        display: none;
+    }
+}
+
+/* First kbd: the Esc/⌘ swap container */
+.kbdSwap {
+    display: flex !important;
+    overflow: hidden !important;
+    position: relative;
+    color: var(--ds-gray-900) !important;
+    transition-property: transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .kbdSwap {
+    width: 28px;
+    transform: translateX(26px);
+}
+
+.escSpan {
+    position: absolute;
+    left: 4px;
+    transform: translateX(32px);
+    transition-property: transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+/* `--padding` is undefined anywhere in the reference — see header note.
+ * The invalid calc() this feeds resolves to the initial value of `translate`
+ * (none), reproduced literally rather than guessed. */
+.cmdkHint[data-animate='true'] .escSpan {
+    transform: none;
+}
+
+.cmdSpan {
+    position: absolute;
+    right: 4px;
+    margin-left: 0;
+    transition-property: transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .cmdSpan {
+    transform: translateX(-24px);
+}
+
+/* Second kbd: the static "K" that slides to make room */
+.cmdkKbdK {
+    display: flex !important;
+    color: var(--ds-gray-900) !important;
+    transition-property: transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--timing);
+}
+
+.cmdkHint[data-animate='true'] .cmdkKbdK {
+    transform: translateX(33px);
+}

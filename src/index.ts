@@ -148,5 +148,26 @@ export type { FeedbackProps, FeedbackRating, FeedbackSubmitData, FeedbackTopic, 
 export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 
+export { ClearableInput } from './components/ClearableInput';
+export type { ClearableInputProps } from './components/ClearableInput';
+
+export { SearchInput } from './components/SearchInput';
+export type { SearchInputProps } from './components/SearchInput';
+
+export { LoadMoreButton } from './components/LoadMoreButton';
+export type { LoadMoreButtonProps } from './components/LoadMoreButton';
+
+export { TextWithCopyButton } from './components/TextWithCopyButton';
+export type { TextWithCopyButtonProps } from './components/TextWithCopyButton';
+
+export { ShowMore } from './components/ShowMore';
+export type { ShowMoreProps } from './components/ShowMore';
+
+export { Code } from './components/Code';
+export type { CodeProps } from './components/Code';
+
+export { MiddleTruncate } from './components/MiddleTruncate';
+export type { MiddleTruncateProps } from './components/MiddleTruncate';
+
 // Tokens CSS export — users import via:
 // import '@oxobz/ui/styles'

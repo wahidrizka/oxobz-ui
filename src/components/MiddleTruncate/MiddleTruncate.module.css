@@ -1,0 +1,72 @@
+/**
+ * MiddleTruncate — CSS Module
+ *
+ * Production sources:
+ * - _nextstatic/component-inspect-element/middletruncate.html
+ *   geistcn Tailwind snapshot (no legacy Geist CSS module exists for this
+ *   component — the Show-code imports it from '@vercel/geistcn/components',
+ *   a Tailwind-authored component, unlike the older CSS-module components
+ *   e.g. status-dot). Captured wrapper:
+ *   `relative inline-grid min-w-0 max-w-full overflow-hidden whitespace-nowrap`
+ *   with three stacked children sharing grid cell 1/1:
+ *     1. sizer   — `pointer-events-none col-start-1 row-start-1 invisible
+ *                  select-none whitespace-nowrap` (full value; establishes
+ *                  the grid's max-content intrinsic width)
+ *     2. visible — `col-start-1 row-start-1 min-w-0 overflow-hidden` (the
+ *                  only child WITHOUT aria-hidden in the snapshot — this is
+ *                  the one exposed to assistive tech and to the pointer)
+ *     3. copySource — `pointer-events-none absolute left-0 top-0
+ *                  inline-block invisible select-none whitespace-nowrap`
+ *                  (full value again; kept for DOM parity — its exact
+ *                  purpose isn't resolvable from a static snapshot alone,
+ *                  see MiddleTruncate.tsx header comment)
+ * - Tailwind utility values verified against chunk 20v_289ahbeyd.css
+ *   (geistcn Tailwind v4 build): all classes above resolve to vanilla
+ *   Tailwind defaults (inline-grid, grid-column-start:1, grid-row-start:1,
+ *   visibility:hidden, user-select:none, min-width:0, max-width:100%) — no
+ *   Geist-specific pixel overrides apply to this component.
+ *
+ * No .dark-theme override exists — this component sets no color/background
+ * of its own; it inherits `color`/`font` from the consumer's className
+ * (e.g. `text-label-14`), which already flips with the theme.
+ */
+
+/* ---- Wrapper (middletruncate-module __wrapper) ---- */
+.wrapper {
+    position: relative;
+    display: inline-grid;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* ---- Sizer: invisible full-value copy that sizes the grid track ---- */
+.sizer {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    pointer-events: none;
+    visibility: hidden;
+    user-select: none;
+    white-space: nowrap;
+}
+
+/* ---- Visible: the rendered (possibly truncated) text ---- */
+.visible {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ---- Copy source: invisible full-value copy kept for DOM parity ---- */
+.copySource {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-block;
+    pointer-events: none;
+    visibility: hidden;
+    user-select: none;
+    white-space: nowrap;
+}
