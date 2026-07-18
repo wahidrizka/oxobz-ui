@@ -69,4 +69,16 @@
     --ds-radius-lg: 12px;
     --ds-radius-xl: 16px;
     --ds-radius-full: 9999px;
+
+    /* === DS Popover Tokens (geistcn Tailwind v4 utilities) ===
+       Source: _nextstatic/chunks/20v_289ahbeyd.css + 3qv8jvk0udmxc.css (both
+       agree). Added for SplitButton (see its CSS module header). Newer chunk
+       generation than the rest of this file: its own --geist-space-medium
+       resolves to 36px here vs the 40px baked into --oxobz-space-medium
+       above, so --ds-popover-row-height uses the value from that SAME
+       (newer) chunk pair rather than mixing generations. */
+    --ds-popover-padding: 6px;
+    --ds-popover-row-padding: 0 8px;
+    --ds-popover-row-height: 36px;
+    --ds-popover-row-radius: 6px;
 }

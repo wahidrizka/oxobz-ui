@@ -4,6 +4,14 @@
  * Production source: _nextstatic/component-inspect-element/file-tree.html
  * (geistcn Tailwind snapshot — no dedicated file-tree-module chunk exists in
  * _nextstatic/chunks/; the demo is built from utility classes only).
+ * Re-verified against file-tree-open.html (Show-code expanded): same
+ * utility classes on every row, confirming no values here needed to change.
+ * That pass also caught a structural bug (now fixed in FileTree.tsx): a
+ * File row's `data-tree-indent` spans are siblings of `.fileLink` — direct
+ * `<li>` children rendered *before* the `<a>` — not nested inside it, unlike
+ * Folder rows where the indent spans live inside `.folderButton`. This CSS
+ * needs no change for that fix (`[data-tree-indent]` is styled globally
+ * under `.tree`, regardless of which element is its immediate parent).
  *
  * Values resolved from the Tailwind utility classes in the snapshot:
  * - Root: `flex flex-col gap-[1px] text-[13px]`.
@@ -13,7 +21,9 @@
  *   -translate-x-1 shrink-0`, with `--indent-color: var(--ds-gray-400)`.
  * - Row (`li`): `list-none leading-7 text-[var(--accents-8)] whitespace-nowrap
  *   select-none`; folder rows add `flex flex-col`, file rows add
- *   `flex items-center`.
+ *   `flex items-center` (file rows also carry an inert `grow-1` — the `<ul>`
+ *   parent isn't a flex container, so it has no visual effect and isn't
+ *   reproduced here).
  * - Folder trigger (`button`): `grow-1 -ml-2 flex bg-transparent border-none
  *   h-7 w-full items-center rounded-sm px-2 py-1 hover:bg-[var(--ds-gray-200)]`,
  *   `width: calc(100% + 8px)`. `rounded-sm` resolved to 4px (chunk

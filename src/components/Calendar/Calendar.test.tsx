@@ -2,6 +2,7 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { Calendar } from './Calendar';
+import { CalendarPopover, getDefaultCalendarPresets } from './CalendarPopover';
 
 /** July 2026 as the pinned visible month (July 1 is a Wednesday). */
 const JULY_2026 = new Date(2026, 6, 1);
@@ -306,5 +307,244 @@ describe('Calendar', () => {
 
     it('has the correct displayName', () => {
         expect(Calendar.displayName).toBe('Calendar');
+    });
+});
+
+/* ================================================================== */
+/*  CalendarPopover — trigger + popover chrome                        */
+/* ================================================================== */
+
+const JUL_RANGE = {
+    start: new Date(2026, 6, 4),
+    end: new Date(2026, 6, 18),
+};
+
+function trigger() {
+    return screen.getByTestId('calendar/trigger/button');
+}
+
+describe('CalendarPopover', () => {
+    // ── Trigger rendering ──
+
+    it('renders a root with data-oxobz-calendar-popover and data-version="v1"', () => {
+        const { container } = render(<CalendarPopover />);
+        const root = container.querySelector('[data-oxobz-calendar-popover]');
+        expect(root).toBeInTheDocument();
+        expect(root).toHaveAttribute('data-version', 'v1');
+    });
+
+    it('renders the placeholder label and dialog trigger attributes', () => {
+        render(<CalendarPopover />);
+        const btn = trigger();
+        expect(btn).toHaveTextContent('Select Date Range');
+        expect(btn).toHaveAttribute('aria-haspopup', 'dialog');
+        expect(btn).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('shows the committed range as the trigger label', () => {
+        render(<CalendarPopover defaultValue={JUL_RANGE} />);
+        expect(trigger()).toHaveTextContent('Jul 4 - 18');
+    });
+
+    // ── Open / close ──
+
+    it('opens the popover on trigger click', () => {
+        render(<CalendarPopover />);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        fireEvent.click(trigger());
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(trigger()).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('closes the popover on a second trigger click', () => {
+        render(<CalendarPopover />);
+        fireEvent.click(trigger());
+        fireEvent.click(trigger());
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('closes the popover on Escape', () => {
+        render(<CalendarPopover />);
+        fireEvent.click(trigger());
+        fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('closes the popover on outside click', () => {
+        render(<CalendarPopover />);
+        fireEvent.click(trigger());
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('fires onOpenChange when toggled', () => {
+        const onOpenChange = vi.fn();
+        render(<CalendarPopover onOpenChange={onOpenChange} />);
+        fireEvent.click(trigger());
+        expect(onOpenChange).toHaveBeenCalledWith(true);
+    });
+
+    // ── Presets ──
+
+    it('renders a preset combobox only when presets are provided', () => {
+        const { rerender } = render(<CalendarPopover />);
+        expect(screen.queryByTestId('calendar/combobox-input')).not.toBeInTheDocument();
+        rerender(<CalendarPopover presets={getDefaultCalendarPresets(new Date(2026, 6, 18))} />);
+        expect(screen.getByTestId('calendar/combobox-input')).toBeInTheDocument();
+    });
+
+    it('opens the preset listbox and sets the range + fires onChange on pick', () => {
+        const onChange = vi.fn();
+        const presets = getDefaultCalendarPresets(new Date(2026, 6, 18));
+        render(<CalendarPopover presets={presets} onChange={onChange} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('calendar/preset/Last 7 Days'));
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
+        expect(arg).toEqual(presets[1].value);
+        // The preset selection closes the listbox.
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    });
+
+    it('renders each preset with its Title Case label', () => {
+        const presets = getDefaultCalendarPresets(new Date(2026, 6, 18));
+        render(<CalendarPopover presets={presets} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        for (const label of ['Last 3 Days', 'Last 7 Days', 'Last 14 Days', 'Last Month']) {
+            expect(screen.getByText(label)).toBeInTheDocument();
+        }
+    });
+
+    // ── Time inputs ──
+
+    it('renders time inputs and lets them change when showTimePicker', () => {
+        render(<CalendarPopover showTimePicker defaultValue={JUL_RANGE} />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        expect(startTime).toBeInTheDocument();
+        expect(startTime.value).toBe('00:00');
+        fireEvent.change(startTime, { target: { value: '09:30' } });
+        expect(startTime.value).toBe('09:30');
+    });
+
+    it('renders date inputs reflecting the selected range', () => {
+        render(<CalendarPopover showTimePicker defaultValue={JUL_RANGE} />);
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
+        expect(startDate.value).toBe('Jul 04, 2026');
+    });
+
+    // ── Timezone ──
+
+    it('renders a timezone select with the supplied options', () => {
+        render(
+            <CalendarPopover
+                timezones={[
+                    { value: 'UTC', label: 'UTC' },
+                    { value: 'Asia/Jakarta', label: 'Local (Asia/Jakarta)' },
+                ]}
+            />,
+        );
+        fireEvent.click(trigger());
+        const select = screen.getByTestId('calendar/timezone-select');
+        expect(select).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'Local (Asia/Jakarta)' })).toBeInTheDocument();
+    });
+
+    it('renders pinnedTimezone as read-only text (no select)', () => {
+        render(<CalendarPopover pinnedTimezone="UTC" />);
+        fireEvent.click(trigger());
+        expect(screen.getByTestId('calendar/pinned-timezone')).toHaveTextContent('UTC');
+        expect(screen.queryByTestId('calendar/timezone-select')).not.toBeInTheDocument();
+    });
+
+    // ── allowClear ──
+
+    it('renders a clear button that empties the selection', () => {
+        render(<CalendarPopover defaultValue={JUL_RANGE} allowClear />);
+        expect(trigger()).toHaveTextContent('Jul 4 - 18');
+        fireEvent.click(screen.getByTestId('calendar/clear'));
+        expect(trigger()).toHaveTextContent('Select Date Range');
+    });
+
+    it('does not render a clear button without a value', () => {
+        render(<CalendarPopover allowClear />);
+        expect(screen.queryByTestId('calendar/clear')).not.toBeInTheDocument();
+    });
+
+    // ── Layouts ──
+
+    it('applies the compact layout class', () => {
+        const { container } = render(
+            <CalendarPopover compact presets={getDefaultCalendarPresets()} />,
+        );
+        expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
+            'compact',
+        );
+    });
+
+    it('applies the stacked layout class', () => {
+        const { container } = render(
+            <CalendarPopover stacked presets={getDefaultCalendarPresets()} />,
+        );
+        expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
+            'stacked',
+        );
+    });
+
+    it('applies the horizontal content-wrapper class inside the popover', () => {
+        const { container } = render(<CalendarPopover horizontalLayout showTimePicker />);
+        fireEvent.click(trigger());
+        const wrapper = container.querySelector(
+            '[class*="calendarContentWrapperHorizontal"]',
+        );
+        expect(wrapper).toBeInTheDocument();
+    });
+
+    it('uses the vertical content-wrapper class by default', () => {
+        const { container } = render(<CalendarPopover />);
+        fireEvent.click(trigger());
+        expect(
+            container.querySelector('[class*="calendarContentWrapperHorizontal"]'),
+        ).not.toBeInTheDocument();
+    });
+
+    // ── size ──
+
+    it('reflects the size prop as data-size', () => {
+        const { container } = render(<CalendarPopover size="small" />);
+        expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
+            'data-size',
+            'small',
+        );
+    });
+
+    // ── disabled ──
+
+    it('disables the trigger', () => {
+        render(<CalendarPopover disabled />);
+        expect(trigger()).toBeDisabled();
+    });
+
+    // ── Custom className / ref / displayName ──
+
+    it('appends a custom className after the module class', () => {
+        const { container } = render(<CalendarPopover className="custom-pop" />);
+        const root = container.querySelector('[data-oxobz-calendar-popover]');
+        expect(root?.className).toContain('calendar');
+        expect(root?.className.endsWith('custom-pop')).toBe(true);
+    });
+
+    it('forwards ref to the root element', () => {
+        const ref = createRef<HTMLDivElement>();
+        render(<CalendarPopover ref={ref} />);
+        expect(ref.current).toBeInstanceOf(HTMLDivElement);
+        expect(ref.current).toHaveAttribute('data-oxobz-calendar-popover');
+    });
+
+    it('has the correct displayName', () => {
+        expect(CalendarPopover.displayName).toBe('CalendarPopover');
     });
 });

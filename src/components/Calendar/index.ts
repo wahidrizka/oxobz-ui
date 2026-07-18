@@ -6,3 +6,10 @@ export type {
     RangeValue,
     WeekDayIndex,
 } from './Calendar';
+export { CalendarPopover, getDefaultCalendarPresets } from './CalendarPopover';
+export type {
+    CalendarPopoverProps,
+    CalendarPopoverSize,
+    CalendarPreset,
+    CalendarTimezone,
+} from './CalendarPopover';

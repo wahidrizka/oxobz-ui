@@ -1,13 +1,33 @@
 /**
  * SplitButton — CSS Module
  *
- * Source: _nextstatic/component-inspect-element/split-button.html (geistcn
- * Tailwind snapshot; literal utility classes translated to concrete CSS).
+ * Sources:
+ * - Closed state: _nextstatic/component-inspect-element/split-button.html
+ *   (geistcn Tailwind snapshot; literal utility classes translated to
+ *   concrete CSS).
+ * - Open dropdown: _nextstatic/component-inspect-element/split-button-open.html
+ *   (15 open-menu snapshots — every alignment / size / variant / icon
+ *   pattern checked, not just the first one).
+ * - Popover tokens (--ds-popover-padding / -row-padding / -row-height /
+ *   -row-radius): _nextstatic/chunks/20v_289ahbeyd.css and
+ *   _nextstatic/chunks/3qv8jvk0udmxc.css (geistcn Tailwind v4 utilities —
+ *   both chunks agree). Added to oxobz-ui/src/tokens/spacing.css.
+ * - Exit animation: production also plays
+ *   `data-[state='closed']:animate-fade-popover-out` (chunk
+ *   `2dd69db0a79ce415.css`) — a plain opacity fade
+ *   (`@keyframes fade-out{0%{opacity:1}to{opacity:0}}`) using the existing
+ *   `--ds-motion-popover-duration` / `--ds-motion-popover-timing` tokens.
+ *   NOT implemented here: the shared Menu popover (Menu.tsx /
+ *   Menu.module.css) unmounts immediately on close and exposes no hook to
+ *   defer that unmount for an exit transition. That gap belongs to Menu
+ *   (already documented in its own header) and is out of scope for this
+ *   SplitButton-only pass.
+ *
  * The two buttons and the popover already get their variant / size / hover /
  * focus / motion styling from Button.module.css and Menu.module.css — this
- * module adds only the "joined pair" seam chrome that is specific to
- * SplitButton: the flex wrapper, the seam-side corner removal, the shared
- * outline, and the hairline divider between the two buttons.
+ * module adds only the "joined pair" seam chrome specific to SplitButton,
+ * plus the pieces of the OPEN menu that are genuinely split-button-specific:
+ * the horizontal re-alignment offset and the item's two-line layout.
  *
  * Verified per-instance in the snapshot (default vs secondary variant, every
  * size, the icon-only example, and the icon-label example all agree):
@@ -22,13 +42,31 @@
  *     while the `secondary` variant actually consumes it, resolving to
  *     `var(--ds-gray-300)`.
  *
- * needsRecapture: `.menuItem` / `.itemTitle` / `.itemDescription` are NOT a
- * 1:1 translation of a captured DOM — every SplitButton instance in the
- * snapshot has its dropdown closed (aria-expanded="false" /
- * data-is-open="false"). These three classes are a best-effort composition
- * of Menu's own `.item` row (b4b9d0dd5348b0c3.css) plus the title/description
- * typography already verified for ChoiceboxGroup
- * (1c419a75d7e589ae.css — 14px font-size, 20px line-height).
+ * Open menu (split-button-open.html, all 15 instances):
+ *   - Popover panel padding is corrected from Menu's built-in 8px fallback
+ *     to the real, now-resolved `--ds-popover-padding` token (6px) — Menu
+ *     itself could not resolve this token from the older chunk set it was
+ *     built against (see Menu.module.css's header) and used 8px as a
+ *     documented stand-in; the newer geistcn chunks resolve it exactly.
+ *   - `bottom-start` (default) gets a corrective `translate` shift — see the
+ *     `--split-button-menu-offset` explanation in SplitButton.tsx. Gated at
+ *     `md:` (768px+, Tailwind's default breakpoint; no `--breakpoint-md`
+ *     override was found in the chunks). Below that, the popover becomes a
+ *     full-width bottom sheet — already handled generically by Menu's own
+ *     `@media (max-width: 600px)` rule (every Menu instance, SplitButton's
+ *     included), so it is intentionally not duplicated here.
+ *   - `bottom-end` needs no correction and gets no offset class at all,
+ *     matching production exactly (see SplitButton.tsx).
+ *   - Each row is a title/description stack (`flex flex-col gap-y-1`)
+ *     containing a title row (`flex items-center gap-x-2`: optional icon +
+ *     title, as siblings) and the description below it. The `<li>` itself
+ *     renders with a production inline-style override
+ *     (`height: fit-content; padding: 8px;`) that takes precedence over the
+ *     default `--ds-popover-row-*` tokens for this two-line layout —
+ *     reproduced as literals in `.menuItem` to match exactly. Icon sizing is
+ *     the shared Menu default (18px via `--oxobz-icon-size`, confirmed by
+ *     `--geist-icon-size: 18px` in every captured instance) — no per-item
+ *     override.
  */
 
 /* ---- Wrapper (joins the two buttons; --divider-color is consumed only by
@@ -91,27 +129,51 @@
     background: var(--ds-gray-300);
 }
 
-/* ---- Dropdown item (needsRecapture — see header note) ---- */
-.menuItem {
-    height: auto;
-    padding: 8px 12px;
-    /* Icon (prefix) stays top-aligned against the two stacked text lines,
-       instead of Menu's default vertical centering for single-line items. */
-    align-items: flex-start;
+/* ---- Dropdown panel (split-button-open.html — every instance) ---- */
+.menu {
+    padding: var(--ds-popover-padding);
 }
 
-/* Both are `display: block` (not part of a flex column — MenuItem only
-   exposes a single wrapping <span> around its children, so title and
-   description stack via normal block flow inside it). */
+/* `bottom-start` re-alignment: shift the menu left by the primary button's
+   measured width (--split-button-menu-offset, set in SplitButton.tsx) so it
+   visually spans the whole joined pair instead of just the narrow toggle
+   trigger. Uses the standalone `translate` property (not `transform`) so it
+   composes independently of Menu's own `transform: scale(...)` enter
+   animation. Matches production's `md:` gate exactly (omitted below it —
+   see Menu.module.css's own mobile bottom-sheet handling). */
+@media (min-width: 768px) {
+    .menuOffsetStart {
+        translate: var(--split-button-menu-offset) 0;
+    }
+}
+
+/* ---- Dropdown item (split-button-open.html — every instance agrees) ---- */
+.menuItem {
+    height: fit-content;
+    padding: 8px;
+}
+
+/* Title/description stack (`flex flex-col gap-y-1`, gap-y-1 = 4px). */
+.itemContent {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Icon + title row (`flex items-center gap-x-2`, gap-x-2 = 8px). */
+.itemTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .itemTitle {
-    display: block;
     font-size: 14px;
     line-height: 20px;
     font-weight: 500;
 }
 
 .itemDescription {
-    display: block;
     font-size: 14px;
     line-height: 20px;
     font-weight: 400;

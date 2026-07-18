@@ -1,4 +1,12 @@
-import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import {
+    forwardRef,
+    useEffect,
+    useRef,
+    useState,
+    type CSSProperties,
+    type HTMLAttributes,
+    type ReactNode,
+} from 'react';
 import { ChevronDown } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import { Button, type ButtonProps, type ButtonVariant } from '../Button';
@@ -39,7 +47,11 @@ export interface SplitButtonProps extends Omit<HTMLAttributes<HTMLDivElement>, '
     menuButtonLabel: string;
     /** `<SplitButtonMenuItem>` elements (or a fragment/array of them) rendered inside the dropdown. */
     menuItems?: ReactNode;
-    /** Props forwarded to the dropdown Menu popover (e.g. `width`). */
+    /**
+     * Props forwarded to the dropdown Menu popover (e.g. `width`). A custom
+     * `className` / `style` is merged after this component's own offset and
+     * padding correction (see `.menu` / `.menuOffsetStart` in the CSS module).
+     */
     menuProps?: Omit<MenuProps, 'children'>;
     /** Dropdown placement. Default `'bottom-start'`. */
     menuAlignment?: SplitButtonMenuAlignment;
@@ -57,10 +69,10 @@ export interface SplitButtonProps extends Omit<HTMLAttributes<HTMLDivElement>, '
  * primitives — their variant/size/hover/focus/popover behaviour is already
  * verified for those components — this component only adds the "joined
  * pair" seam chrome (shared border, seam-side corner removal, hairline
- * divider) that is specific to SplitButton.
+ * divider) plus the two pieces of the OPEN dropdown that are genuinely
+ * split-button-specific (see below).
  *
- * Rendered DOM (split-button.html, closed state — the only state captured
- * anywhere in the snapshot):
+ * Rendered DOM (closed — split-button.html):
  * ```html
  * <div class="flex relative" data-oxobz-split-button="" data-version="v1">
  *   <button ...primary Button, seam on the right, border-right: 0...>Save</button>
@@ -78,13 +90,38 @@ export interface SplitButtonProps extends Omit<HTMLAttributes<HTMLDivElement>, '
  * unused for that variant — while the `secondary` variant actually consumes
  * `--divider-color` (`var(--ds-gray-300)`). Both are reproduced as-is.
  *
- * needsRecapture: every instance in split-button.html is closed
- * (`aria-expanded="false"`, `data-is-open="false"`) — the open dropdown
- * content was never captured. `SplitButtonMenuItem`'s two-line
- * title/description row therefore reuses the existing Menu `.item` row plus
- * the title/description typography already verified for `ChoiceboxGroup`
- * (14px / 20px line-height) rather than a captured production layout — see
- * the note on `SplitButtonMenuItem` below.
+ * Open dropdown (split-button-open.html — 15 captured instances covering
+ * every size, both variants, both alignments, and both icon patterns):
+ * the popover's trigger is the narrow toggle button only, so the generic
+ * Menu popover (which anchors its `bottom-start` math to the trigger's own
+ * left edge) would render the menu under just the toggle instead of the
+ * whole joined pair. Production corrects this with a
+ * `--split-button-menu-offset` custom property — the primary button's
+ * rendered width, negated — applied through the modern standalone
+ * `translate` CSS property (confirmed in chunk `20v_289ahbeyd.css`:
+ * `.md\:translate-x-[var(--split-button-menu-offset)]{--tw-translate-x:
+ * var(--split-button-menu-offset);translate:var(--tw-translate-x)
+ * var(--tw-translate-y)}` — the standalone property, NOT the legacy
+ * `transform` shorthand, so it composes without conflict with Menu's own
+ * `transform: scale(...)` enter-animation inline style). Observed values
+ * (-54.03px small, -62.03px medium, -74.23px large "Save") are the primary
+ * button's actual rendered width, not a fixed per-size constant, so this
+ * component measures it at runtime with a `ResizeObserver` (feature-detected
+ * — absent in jsdom, mirroring `MiddleTruncate`'s convention).
+ * `bottom-end` needs no correction at all — the toggle's right edge already
+ * sits at the pair's right edge, and Menu's own `align: 'end'` math already
+ * lands correctly — production reflects this by omitting the translate
+ * utility entirely for that instance (`--split-button-menu-offset: 0`, no
+ * `md:translate-x-*` class), reproduced here by only applying
+ * `.menuOffsetStart` for `menuAlignment="bottom-start"`.
+ *
+ * Known gap (inherited, out of scope for this component): production also
+ * plays an exit fade (`data-[state='closed']:animate-fade-popover-out`, a
+ * plain opacity animation — chunk `2dd69db0a79ce415.css`). The shared Menu
+ * popover unmounts immediately on close and does not expose a hook to defer
+ * that unmount for an exit transition; that limitation belongs to Menu
+ * (already documented in `Menu.module.css`'s own header), not to this
+ * SplitButton-only pass.
  */
 const SplitButton = forwardRef<HTMLDivElement, SplitButtonProps>(
     (
@@ -103,6 +140,27 @@ const SplitButton = forwardRef<HTMLDivElement, SplitButtonProps>(
     ) => {
         const { variant = 'default', disabled, size, ...restButtonProps } = buttonProps ?? {};
         const isSecondary = variant === 'secondary';
+        const isBottomStart = menuAlignment === 'bottom-start';
+
+        // Measure the primary button's rendered width so the popover — anchored
+        // to the narrow toggle trigger by the shared Menu component — can be
+        // shifted left to visually span the whole joined pair. See the
+        // `--split-button-menu-offset` note in the component doc comment above.
+        const primaryRef = useRef<HTMLButtonElement>(null);
+        const [primaryWidth, setPrimaryWidth] = useState(0);
+
+        useEffect(() => {
+            const node = primaryRef.current;
+            if (!node) return undefined;
+            const measure = (): void => setPrimaryWidth(node.getBoundingClientRect().width);
+            measure();
+            if (typeof ResizeObserver === 'undefined') return undefined;
+            const observer = new ResizeObserver(measure);
+            observer.observe(node);
+            return () => observer.disconnect();
+        }, []);
+
+        const { className: menuClassName, style: menuStyle, ...restMenuProps } = menuProps ?? {};
 
         return (
             <MenuContainer
@@ -115,6 +173,7 @@ const SplitButton = forwardRef<HTMLDivElement, SplitButtonProps>(
             >
                 <Button
                     {...restButtonProps}
+                    ref={primaryRef}
                     variant={variant}
                     size={size}
                     disabled={disabled}
@@ -133,7 +192,18 @@ const SplitButton = forwardRef<HTMLDivElement, SplitButtonProps>(
                 >
                     <ChevronDown size={16} />
                 </MenuButton>
-                <Menu {...menuProps}>{menuItems}</Menu>
+                <Menu
+                    {...restMenuProps}
+                    className={cn(styles.menu, isBottomStart && styles.menuOffsetStart, menuClassName)}
+                    style={
+                        {
+                            '--split-button-menu-offset': `${-primaryWidth}px`,
+                            ...menuStyle,
+                        } as CSSProperties
+                    }
+                >
+                    {menuItems}
+                </Menu>
             </MenuContainer>
         );
     },
@@ -150,33 +220,47 @@ export interface SplitButtonMenuItemProps {
     title: ReactNode;
     /** Secondary line explaining the action. */
     description?: string;
-    /** Icon rendered before the title (16px — the icon example uses `w-4 h-4`). */
+    /**
+     * Icon rendered before the title, inside the title row (18px — the shared
+     * Menu default via `--oxobz-icon-size`; every captured instance in
+     * split-button-open.html carries `--geist-icon-size: 18px`, so no
+     * per-item override is applied here).
+     */
     icon?: ReactNode;
     /** Props forwarded to the underlying MenuItem (onClick, className, ...). */
     menuItemProps?: MenuItemProps;
 }
 
 /**
- * A row in the SplitButton's dropdown: title + optional description + optional
- * icon, composed from the existing `MenuItem`. See the `needsRecapture` note
- * on `SplitButton` above — the exact production layout for this row was
- * never captured open, so this is a best-effort composition of already-
- * verified pieces rather than a 1:1 translation of a captured DOM.
+ * A row in the SplitButton's dropdown: an icon + title row, plus an optional
+ * description line below it, composed from the existing `MenuItem`.
+ *
+ * DOM (split-button-open.html, every one of the 15 captured instances
+ * agrees): `<li>` > title/description stack (`flex flex-col gap-y-1`) >
+ * [title row (`flex items-center gap-x-2`, optional icon + title text),
+ * description]. The `<li>` itself carries a production inline-style override
+ * (`height: fit-content; padding: 8px;`) that takes precedence over the
+ * default popover row tokens for this two-line layout — reproduced as
+ * literals in `.menuItem` to match exactly (see the CSS module header for
+ * the token values this deliberately overrides).
  */
 const SplitButtonMenuItem = forwardRef<HTMLLIElement, SplitButtonMenuItemProps>(
     ({ title, description, icon, menuItemProps }, ref) => {
-        const { className, style, ...restItemProps } = menuItemProps ?? {};
+        const { className, ...restItemProps } = menuItemProps ?? {};
         return (
             <MenuItem
                 {...restItemProps}
                 ref={ref}
-                prefix={icon}
                 data-oxobz-split-button-menu-item=""
                 className={cn(styles.menuItem, className)}
-                style={{ '--oxobz-icon-size': '16px', ...style } as CSSProperties}
             >
-                <span className={styles.itemTitle}>{title}</span>
-                {description !== undefined && <span className={styles.itemDescription}>{description}</span>}
+                <span className={styles.itemContent}>
+                    <span className={styles.itemTitleRow}>
+                        {icon}
+                        <span className={styles.itemTitle}>{title}</span>
+                    </span>
+                    {description !== undefined && <span className={styles.itemDescription}>{description}</span>}
+                </span>
             </MenuItem>
         );
     },

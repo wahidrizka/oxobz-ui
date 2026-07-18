@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { SplitButton, SplitButtonMenuItem } from './SplitButton';
@@ -100,6 +100,26 @@ describe('SplitButton', () => {
         expect(screen.getByText('Save changes and create a new production deployment')).toBeInTheDocument();
     });
 
+    it('sets aria-expanded / data-is-open and wires aria-controls to the menu id when open', () => {
+        renderSplitButton();
+        const toggle = screen.getByRole('button', { name: 'Select save method' });
+        openMenu();
+        const menu = screen.getByRole('menu');
+        expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        expect(toggle).toHaveAttribute('data-is-open', 'true');
+        expect(toggle.getAttribute('aria-controls')).toBe(menu.id);
+        expect(menu.getAttribute('aria-labelledby')).toBe(toggle.id);
+    });
+
+    it('closes the dropdown on Escape and returns focus to the toggle', async () => {
+        renderSplitButton();
+        const toggle = screen.getByRole('button', { name: 'Select save method' });
+        openMenu();
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+        await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
     it('closes the dropdown after activating a menu item and calls its onClick', () => {
         const onRedeploy = vi.fn();
         renderSplitButton({ onRedeploy });
@@ -107,6 +127,30 @@ describe('SplitButton', () => {
         fireEvent.click(screen.getByText('Save + Redeploy'));
         expect(onRedeploy).toHaveBeenCalledTimes(1);
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('does not activate or close on a disabled menu item', () => {
+        const onRedeploy = vi.fn();
+        render(
+            <SplitButton
+                menuButtonLabel="Select save method"
+                menuItems={
+                    <SplitButtonMenuItem
+                        description="Save changes and create a new production deployment"
+                        menuItemProps={{ disabled: true, onClick: onRedeploy }}
+                        title="Save + Redeploy"
+                    />
+                }
+            >
+                Save
+            </SplitButton>,
+        );
+        openMenu();
+        const item = screen.getByRole('menuitem');
+        expect(item).toHaveAttribute('aria-disabled', 'true');
+        fireEvent.click(item);
+        expect(onRedeploy).not.toHaveBeenCalled();
+        expect(screen.getByRole('menu')).toBeInTheDocument();
     });
 
     // ── Variant / size / disabled propagation ──
@@ -151,6 +195,24 @@ describe('SplitButton', () => {
         openMenu();
         const popover = screen.getByRole('menu').parentElement;
         expect(popover).toHaveAttribute('data-popper-placement', 'bottom-end');
+    });
+
+    it('applies the menu offset class and custom property for bottom-start (default)', () => {
+        renderSplitButton();
+        openMenu();
+        const menu = screen.getByRole('menu');
+        expect(menu.className).toContain('menuOffsetStart');
+        // jsdom never lays elements out, so the measured primary-button width
+        // is always 0 — this locks in the *mechanism* (the CSS variable is
+        // wired from the measured width), not a real pixel value.
+        expect(menu.style.getPropertyValue('--split-button-menu-offset')).toBe('0px');
+    });
+
+    it('omits the menu offset class for bottom-end', () => {
+        renderSplitButton({ menuAlignment: 'bottom-end' });
+        openMenu();
+        const menu = screen.getByRole('menu');
+        expect(menu.className).not.toContain('menuOffsetStart');
     });
 
     // ── Custom className ──
@@ -210,7 +272,7 @@ describe('SplitButtonMenuItem', () => {
         expect(item.textContent).toBe('Save');
     });
 
-    it('renders an optional icon as the item prefix', () => {
+    it('renders an optional icon inline with the title row (not as a leading block)', () => {
         render(
             <SplitButton
                 menuButtonLabel="Select save method"
@@ -220,7 +282,12 @@ describe('SplitButtonMenuItem', () => {
             </SplitButton>,
         );
         fireEvent.click(screen.getByRole('button', { name: 'Select save method' }));
-        expect(screen.getByTestId('item-icon')).toBeInTheDocument();
+        const icon = screen.getByTestId('item-icon');
+        const item = screen.getByRole('menuitem');
+        expect(item).toContainElement(icon);
+        // The icon's row-level parent must also hold the title text directly
+        // (icon + title are siblings in the title row), per split-button-open.html.
+        expect(icon.parentElement).toHaveTextContent('Save');
     });
 
     it('forwards ref to the underlying menu item', () => {

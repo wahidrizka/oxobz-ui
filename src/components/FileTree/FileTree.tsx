@@ -154,10 +154,19 @@ Folder.displayName = 'Folder';
 
 /**
  * Function-runtime badge shown on a deployed file. Accepted and forwarded
- * as `data-type` only — file-tree.html never renders a File with `type` set
- * (the three examples live inside the collapsed, non-`defaultOpen` `app`
- * folder), so the visual treatment (icon swap vs. badge vs. color) is
- * unverified. See the component report's `needsRecapture` note.
+ * as `data-type` only. Re-verified against file-tree-open.html (Show-code
+ * expanded): the three documented values below are confirmed 1:1 from the
+ * Show-code JSX (`main.tsx` / `dashboard.tsx` examples under the `app`
+ * folder), but the `app` folder itself is *still* collapsed in that
+ * snapshot's actual rendered DOM (no `title="main.tsx"` or similar appears
+ * outside the Show-code text) — so the icon/badge/color treatment for a
+ * typed File row remains unverified, exactly as before. Do not guess it.
+ *
+ * Candidates exist in `@oxobz/icons` for a future pass once a snapshot with
+ * the `app` folder actually expanded is captured: `FunctionEdge` /
+ * `FunctionEdgeColor` (edge-function), `Lambda` / `LambdaRectangle` /
+ * `LambdaRectangleFill` (lambda), `Middleware` / `FunctionMiddleware`
+ * (middleware). None are wired up — see the fallback note on `File` below.
  */
 export type FileType = 'edge-function' | 'lambda' | 'middleware';
 
@@ -174,6 +183,24 @@ export interface FileProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>,
  * File — a leaf row. Renders an `<a>` (matching file-tree.html exactly,
  * including the no-`href` case for `index.js`, where the anchor has no
  * `href` attribute at all rather than falling back to a `<span>`/`<button>`).
+ *
+ * `IndentGuides` render as a sibling *before* the `<a>` (both children of the
+ * `<li>`), not nested inside it — confirmed from file-tree-open.html's
+ * `.vc-config.json` / `index.js` rows, where the 4 `data-tree-indent` spans
+ * sit directly under `<li>` ahead of the anchor. This differs from `Folder`,
+ * whose indent spans *are* nested inside its `<button>` — an asymmetry the
+ * production markup itself exhibits, not a copy-paste error here. Getting
+ * this right matters visually: because `.fileLink` carries the full-bleed
+ * hover background (`margin-left:-8px` + `width:calc(100% + 8px)`), nesting
+ * the guides inside it (as a prior revision did) would extend the hover
+ * highlight underneath the indent lines; keeping them as flex siblings lets
+ * the anchor shrink to start right after the last guide, so hovering a
+ * nested file only highlights from its icon onward, matching production.
+ *
+ * TODO(needs-recapture): `type` currently only forwards `data-type` and
+ * always renders the generic `FileIcon` regardless of value. Re-verify once
+ * a snapshot exists with the `app` folder actually expanded (click it open,
+ * *then* inspect+copy) so the real per-type icon/badge markup is in the DOM.
  */
 const File = forwardRef<HTMLAnchorElement, FileProps>(
     ({ name, href, type, className, ...rest }, ref) => {
@@ -181,6 +208,7 @@ const File = forwardRef<HTMLAnchorElement, FileProps>(
 
         return (
             <li className={styles.item} title={name} data-oxobz-file-tree-file="">
+                <IndentGuides depth={depth} />
                 <a
                     {...rest}
                     ref={ref}
@@ -188,7 +216,6 @@ const File = forwardRef<HTMLAnchorElement, FileProps>(
                     className={cn(styles.fileLink, className)}
                     data-type={type}
                 >
-                    <IndentGuides depth={depth} />
                     <span className={cn(styles.icon, styles.fileIcon)}>
                         <FileIcon size={14} />
                     </span>

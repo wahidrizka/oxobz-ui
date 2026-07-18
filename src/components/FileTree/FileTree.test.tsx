@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { FileTree, Tree, Folder, File } from './FileTree';
+import { FileTree, Tree, Folder, File, type FileType } from './FileTree';
 
 describe('Tree (root)', () => {
     it('renders a root div with data-oxobz-file-tree and data-version="v1"', () => {
@@ -179,7 +179,12 @@ describe('Folder', () => {
         const nestedButton = screen.getByRole('button', { name: /output/i });
         expect(nestedButton.querySelectorAll('[data-tree-indent]')).toHaveLength(1);
 
-        const fileRow = screen.getByText('index.js').closest('a');
+        // File rows render their indent guides as siblings of the <a> — both
+        // children of the <li> — not nested inside the anchor (verified from
+        // file-tree-open.html's .vc-config.json / index.js rows).
+        const fileLink = screen.getByText('index.js').closest('a');
+        expect(fileLink?.querySelectorAll('[data-tree-indent]')).toHaveLength(0);
+        const fileRow = fileLink?.closest('li');
         expect(fileRow?.querySelectorAll('[data-tree-indent]')).toHaveLength(2);
     });
 
@@ -238,14 +243,40 @@ describe('File', () => {
         expect(link?.tagName).toBe('A');
     });
 
-    it('forwards the type prop as data-type', () => {
+    // Every value documented in file-tree-open.html's Show-code JSX (the
+    // `main.tsx` / `dashboard.tsx` examples nested under the `app` folder).
+    const fileTypeInfo: ReadonlyArray<readonly [FileType, string]> = [
+        ['edge-function', 'main.tsx'],
+        ['lambda', 'dashboard.tsx'],
+        ['middleware', 'dashboard.tsx'],
+    ];
+
+    it.each(fileTypeInfo)(
+        'forwards type="%s" as data-type and still renders the generic file icon',
+        (type, name) => {
+            render(
+                <Tree>
+                    <File name={name} type={type} />
+                </Tree>,
+            );
+            const link = screen.getByText(name).closest('a');
+            expect(link).toHaveAttribute('data-type', type);
+            // file-tree-open.html's `app` folder (which holds these typed
+            // examples) is still collapsed in that snapshot's rendered DOM,
+            // so no per-type icon/badge swap is verified — every type keeps
+            // rendering the same generic file icon (see FileTree.tsx TODO).
+            expect(link?.querySelector('svg')).toBeInTheDocument();
+        },
+    );
+
+    it('renders without a data-type attribute when type is omitted (default)', () => {
         render(
             <Tree>
-                <File name="main.tsx" type="edge-function" />
+                <File name="index.js" />
             </Tree>,
         );
-        const link = screen.getByText('main.tsx').closest('a');
-        expect(link).toHaveAttribute('data-type', 'edge-function');
+        const link = screen.getByText('index.js').closest('a');
+        expect(link).not.toHaveAttribute('data-type');
     });
 
     it('appends a custom className after the module class', () => {
