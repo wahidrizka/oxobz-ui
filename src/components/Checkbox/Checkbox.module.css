@@ -30,9 +30,9 @@
     position: relative;
 }
 
-/* ---- Text label ---- */
+/* ---- Text label (geistcn July capture: ml-2 = 8px) ---- */
 .text {
-    margin-left: var(--oxobz-gap-quarter);
+    margin-left: 8px;
 }
 
 .fullWidth .text {
@@ -48,7 +48,8 @@
     align-items: center;
     width: 1rem;
     height: 1rem;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    /* geistcn July capture: transition-all duration-200 */
+    transition: all 0.2s;
     display: inline-flex;
     position: relative;
     transform: rotate(0.000001deg);
@@ -115,10 +116,9 @@
     background: var(--ds-gray-100);
 }
 
-/* ---- Hover ---- */
+/* ---- Hover (geistcn July capture: bg gray-200 only — no border change) ---- */
 @media (hover: hover) {
     .input:not(:disabled):not(:checked):hover+.icon {
-        border-color: var(--ds-gray-900);
         background-color: var(--ds-gray-200);
     }
 }
