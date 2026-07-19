@@ -15,7 +15,6 @@ import { Calendar as CalendarIcon, ChevronDown, Cross } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import { Button } from '../Button';
 import { Input } from '../Input';
-import { Select } from '../Select';
 import { CalendarGrid, type DateValue, type RangeValue, type WeekDayIndex } from './CalendarGrid';
 import styles from './Calendar.module.css';
 
@@ -139,17 +138,49 @@ const MONTH_ABBR = [
  */
 const TRIGGER_PLACEHOLDER = 'Select Date Range';
 
-/** `"Jul 18, 2026"` — the date-input display format from the snapshot. */
+/**
+ * `"Jul 4, 2026"` — the date-input display format. The snapshot's committed
+ * values carry NO leading zero on the day (`value="Jul 18, 2026"`, and the
+ * user-visible `Jul 4, 2026`); only the static *placeholder* text is the
+ * zero-padded `"Jan 01, 2025"`.
+ */
 function formatDate(date: Date): string {
-    return `${MONTH_ABBR[date.getMonth()]} ${`${date.getDate()}`.padStart(2, '0')}, ${date.getFullYear()}`;
+    return `${MONTH_ABBR[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
 /**
- * Parse an `HH:MM` time-input string into `[hours, minutes]`, or `null` when
- * malformed / out of range. Used by the Apply commit (see {@link Calendar}).
+ * Time-of-day display formatter — production formats through the viewer's
+ * own locale (`Intl`, 2-digit 24h): the captured values read `00.00` /
+ * `23.59` (dot separator — the capturing machine's id-ID locale) while the
+ * static placeholder stays the literal `13:00`. Falls back to `HH:MM` when
+ * Intl is unavailable.
+ */
+const TIME_FORMATTER: Intl.DateTimeFormat | null = (() => {
+    try {
+        return new Intl.DateTimeFormat(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        });
+    } catch {
+        return null;
+    }
+})();
+
+function formatTime(hours: number, minutes: number): string {
+    if (TIME_FORMATTER) {
+        return TIME_FORMATTER.format(new Date(2000, 0, 1, hours, minutes));
+    }
+    return `${`${hours}`.padStart(2, '0')}:${`${minutes}`.padStart(2, '0')}`;
+}
+
+/**
+ * Parse an `HH:MM` / `HH.MM` time-input string into `[hours, minutes]`, or
+ * `null` when malformed / out of range. Accepts both separators since the
+ * displayed value is locale-formatted (see {@link formatTime}).
  */
 function parseTimeParts(value: string): [number, number] | null {
-    const match = /^(\d{1,2}):(\d{1,2})$/.exec(value.trim());
+    const match = /^(\d{1,2})[:.](\d{1,2})$/.exec(value.trim());
     if (!match) return null;
     const hours = Number(match[1]);
     const minutes = Number(match[2]);
@@ -196,6 +227,122 @@ const TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'UTC', label: 'UTC' },
     { value: LOCAL_TIMEZONE, label: `Local (${LOCAL_TIMEZONE})` },
 ];
+
+/**
+ * The combobox prefix glyph — a clock (circle + hand), NOT the calendar
+ * icon: path taken verbatim from the "Select Period" input's prefix SVG in
+ * calendar-open.html. No icon in @oxobz/icons matches this path (the
+ * existing `Clock` uses different ring/hand geometry), so it is inlined
+ * here. TODO: move into @oxobz/icons (new SVG + `npm run generate`) on the
+ * next icons release, then swap this for the generated component.
+ */
+function ClockGlyph(): React.JSX.Element {
+    return (
+        <svg viewBox="0 0 16 16" height={16} width={16} aria-hidden="true">
+            <path
+                fill="currentColor"
+                d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0m0 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13m.75 6.12 1.7 1.28.6.45-.9 1.2-.6-.45-1.9-1.43a1 1 0 0 1-.4-.8V3.5h1.5z"
+            />
+        </svg>
+    );
+}
+
+/**
+ * Combobox placeholder — hardcoded in production
+ * (`placeholder="Select Period"` on every non-compact combobox input).
+ */
+const COMBOBOX_PLACEHOLDER = 'Select Period';
+
+/** Hint-panel chips, verbatim from the two-column preset dropdown. */
+const RELATIVE_CHIPS = ['45m', '12 hours', '10d', '2 weeks', 'last month', 'yesterday', 'today'] as const;
+const FIXED_CHIPS = ['Jan 1', 'Jan 1 - Jan 2', '1/1', '1/1 - 1/2'] as const;
+
+function startOfDay(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function endOfDay(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+}
+
+/** `"Jan 1"` / `"jan 1"` → a Date in the current year, or null. */
+function parseFixedSingle(text: string, now: Date): Date | null {
+    const monthDay = /^([a-z]{3,9})\s+(\d{1,2})$/i.exec(text);
+    if (monthDay) {
+        const monthIndex = MONTH_ABBR.findIndex((m) =>
+            monthDay[1].toLowerCase().startsWith(m.toLowerCase()),
+        );
+        const day = Number(monthDay[2]);
+        if (monthIndex >= 0 && day >= 1 && day <= 31) {
+            return new Date(now.getFullYear(), monthIndex, day);
+        }
+        return null;
+    }
+    const slash = /^(\d{1,2})\/(\d{1,2})$/.exec(text);
+    if (slash) {
+        const month = Number(slash[1]);
+        const day = Number(slash[2]);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return new Date(now.getFullYear(), month - 1, day);
+        }
+    }
+    return null;
+}
+
+/**
+ * Parse the combobox's free-typed period text into a range. Understands the
+ * exact families the production hint panel advertises:
+ * - relative: `45m`, `12 hours`, `10d`, `2 weeks`, `last month`,
+ *   `yesterday`, `today`
+ * - fixed: `Jan 1`, `Jan 1 - Jan 2`, `1/1`, `1/1 - 1/2`
+ * Returns null for anything else. The RESULTING range semantics (e.g.
+ * "45m" = the trailing 45 minutes ending now) are a documented
+ * interpretation — the static snapshot proves the chips and input, not the
+ * computed dates.
+ */
+function parsePeriodInput(raw: string, now: Date): RangeValue<Date> | null {
+    const text = raw.trim().toLowerCase();
+    if (!text) return null;
+
+    if (text === 'today') return { start: startOfDay(now), end: now };
+    if (text === 'yesterday') {
+        const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        return { start: startOfDay(y), end: endOfDay(y) };
+    }
+    if (text === 'last month') {
+        return {
+            start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+            end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999),
+        };
+    }
+
+    const relative = /^(\d+)\s*(m|min|mins|minutes?|h|hr|hrs|hours?|d|days?|w|weeks?)$/.exec(text);
+    if (relative) {
+        const amount = Number(relative[1]);
+        const unit = relative[2][0];
+        const minutes =
+            unit === 'm' && !relative[2].startsWith('mo')
+                ? amount
+                : unit === 'h'
+                    ? amount * 60
+                    : unit === 'd'
+                        ? amount * 60 * 24
+                        : amount * 60 * 24 * 7; // w
+        return { start: new Date(now.getTime() - minutes * 60_000), end: now };
+    }
+
+    const rangeParts = raw.split('-').map((p) => p.trim());
+    if (rangeParts.length === 2) {
+        const start = parseFixedSingle(rangeParts[0], now);
+        const end = parseFixedSingle(rangeParts[1], now);
+        if (start && end) return { start: startOfDay(start), end: endOfDay(end) };
+        return null;
+    }
+
+    const single = parseFixedSingle(raw.trim(), now);
+    if (single) return { start: startOfDay(single), end: endOfDay(single) };
+    return null;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -283,9 +430,17 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         // timezone semantics); no `timezone`/`onTimezoneChange` prop exists.
         const [tzValue, setTzValue] = useState(LOCAL_TIMEZONE);
 
-        // Time inputs are local display state (HH:MM), seeded independent of the range.
-        const [startTime, setStartTime] = useState('00:00');
-        const [endTime, setEndTime] = useState('23:59');
+        // Time inputs are local display state, locale-formatted (see formatTime:
+        // "00.00"/"23.59" on the capturing machine), seeded independent of the range.
+        const [startTime, setStartTime] = useState(() => formatTime(0, 0));
+        const [endTime, setEndTime] = useState(() => formatTime(23, 59));
+
+        // Combobox input text — the picked preset's label, or free-typed period
+        // text ("45m", "Jan 1 - Jan 2", ...) awaiting Enter.
+        const [comboText, setComboText] = useState<string>(() => {
+            if (presetIndex == null) return '';
+            return presetEntries[presetIndex]?.[1].text ?? '';
+        });
 
         const rootRef = useRef<HTMLDivElement | null>(null);
         const dialogId = useId();
@@ -365,6 +520,23 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const pickPreset = useCallback(
             (preset: CalendarPresetEntry): void => {
                 applyRange({ start: preset.start, end: preset.end });
+                setComboText(preset.text);
+                setPresetsOpen(false);
+            },
+            [applyRange],
+        );
+
+        /**
+         * Free-typed period text (or a clicked hint chip) → parsed range.
+         * The dropdown closes on a successful parse, same as picking a
+         * preset; unparsable text is left in place (decision — the static
+         * snapshot shows the input and chips, not the failure behaviour).
+         */
+        const commitPeriodText = useCallback(
+            (text: string): void => {
+                const parsed = parsePeriodInput(text, new Date());
+                if (!parsed) return;
+                applyRange(parsed);
                 setPresetsOpen(false);
             },
             [applyRange],
@@ -387,48 +559,61 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
 
         const widthVar = small ? '180px' : '250px';
 
-        /* ---- Preset combobox (rendered only when presets are supplied) ---- */
+        /*
+         * ---- Preset combobox (rendered only when presets are supplied) ----
+         * A real text input (production: `cmdk-input` with
+         * `placeholder="Select Period"`, aria-haspopup="dialog") whose
+         * dropdown is a TWO-COLUMN dialog: the preset listbox on the left
+         * and the "Type relative times" / "Type fixed times" hint chips on
+         * the right — width `calc(trigger-width * 2 + 2px)`, min 370px.
+         * The prefix glyph is a CLOCK (see ClockGlyph), absolutely placed at
+         * top/left 9px; compact renders no prefix at all (pl-2 input).
+         * Typing a period ("45m", "Jan 1 - Jan 2") and pressing Enter — or
+         * clicking a hint chip — parses and applies the range.
+         */
         const presetCombobox: ReactNode =
             presetEntries.length > 0 ? (
-                <div
-                    className={cn(styles.comboboxWrapper, small && styles.comboboxWrapperSmall)}
-                    data-open={presetsOpen || undefined}
-                >
-                    <button
-                        type="button"
+                <div className={styles.comboboxWrapper} data-open={presetsOpen || undefined}>
+                    <input
+                        type="text"
                         role="combobox"
-                        aria-haspopup="listbox"
+                        aria-haspopup="dialog"
                         aria-expanded={presetsOpen}
                         aria-controls={listboxId}
+                        aria-autocomplete="list"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
                         disabled={disabled}
+                        placeholder={COMBOBOX_PLACEHOLDER}
+                        value={comboText}
                         data-testid="calendar/combobox-input"
-                        className={cn(styles.comboboxInput, small && styles.comboboxInputSmall)}
-                        onClick={() => setPresetsOpen((o) => !o)}
-                        onKeyDown={handleTriggerKeyDown}
-                    >
-                        Combobox Menu
-                    </button>
-                    {/*
-                     * Prefix icon: geist-icon (calendar) rendered before the
-                     * text in every evidenced combobox EXCEPT compact — the
-                     * compact "Compact" example in calendar-open.html shows
-                     * no such icon at all (only the chevron suffix, and the
-                     * input's own padding drops to `pl-2`/8px with nothing
-                     * reserving the icon's spot). Rendering it unconditionally
-                     * there is what caused the icon to sit on top of
-                     * "Combobox Menu" — root cause confirmed against the DOM,
-                     * not padding math alone.
-                     */}
+                        className={styles.comboboxInput}
+                        onChange={(e) => setComboText(e.target.value)}
+                        onClick={() => setPresetsOpen(true)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                commitPeriodText(comboText);
+                                return;
+                            }
+                            handleTriggerKeyDown(event);
+                        }}
+                    />
                     {!compact ? (
                         <span className={styles.comboboxInputPrefix}>
-                            <CalendarIcon size={16} />
+                            <ClockGlyph />
                         </span>
                     ) : null}
                     <span className={styles.comboboxInputSuffix}>
                         <ChevronDown size={16} />
                     </span>
                     {presetsOpen ? (
-                        <div className={styles.comboboxPopover}>
+                        <div
+                            role="dialog"
+                            aria-label="Select a period"
+                            className={styles.comboboxPopover}
+                        >
                             <div
                                 role="listbox"
                                 aria-label="Suggestions"
@@ -451,6 +636,40 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                         {preset.text}
                                     </div>
                                 ))}
+                            </div>
+                            <div className={styles.hintPanel}>
+                                <p className={styles.hintTitle}>Type relative times</p>
+                                <div className={styles.hintChips}>
+                                    {RELATIVE_CHIPS.map((chip) => (
+                                        <button
+                                            key={chip}
+                                            type="button"
+                                            className={styles.hintChip}
+                                            onClick={() => {
+                                                setComboText(chip);
+                                                commitPeriodText(chip);
+                                            }}
+                                        >
+                                            {chip}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className={styles.hintTitle}>Type fixed times</p>
+                                <div className={styles.hintChips}>
+                                    {FIXED_CHIPS.map((chip) => (
+                                        <button
+                                            key={chip}
+                                            type="button"
+                                            className={styles.hintChip}
+                                            onClick={() => {
+                                                setComboText(chip);
+                                                commitPeriodText(chip);
+                                            }}
+                                        >
+                                            {chip}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     ) : null}
@@ -501,48 +720,58 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          */
         const inputsSection: ReactNode = (
             <div className={styles.inputsWrapper}>
-                <label className={styles.inputGroupLabel}>Start</label>
-                <div className={cn(styles.inputRow, !showTimeInput && styles.inputRowSingle)}>
-                    <Input
-                        size="small"
-                        readOnly
-                        placeholder="Jan 01, 2025"
-                        value={range ? formatDate(range.start) : ''}
-                        data-testid="calendar/input/start-date"
-                    />
-                    {showTimeInput ? (
+                <div>
+                    <div className={styles.inputGroupHeader}>
+                        <label className={styles.inputGroupLabel}>Start</label>
+                    </div>
+                    <div className={styles.inputRow}>
                         <Input
                             size="small"
-                            placeholder="13:00"
-                            value={startTime}
-                            className={styles.timeInput}
-                            data-testid="calendar/input/start-time"
-                            onChange={(e) => setStartTime(e.target.value)}
-                            onKeyDown={handleTimeKeyDown}
+                            readOnly
+                            placeholder="Jan 01, 2025"
+                            value={range ? formatDate(range.start) : ''}
+                            className={styles.dateInput}
+                            data-testid="calendar/input/start-date"
                         />
-                    ) : null}
+                        {showTimeInput ? (
+                            <Input
+                                size="small"
+                                placeholder="13:00"
+                                value={startTime}
+                                className={styles.timeInput}
+                                data-testid="calendar/input/start-time"
+                                onChange={(e) => setStartTime(e.target.value)}
+                                onKeyDown={handleTimeKeyDown}
+                            />
+                        ) : null}
+                    </div>
                 </div>
 
-                <label className={styles.inputGroupLabel}>End</label>
-                <div className={cn(styles.inputRow, !showTimeInput && styles.inputRowSingle)}>
-                    <Input
-                        size="small"
-                        readOnly
-                        placeholder="Jan 01, 2025"
-                        value={range ? formatDate(range.end) : ''}
-                        data-testid="calendar/input/end-date"
-                    />
-                    {showTimeInput ? (
+                <div>
+                    <div className={styles.inputGroupHeader}>
+                        <label className={styles.inputGroupLabel}>End</label>
+                    </div>
+                    <div className={styles.inputRow}>
                         <Input
                             size="small"
-                            placeholder="13:00"
-                            value={endTime}
-                            className={styles.timeInput}
-                            data-testid="calendar/input/end-time"
-                            onChange={(e) => setEndTime(e.target.value)}
-                            onKeyDown={handleTimeKeyDown}
+                            readOnly
+                            placeholder="Jan 01, 2025"
+                            value={range ? formatDate(range.end) : ''}
+                            className={styles.dateInput}
+                            data-testid="calendar/input/end-date"
                         />
-                    ) : null}
+                        {showTimeInput ? (
+                            <Input
+                                size="small"
+                                placeholder="13:00"
+                                value={endTime}
+                                className={styles.timeInput}
+                                data-testid="calendar/input/end-time"
+                                onChange={(e) => setEndTime(e.target.value)}
+                                onKeyDown={handleTimeKeyDown}
+                            />
+                        ) : null}
+                    </div>
                 </div>
 
                 {/*
@@ -571,7 +800,18 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     </Button>
                 </div>
 
-                <div className={styles.timezoneRow}>
+                {/*
+                 * Timezone row. Select variant: `mt-1 flex justify-center pl-4`
+                 * with a geist-GHOST select (no ring until hover, gray-800
+                 * text, sibling chevron) — NOT the bordered form Select.
+                 * Pinned variant: a bare `text-xs text-gray-800` span, no pl-4.
+                 */}
+                <div
+                    className={cn(
+                        styles.timezoneRow,
+                        !pinnedTimezone && styles.timezoneRowSelect,
+                    )}
+                >
                     {pinnedTimezone ? (
                         <span
                             className={styles.pinnedTimezone}
@@ -580,19 +820,24 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             {pinnedTimezone}
                         </span>
                     ) : (
-                        <Select
-                            size="small"
-                            aria-label="Timezone"
-                            value={tzValue}
-                            onChange={handleTimezoneChange}
-                            data-testid="calendar/timezone-select"
-                        >
-                            {TIMEZONE_OPTIONS.map((tz) => (
-                                <option key={tz.value} value={tz.value}>
-                                    {tz.label}
-                                </option>
-                            ))}
-                        </Select>
+                        <div className={styles.timezoneSelectWrapper}>
+                            <select
+                                aria-label="Timezone"
+                                className={styles.timezoneSelect}
+                                value={tzValue}
+                                onChange={handleTimezoneChange}
+                                data-testid="calendar/timezone-select"
+                            >
+                                {TIMEZONE_OPTIONS.map((tz) => (
+                                    <option key={tz.value} value={tz.value}>
+                                        {tz.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <span className={styles.timezoneSelectChevron}>
+                                <ChevronDown size={16} />
+                            </span>
+                        </div>
                     )}
                 </div>
             </div>
@@ -648,6 +893,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         data-state="open"
                         className={cn(
                             styles.popover,
+                            horizontalLayout && styles.popoverHorizontal,
                             popoverAlignment === 'center' && styles.popoverCenter,
                         )}
                         onKeyDown={handleTriggerKeyDown}

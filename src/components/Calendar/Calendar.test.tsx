@@ -447,7 +447,10 @@ describe('Calendar', () => {
         fireEvent.click(trigger());
         const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
         expect(startTime).toBeInTheDocument();
-        expect(startTime.value).toBe('00:00');
+        // Locale-formatted 2-digit 24h ("00:00" or "00.00" depending on the
+        // runner's locale — production shows the same variance, e.g. "00.00"
+        // in the id-ID capture).
+        expect(startTime.value).toMatch(/^00[:.]00$/);
         fireEvent.change(startTime, { target: { value: '09:30' } });
         expect(startTime.value).toBe('09:30');
     });
@@ -456,7 +459,83 @@ describe('Calendar', () => {
         render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         fireEvent.click(trigger());
         const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
-        expect(startDate.value).toBe('Jul 04, 2026');
+        // No leading zero on the day — snapshot value format "Jul 4, 2026"
+        // (only the static placeholder is the zero-padded "Jan 01, 2025").
+        expect(startDate.value).toBe('Jul 4, 2026');
+    });
+
+    // ── Popover layout & timezone (production-parity pass) ──
+
+    it('keeps the inputs header FIRST in the DOM under a column-reverse wrapper (grid renders on top)', () => {
+        const { container } = render(<Calendar />);
+        fireEvent.click(trigger());
+        const wrapper = container.querySelector('[role="dialog"] [class*="calendarContentWrapper"]');
+        expect(wrapper).toBeInTheDocument();
+        // Production writes inputs-then-grid and reverses visually via CSS.
+        expect(wrapper?.firstElementChild?.className).toContain('inputsWrapper');
+        expect(wrapper?.className).toContain('calendarContentWrapper');
+    });
+
+    it('renders the built-in ghost timezone select with exactly UTC + Local options', () => {
+        render(<Calendar />);
+        fireEvent.click(trigger());
+        const select = screen.getByTestId('calendar/timezone-select') as HTMLSelectElement;
+        expect(select.className).toContain('timezoneSelect');
+        const options = Array.from(select.options).map((o) => o.value);
+        expect(options[0]).toBe('UTC');
+        expect(options).toHaveLength(2);
+        expect(select.options[1].textContent).toMatch(/^Local \(/);
+    });
+
+    // ── Preset combobox (text input + two-column dropdown) ──
+
+    it('renders the preset combobox as a text input with the "Select Period" placeholder', () => {
+        render(<Calendar presets={PRESETS} />);
+        const combo = screen.getByTestId('calendar/combobox-input') as HTMLInputElement;
+        expect(combo.tagName).toBe('INPUT');
+        expect(combo).toHaveAttribute('placeholder', 'Select Period');
+        expect(combo).toHaveAttribute('aria-haspopup', 'dialog');
+    });
+
+    it('opens a two-column dropdown: preset listbox + typing hint chips', () => {
+        render(<Calendar presets={PRESETS} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
+        expect(screen.getByText('Type relative times')).toBeInTheDocument();
+        expect(screen.getByText('Type fixed times')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '45m' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Jan 1 - Jan 2' })).toBeInTheDocument();
+    });
+
+    it('picking a preset writes its label into the combobox input', () => {
+        render(<Calendar presets={PRESETS} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        fireEvent.click(screen.getByTestId('calendar/preset/last-14-days'));
+        const combo = screen.getByTestId('calendar/combobox-input') as HTMLInputElement;
+        expect(combo.value).toBe('Last 14 Days');
+    });
+
+    it('applies a parsed range when a hint chip is clicked', () => {
+        const onChange = vi.fn();
+        render(<Calendar presets={PRESETS} onChange={onChange} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        fireEvent.click(screen.getByRole('button', { name: 'yesterday' }));
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const range = onChange.mock.calls[0][0];
+        expect(range.start).toBeInstanceOf(Date);
+        expect(range.end.getTime()).toBeGreaterThan(range.start.getTime());
+    });
+
+    it('applies a typed period on Enter (e.g. "2 weeks")', () => {
+        const onChange = vi.fn();
+        render(<Calendar presets={PRESETS} onChange={onChange} />);
+        const combo = screen.getByTestId('calendar/combobox-input');
+        fireEvent.change(combo, { target: { value: '2 weeks' } });
+        fireEvent.keyDown(combo, { key: 'Enter' });
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const range = onChange.mock.calls[0][0];
+        const days = (range.end.getTime() - range.start.getTime()) / 86_400_000;
+        expect(Math.round(days)).toBe(14);
     });
 
     it('hides only the time sub-inputs when showTimeInput={false}, keeping the date row', () => {

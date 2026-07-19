@@ -5,33 +5,49 @@
  * `Calendar` (chrome) and the grid moved to CalendarGrid.tsx / .module.css.
  *
  * Production sources:
- * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   Module: calendar-module__lCNR3G — every chrome class is taken verbatim from
- *   here: .calendar/.hasSelect/.compact/.stacked (trigger layouts), .popover,
- *   .calendarContentWrapper(+Horizontal), .inputsWrapper/.inputRow/.timeInput,
- *   .comboboxWrapper(+Small)/.comboboxInput(+Small)/.comboboxInputPrefix/Suffix,
- *   .comboboxPopover/.suggestions/.comboboxItem, .clearButton(+Small).
  * - _nextstatic/component-inspect-element/calendar-open.html
- *   geistcn OPEN-popover snapshots. Source of truth for the popover inner
- *   padding (--padding: 12px), the 32px (h-8) input height, `data-align`
- *   (.popoverCenter — only "start"/default and "center" are evidenced), and
- *   the timezone control: no visible "Timezone" caption in production (just
- *   the select or the pinned span, centered) — .timezoneRow/.pinnedTimezone
- *   below were adjusted from an earlier guess to match. Also the source for
- *   the "Compact" example's own DOM (button first, no prefix icon on its
- *   combobox, `pl-2` padding) behind .compact/.comboboxInputPrefix's
- *   suppression in Calendar.tsx, and for the Apply button surveyed across
- *   all 32 Start/End popovers (.applyButton/.applyHint below;
- *   .timezoneRow's margin-top corrected to the 4px measured from Apply).
+ *   geistcn OPEN-popover snapshots — primary source for this pass:
+ *   - Popover dialog: `width: min(280px, avail)`, rounded-12, shadow-menu,
+ *     inner `--padding: 12px`.
+ *   - Section order: the DOM writes the inputs header FIRST, then the grid,
+ *     but wraps both in `flex-col group-data-[side='bottom']:flex-col-reverse`
+ *     — when the popover opens BELOW the trigger (our only side) the column
+ *     is reversed, so the grid renders on top and the inputs header sits at
+ *     the bottom with `mt-3 pt-2.5 border-t border-gray-100` (full-bleed).
+ *   - Inputs: groups spaced 8px (`space-y-2`), label 13px gray-900 capitalize
+ *     in an `mb-1` wrapper; each row is `flex gap-2` with the date input
+ *     `w-full` and the time input `w-36` (144px); inputs are h-8 (32px).
+ *   - Apply: full-width small secondary button; its Enter hint is
+ *     `absolute top-2.5 ml-2 text-xs` anchored to the button box.
+ *   - Timezone row: `mt-1 flex justify-center` (+ `pl-4` only in the select
+ *     variant); the built-in select is the `geist-ghost` preset
+ *     (`--themed-border: transparent` → no ring until hover), 14px text
+ *     forced to gray-800, h-8, chevron suffix at right-3. Pinned variant is
+ *     a bare `text-xs text-gray-800` span (no pl-4).
+ *   - Preset combobox: a real text input, `w-[var(--width)]`,
+ *     `h-(--ds-size-small)` (32px in EVERY size), `px-[34px]` (8px when
+ *     compact — no prefix icon there), 14px `text-gray-700`, rounded-5,
+ *     ring `0 0 0 1px gray-400`; clock prefix icon absolute top/left 9px.
+ *   - Preset dropdown: a two-column `role="dialog"` grid —
+ *     `width: calc(trigger-width * 2 + 2px)`, `min-width: 370px`,
+ *     rounded-8, shadow-menu; left column p-2 + border-r gray-alpha-400 with
+ *     36px listbox rows (`aria-selected: bg-gray-alpha-300`); right column
+ *     `p-4 pr-[30px]` with "Type relative/fixed times" captions
+ *     (text-copy-14 gray-900, second caption margin-top 16px) and chip
+ *     buttons: 13px mono, bg accents-2, h-5 (20px), px-1.5 (6px),
+ *     rounded-4, hover hsl(0,0%,87%) (dark: hsl(0,0%,30%)).
+ * - _nextstatic/chunks/1c419a75d7e589ae.css
+ *   Module calendar-module__lCNR3G — trigger/.hasSelect/.compact/.stacked
+ *   layout classes and the clear button.
  * - _nextstatic/chunks/20v_289ahbeyd.css, 3qv8jvk0udmxc.css
- *   Resolve the Tailwind utilities on the Apply button/hint to px values:
- *   text-xs=12px, top-2.5=10px, ml-2=8px.
+ *   Tailwind scale + `geist-ghost` preset (`--themed-fg: var(--accents-5);
+ *   --themed-bg: transparent; --themed-border: transparent`) + fadeOut
+ *   keyframes for the dialog (same motion tokens as Menu).
  *
- * Legacy geist tokens absent from oxobz are inlined at their production value:
- *   --geist-radius 6px, --geist-gap-half 8px, --geist-space-2x 8px,
- *   --geist-space-4x 16px, --geist-gap-quarter 4px, --ds-size-small 32px,
- *   --ds-size-medium 40px. Dark theme needs no override: every color is a
- *   --ds- / --accents- token that already flips with .dark-theme.
+ * Legacy geist tokens absent from oxobz are inlined at their production
+ * value: --geist-radius 6px, --ds-size-small 32px, --ds-size-medium 40px,
+ * --ds-control-decoration-size 16px. Dark theme needs no override except the
+ * chip hover (explicit hsl pair in production).
  */
 
 /* ---- Outer wrapper (calendar-module __calendar) ---- */
@@ -41,13 +57,8 @@
     width: fit-content;
 }
 
-/*
- * When a preset combobox sits next to the trigger the wrapper is a flex row.
- * align-items: center matches the `items-center` class present on every
- * evidenced hasSelect wrapper (default "Presets", "Compact", and "Stacked"
- * examples in calendar-open.html) — previously only .compact carried it,
- * leaving the plain (non-compact, non-stacked) preset row mis-aligned.
- */
+/* Preset combobox + trigger share a flex row (items-center on every
+   evidenced hasSelect wrapper). */
 .hasSelect {
     display: flex;
     align-items: center;
@@ -58,12 +69,7 @@
     align-items: center;
 }
 
-/*
- * Compact squares only the button's RIGHT edge (its left edge stays rounded
- * — it is the leftmost/outer element in this layout, opposite of the
- * default order). Verified against the "Compact" example's own
- * `rounded-l-[5px] rounded-r-none` classes on `[data-geist-button]`.
- */
+/* Compact squares only the button's RIGHT edge (leftmost/outer element). */
 .compact .trigger {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -93,91 +99,79 @@
     color: var(--ds-gray-700);
 }
 
-/* ---- Preset combobox selector (calendar-module __comboboxWrapper) ---- */
+/* ---- Preset combobox (real text input + clock prefix + chevron suffix) ---- */
 .comboboxWrapper {
     position: relative;
     display: flex;
-    height: 40px;
-}
-
-.comboboxWrapperSmall {
+    /* h-(--ds-size-small): the combobox input is 32px tall in EVERY size —
+       verified on the default/"Presets" (medium) example, not just small. */
     height: 32px;
 }
 
-/* The clickable input-like control (calendar-module __comboboxInput). */
 .comboboxInput {
     position: relative;
-    width: var(--width, 165px);
-    height: 40px;
-    padding: 0 40px;
+    width: var(--width, 250px);
+    height: 32px;
+    /* px-[34px]: room for the clock prefix (left) and chevron (right). */
+    padding: 0 34px;
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     outline: none;
     background: var(--ds-background-100);
     background-clip: padding-box;
     box-shadow: 0 0 0 1px var(--ds-gray-400);
-    color: var(--ds-gray-1000);
+    /* Production keeps the input text gray-700 even with a value
+       (text-[var(--ds-gray-700)] on the element itself). */
+    color: var(--ds-gray-700);
     font-family: var(--font-sans, inherit);
     font-size: 14px;
     font-weight: 400;
     text-align: left;
     cursor: pointer;
-    transition:
-        border-color 0.15s,
-        box-shadow 0.15s,
-        background 0.15s;
+    white-space: nowrap;
+    transition: box-shadow 0.15s;
 }
 
-.comboboxInputSmall {
-    height: 32px;
-    padding: 0 36px;
+.comboboxInput::placeholder {
+    color: var(--ds-gray-700);
 }
 
 .comboboxInput:hover:not(:disabled) {
     background: var(--ds-gray-100);
     box-shadow: 0 0 0 1px var(--ds-gray-500);
+    z-index: 10;
 }
 
-.comboboxInput:focus-visible {
-    box-shadow: var(--ds-focus-ring);
+.comboboxInput:focus {
+    box-shadow:
+        0 0 0 1px var(--ds-gray-600),
+        0px 0px 0px 4px rgba(0, 0, 0, 0.16);
+    z-index: 10;
 }
 
-/*
- * Compact: combobox is the right-hand element (button now renders first —
- * see Calendar.tsx), so round only its right side. padding-left: 8px
- * (not the 40px reserved by the base rule above) matches the "Compact"
- * example's own `pl-2` override — production renders NO prefix icon in this
- * layout at all (chevron suffix only), which is also why Calendar.tsx no
- * longer renders `.comboboxInputPrefix` when `compact`. Previously this rule
- * only tightened the padding (to 12px) while the icon kept rendering
- * absolutely-positioned at left:12px — the icon and "Combobox Menu" text
- * then started at the same x position, i.e. the reported overlap bug.
- */
+/* Compact: combobox is the right-hand element (button renders first), so
+   round only its right side. pl-2 (8px): production renders NO prefix icon
+   in this layout (chevron suffix only). */
 .compact .comboboxInput {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     padding-left: 8px;
 }
 
-/* Stacked: combobox is on top, square its bottom edge against the button. */
+/* Stacked: combobox on top, square its bottom edge against the button. */
 .stacked .comboboxInput {
-    border-bottom: none;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
 }
 
+/* Clock prefix icon — absolute top-[9px] left-[9px], gray-700. */
 .comboboxInputPrefix {
     position: absolute;
-    top: 10px;
-    left: 12px;
+    top: 9px;
+    left: 9px;
     z-index: 10;
     pointer-events: none;
     color: var(--ds-gray-700);
-}
-
-.comboboxWrapperSmall .comboboxInputPrefix {
-    top: 8px;
-    left: 9px;
 }
 
 .comboboxInputSuffix {
@@ -191,29 +185,31 @@
     transition: transform 0.2s;
 }
 
-.comboboxWrapperSmall .comboboxInputSuffix {
-    right: 8px;
-}
-
 .comboboxWrapper[data-open='true'] .comboboxInputSuffix {
     transform: translateY(-50%) rotate(180deg);
 }
 
-/* ---- Preset dropdown (calendar-module __comboboxPopover / __suggestions) ---- */
+/* ---- Preset dropdown: two-column dialog (listbox + typing hints) ---- */
 .comboboxPopover {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
     z-index: 99999999;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* width: calc(var(--radix-popover-trigger-width) * 2 + 2px), min 370px. */
+    width: calc(var(--width, 250px) * 2 + 2px);
+    min-width: 370px;
     overflow: hidden;
     border-radius: 8px;
     background: var(--ds-background-100);
     box-shadow: var(--ds-shadow-menu);
 }
 
+/* Left column — the preset listbox (cmdk list). */
 .suggestions {
     padding: 8px;
-    min-width: 165px;
+    border-right: 1px solid var(--ds-gray-alpha-400);
 }
 
 .comboboxItem {
@@ -221,7 +217,7 @@
     align-items: center;
     height: 36px;
     padding: 0 8px;
-    border-radius: 6px;
+    border-radius: 5px;
     scroll-margin: 8px;
     color: var(--ds-gray-1000);
     font-size: 14px;
@@ -229,8 +225,61 @@
     cursor: pointer;
 }
 
-.comboboxItem[aria-selected='true'] {
-    background-color: var(--ds-gray-300);
+.comboboxItem[aria-selected='true'],
+.comboboxItem:hover {
+    background-color: var(--ds-gray-alpha-300);
+}
+
+/* Right column — "Type relative/fixed times" hint panel (p-4 pr-[30px]). */
+.hintPanel {
+    padding: 16px 30px 16px 16px;
+}
+
+/* text-copy-14: 14px / 20px line-height, gray-900. */
+.hintTitle {
+    margin: 0;
+    color: var(--ds-gray-900);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+}
+
+.hintTitle + .hintChips + .hintTitle,
+.hintPanel .hintTitle:not(:first-child) {
+    margin-top: 16px;
+}
+
+.hintChips {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    gap: 4px;
+}
+
+.hintChip {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 4px;
+    background: var(--accents-2);
+    color: var(--ds-gray-1000);
+    font-family: var(--font-mono, var(--font-mono-fallback, monospace));
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.hintChip:hover {
+    background: hsl(0, 0%, 87%);
+}
+
+:global(.dark-theme) .hintChip:hover {
+    background: hsl(0, 0%, 30%);
+}
+
+.hintChip:focus-visible {
+    outline: 2px solid var(--ds-gray-700);
 }
 
 /* ---- Clear button (calendar-module __clearButton) ---- */
@@ -257,21 +306,28 @@
     right: -0.5rem;
 }
 
-/* ---- Popover (calendar-module __popover) ---- */
+/* ---- Popover (role="dialog") ---- */
 .popover {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
     z-index: 99999999;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     outline: none;
+    /* width: min(280px, calc(100vw - 32px)) — from the dialog's own style. */
+    width: min(280px, calc(100vw - 32px));
     border-radius: 12px;
     background: var(--ds-background-100);
     box-shadow: var(--ds-shadow-menu);
 }
 
-/* popoverAlignment="center" (data-align="center" in the snapshot) — the only
-   other evidenced alignment besides the "start"/default (left: 0) above. */
+/* horizontalLayout renders inputs beside the grid — the dialog grows to fit. */
+.popoverHorizontal {
+    width: fit-content;
+}
+
+/* popoverAlignment="center" (data-align="center" in the snapshot). */
 .popoverCenter {
     left: 50%;
     transform: translateX(-50%);
@@ -282,59 +338,88 @@
     padding: var(--padding);
 }
 
-/* ---- Content layout (calendar-module __calendarContentWrapper) ---- */
+/*
+ * ---- Content layout ----
+ * Production writes the inputs header BEFORE the grid in the DOM but
+ * reverses the column when the popover opens below the trigger
+ * (`group-data-[side='bottom']:flex-col-reverse`) — our popover always
+ * opens below, so the reversed order (grid on top, inputs at the bottom)
+ * is the one and only rendered order here.
+ */
 .calendarContentWrapper {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
 }
 
-/* horizontalLayout: inputs column beside the grid. */
+/* horizontalLayout: `flex-row-reverse` + 20px gap (inputs column on the
+   left, grid on the right — reversed row over the same DOM order). */
 .calendarContentWrapperHorizontal {
     display: flex;
     flex-direction: row-reverse;
     gap: 20px;
 }
 
-/* ---- Date / time inputs (calendar-module __inputsWrapper / __inputRow) ---- */
+/* ---- Inputs header (bottom side: mt-3 pt-2.5 border-t, full bleed) ---- */
 .inputsWrapper {
-    margin-bottom: 12px;
+    margin-top: 12px;
     margin-left: -12px;
     margin-right: -12px;
-    padding: 0 12px 12px;
-    border-bottom: 1px solid var(--ds-gray-100);
+    padding: 10px 12px 0;
+    border-top: 1px solid var(--ds-gray-100);
 }
 
 /* In horizontal layout the inputs sit in their own column, no full-bleed border. */
 .calendarContentWrapperHorizontal .inputsWrapper {
     margin: 0;
     padding: 0;
-    border-bottom: none;
+    border-top: none;
 }
 
+/* space-y-2: 8px between the input groups / Apply / timezone rows... */
+.inputsWrapper > * + * {
+    margin-top: 8px;
+}
+
+/* ...except the timezone row, whose own mt-1 (4px) wins in production. */
+.inputsWrapper > .timezoneRow {
+    margin-top: 4px;
+}
+
+/* Label wrapper (`mb-1 flex items-center justify-between`). */
+.inputGroupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+/* `block text-[13px] text-gray-900 capitalize mb-0` */
 .inputGroupLabel {
     display: block;
-    margin-bottom: 6px;
+    max-width: 100%;
     color: var(--ds-gray-900);
-    font-size: 0.75rem;
+    font-size: 13px;
     font-weight: 400;
+    text-transform: capitalize;
 }
 
-.inputGroupLabel:not(:first-child) {
-    margin-top: 10px;
-}
-
+/* Row: `flex gap-2` — date input w-full, time input w-36 (144px). */
 .inputRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    gap: 8px;
 }
 
-.inputRowSingle {
-    grid-template-columns: 1fr;
+.dateInput {
+    width: 100%;
+    min-width: 0;
+}
+
+.timeInput {
+    width: 144px;
+    flex: none;
 }
 
 .inputRow input {
-    padding: 0 8px;
     color: var(--ds-gray-1000);
 }
 
@@ -342,22 +427,15 @@
     text-transform: uppercase;
 }
 
-/*
- * Apply button (commits typed Start/End time onto the range). Evidenced in
- * every Start/End popover in calendar-open.html, always the plain <div>
- * directly below the End row (no margin-top of its own — the "mt-1"/4px gap
- * belongs to the *next* row, see .timezoneRow below).
- */
+/* ---- Apply (commits typed Start/End time onto the range) ---- */
 .applyButton {
+    /* The hint's containing block: production's button establishes one via
+       its own transform; ours declares position explicitly. */
+    position: relative;
     width: 100%;
 }
 
-/*
- * The "↵" Enter-key hint. Positioned absolutely within the button (which is
- * `position: relative`, matching production's own `.base`/`.reset` Button
- * styling) — verified values from the "Apply" button's own
- * `absolute top-2.5 ml-2 text-xs` classes.
- */
+/* The Enter-key hint: `absolute top-2.5 ml-2 text-xs` (10px / 8px / 12px). */
 .applyHint {
     position: absolute;
     top: 10px;
@@ -365,24 +443,68 @@
     font-size: 12px;
 }
 
-/*
- * Timezone control row (built-in select, or pinned read-only text). The
- * snapshot has no visible "Timezone" caption — just this centered control,
- * so unlike Start/End this row does not pair with an .inputGroupLabel.
- * margin-top: 4px (not 10px) — matches the "mt-1" gap measured from the
- * Apply button above it (Apply always renders directly above this row; see
- * .applyButton).
- */
+/* ---- Timezone row (`mt-1 flex justify-center`, + pl-4 select-only) ---- */
 .timezoneRow {
     display: flex;
     justify-content: center;
-    margin-top: 4px;
 }
 
-.pinnedTimezone {
-    display: inline-flex;
+.timezoneRowSelect {
+    padding-left: 16px;
+}
+
+/*
+ * Built-in timezone select — the `geist-ghost` preset: no ring
+ * (--themed-border: transparent), text forced gray-800, h-8, px-3 pr-9,
+ * hover ring gray-alpha-500. Native select, appearance stripped; the
+ * chevron is a sibling span.
+ */
+.timezoneSelectWrapper {
+    position: relative;
+    display: flex;
     align-items: center;
+}
+
+.timezoneSelect {
+    appearance: none;
+    border: none;
     height: 32px;
+    padding: 0 36px 0 12px;
+    border-radius: var(--geist-radius, 6px);
+    background: var(--ds-background-100);
+    box-shadow: 0 0 0 1px transparent;
     color: var(--ds-gray-800);
-    font-size: 0.75rem;
+    font-size: 14px;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition:
+        box-shadow 0.2s,
+        color 0.2s;
+}
+
+.timezoneSelect:hover {
+    box-shadow: 0 0 0 1px var(--ds-gray-alpha-500);
+}
+
+.timezoneSelect:focus {
+    outline: none;
+    box-shadow: var(--ds-focus-border, 0 0 0 1px var(--ds-gray-alpha-600));
+}
+
+.timezoneSelectChevron {
+    position: absolute;
+    right: 12px;
+    display: inline-flex;
+    pointer-events: none;
+    color: var(--ds-gray-700);
+    transition: color 0.15s ease-in;
+}
+
+/* Pinned variant — a bare `text-xs text-gray-800` span. */
+.pinnedTimezone {
+    color: var(--ds-gray-800);
+    font-size: 12px;
 }
