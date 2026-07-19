@@ -164,21 +164,30 @@
     border-bottom-left-radius: 0;
 }
 
-/* Clock prefix icon — absolute top-[9px] left-[9px], gray-700. */
+/* Clock prefix icon — absolute top-[9px] left-[9px], gray-700.
+   inline-flex: collapse the span to the svg box — without it the inline svg
+   sits on the text baseline inside the span's 21px line box and drifts off
+   its 9px offset (production relies on Tailwind preflight's svg{display:block}). */
 .comboboxInputPrefix {
     position: absolute;
     top: 9px;
     left: 9px;
     z-index: 10;
+    display: inline-flex;
     pointer-events: none;
     color: var(--ds-gray-700);
 }
 
+/* Chevron suffix — same inline-flex reason as the prefix: keeps the svg
+   exactly centered by top-50%/translateY(-50%) in both the closed (down)
+   and open (rotated up) states. */
 .comboboxInputSuffix {
     position: absolute;
     top: 50%;
     right: 12px;
     z-index: 10;
+    display: inline-flex;
+    align-items: center;
     pointer-events: none;
     color: var(--ds-gray-700);
     transform: translateY(-50%);
