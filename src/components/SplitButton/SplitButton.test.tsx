@@ -226,6 +226,67 @@ describe('SplitButton', () => {
         expect(menu.className).not.toContain('menuOffsetStart');
     });
 
+    // ── Dropdown anchoring ──
+    // The popover renders in a portal on document.body (Menu.tsx), decoupled
+    // from the DOM tree, so "anchored to the wrapper" is proven two ways:
+    // (1) the root wrapper itself carries the position:relative anchor class
+    // MenuContainer defines, and (2) the popover's computed top/left actually
+    // land against the toggle trigger's rect for both alignments — this is
+    // also a regression test for the Menu positioning bug (see Menu.test.tsx)
+    // where the popover could get stuck pinned to the viewport's top-left
+    // corner on first open.
+
+    it('renders the root wrapper carrying the Menu position:relative anchor class', () => {
+        const { container } = renderSplitButton();
+        const root = container.querySelector('[data-oxobz-split-button]');
+        // MenuContainer's own `.container` class (position: relative) and
+        // SplitButton's `.wrapper` class (position: relative; display: flex)
+        // are both applied to the same root element — it is the anchor.
+        expect(root?.className).toContain('container');
+        expect(root?.className).toContain('wrapper');
+    });
+
+    describe('popover coordinates', () => {
+        const TOGGLE_RECT = { top: 100, left: 300, right: 340, bottom: 140, width: 40, height: 40 };
+        const MENU_RECT = { top: 0, left: 0, right: 264, bottom: 200, width: 264, height: 200 };
+
+        function mockRects() {
+            return vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+                this: Element,
+            ) {
+                const base = this.tagName === 'UL' ? MENU_RECT : TOGGLE_RECT;
+                return { ...base, x: base.left, y: base.top, toJSON: () => base } as DOMRect;
+            });
+        }
+
+        it('anchors the popover to the toggle trigger for bottom-start (align start)', () => {
+            const spy = mockRects();
+            try {
+                renderSplitButton();
+                openMenu();
+                const wrapper = screen.getByRole('menu').parentElement as HTMLElement;
+                expect(wrapper.style.left).toBe(`${TOGGLE_RECT.left}px`);
+                // trigger.bottom + the 8px popover gap.
+                expect(wrapper.style.top).toBe(`${TOGGLE_RECT.bottom + 8}px`);
+            } finally {
+                spy.mockRestore();
+            }
+        });
+
+        it('anchors the popover to the toggle trigger for bottom-end (align end)', () => {
+            const spy = mockRects();
+            try {
+                renderSplitButton({ menuAlignment: 'bottom-end' });
+                openMenu();
+                const wrapper = screen.getByRole('menu').parentElement as HTMLElement;
+                expect(wrapper.style.left).toBe(`${TOGGLE_RECT.right - MENU_RECT.width}px`);
+                expect(wrapper.style.top).toBe(`${TOGGLE_RECT.bottom + 8}px`);
+            } finally {
+                spy.mockRestore();
+            }
+        });
+    });
+
     // ── Custom className ──
 
     it('appends a custom className after the module class', () => {

@@ -437,6 +437,37 @@ describe('Menu', () => {
         expect(wrapper).toHaveAttribute('data-popper-placement', 'left-start');
     });
 
+    // Regression: the position effect must depend on `mounted`, not just
+    // `ctx.open`. The render where `ctx.open` first flips true still has
+    // `mounted === false`, so the portal (and its `<ul>`) doesn't exist yet
+    // and the effect used to bail out on a null list ref; because `mounted`
+    // wasn't in its dependency array, it never re-ran on the following render
+    // that actually mounts the list, leaving `coords` stuck at the effect's
+    // `{ top: 0, left: 0 }` default — the popover then rendered `position:
+    // fixed` at the viewport's top-left corner instead of anchored under the
+    // trigger.
+    it('positions the popover against the trigger the very first time it opens (not pinned to the viewport corner)', () => {
+        const triggerRect = { top: 100, left: 200, right: 300, bottom: 140, width: 100, height: 40 };
+        const menuRect = { top: 0, left: 0, right: 264, bottom: 200, width: 264, height: 200 };
+        const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+            this: Element,
+        ) {
+            const base = this.tagName === 'UL' ? menuRect : triggerRect;
+            return { ...base, x: base.left, y: base.top, toJSON: () => base } as DOMRect;
+        });
+        try {
+            renderMenu({ width: 264 });
+            open();
+            const wrapper = screen.getByRole('menu').parentElement as HTMLElement;
+            // bottom-start (default): align start -> left = trigger.left;
+            // top = trigger.bottom + the 8px popover gap.
+            expect(wrapper.style.left).toBe('200px');
+            expect(wrapper.style.top).toBe('148px');
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
     // ── className / ref ──
 
     it('appends a custom className on the menu', () => {

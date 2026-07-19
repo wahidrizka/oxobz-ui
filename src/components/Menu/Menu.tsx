@@ -446,14 +446,24 @@ const Menu = forwardRef<HTMLUListElement, MenuProps>(
             return () => window.clearTimeout(timer);
         }, [ctx.open, mounted]);
 
-        // Position the popover against the trigger.
+        // Position the popover against the trigger. Depends on `mounted` (not
+        // just `ctx.open`): the render where `ctx.open` first flips true still
+        // has `mounted === false` (see the mount-lifecycle effect above), so
+        // this component still returns `null` — `listRef.current` is null on
+        // that pass and the effect used to bail out silently. Because
+        // `mounted` wasn't a dependency, the effect never re-ran on the next
+        // render (the one that actually mounts the portal's `<ul>`), so
+        // `coords` stayed stuck at its `{ top: 0, left: 0 }` initial value —
+        // the popover then renders `position: fixed` at the viewport's
+        // top-left corner instead of anchored under the trigger. Adding
+        // `mounted` here makes the effect re-run once the list node exists.
         useEffect(() => {
-            if (!ctx.open) return;
+            if (!ctx.open || !mounted) return;
             const trigger = ctx.triggerRef.current;
             const list = listRef.current;
             if (!trigger || !list) return;
             setCoords(computePosition(ctx.position, trigger.getBoundingClientRect(), list.getBoundingClientRect()));
-        }, [ctx.open, ctx.position, width]);
+        }, [ctx.open, mounted, ctx.position, width]);
 
         // Move focus to the list on open so key events are captured.
         useEffect(() => {
