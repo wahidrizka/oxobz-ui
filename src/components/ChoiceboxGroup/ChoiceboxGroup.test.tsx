@@ -210,23 +210,26 @@ describe('ChoiceboxGroup — checkbox mode', () => {
     });
 });
 
+// geistcn generation: the list is a plain flex ul (row by default) —
+// direction="column" adds the .vertical class; no Stack variables remain.
 describe('ChoiceboxGroup — direction', () => {
-    it('defaults to row via --stack-direction on the ul', () => {
+    it('defaults to a plain row list (no vertical class, no stack vars)', () => {
         const { container } = render(
             <ChoiceboxGroup label="plan">{twoItems}</ChoiceboxGroup>,
         );
         const ul = container.querySelector('ul');
-        expect(ul?.style.getPropertyValue('--stack-direction')).toBe('row');
+        expect(ul?.className).not.toContain('vertical');
+        expect(ul?.style.getPropertyValue('--stack-direction')).toBe('');
     });
 
-    it('direction="column" sets --stack-direction to column', () => {
+    it('direction="column" adds the vertical class', () => {
         const { container } = render(
             <ChoiceboxGroup label="plan" direction="column">
                 {twoItems}
             </ChoiceboxGroup>,
         );
         const ul = container.querySelector('ul');
-        expect(ul?.style.getPropertyValue('--stack-direction')).toBe('column');
+        expect(ul?.className).toContain('vertical');
     });
 });
 
@@ -538,14 +541,15 @@ describe('ChoiceboxGroup — listClassName', () => {
         expect(ul?.className).toContain('flex-row');
     });
 
-    it('keeps the stack class when listClassName is set', () => {
+    it('listClassName does not disturb the vertical class when direction="column"', () => {
         const { container } = render(
-            <ChoiceboxGroup label="plan" listClassName="flex-row">
+            <ChoiceboxGroup direction="column" label="plan" listClassName="flex-row">
                 {twoItems}
             </ChoiceboxGroup>,
         );
         const ul = container.querySelector('ul');
-        expect(ul?.className).toContain('stack');
+        expect(ul?.className).toContain('vertical');
+        expect(ul?.className).toContain('flex-row');
     });
 });
 

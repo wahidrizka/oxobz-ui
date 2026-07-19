@@ -1,4 +1,4 @@
-import React, {
+import {
     createContext,
     forwardRef,
     useContext,
@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import { cn } from '../../utils/cn';
 import { Label } from '../Label';
-import stackStyles from '../Stack/Stack.module.css';
 import styles from './ChoiceboxGroup.module.css';
 import radioStyles from '../Radio/Radio.module.css';
 import checkboxStyles from '../Checkbox/Checkbox.module.css';
@@ -146,54 +145,29 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
             }
         };
 
+        // geistcn generation: plain flex classes on the label/option/title
+        // wrapper (choicebox-jul2026.html) — the old Stack-variable chrome is
+        // gone from production.
         return (
             <label
                 {...rest}
                 ref={ref}
                 className={cn(
-                    stackStyles.stack,
                     styles.choicebox,
                     isChecked && styles.checked,
                     isDisabled && styles.disabled,
+                    children != null && styles.hasContent,
                     className,
                 )}
                 data-version="v1"
                 aria-selected={isChecked}
-                style={{
-                    '--stack-flex': '1',
-                    '--stack-direction': 'column',
-                    '--stack-align': 'stretch',
-                    '--stack-justify': 'flex-start',
-                    '--stack-padding': '0px',
-                    '--stack-gap': '0px',
-                    ...(rest.style ?? {}),
-                } as React.CSSProperties}
             >
                 {/* Option row */}
-                <div
-                    className={cn(stackStyles.stack, styles.option)}
-                    data-version="v1"
-                    style={{
-                        '--stack-flex': 'initial',
-                        '--stack-direction': 'row',
-                        '--stack-align': 'center',
-                        '--stack-justify': 'space-between',
-                        '--stack-padding': '0px',
-                        '--stack-gap': '24px',
-                    } as React.CSSProperties}
-                >
+                <div className={styles.option} data-slot="choicebox-group-item-option">
                     {/* Title + Description */}
                     <span
-                        className={stackStyles.stack}
-                        data-version="v1"
-                        style={{
-                            '--stack-flex': 'initial',
-                            '--stack-direction': 'column',
-                            '--stack-align': 'stretch',
-                            '--stack-justify': 'flex-start',
-                            '--stack-padding': '0px',
-                            '--stack-gap': '4px',
-                        } as React.CSSProperties}
+                        className={styles.titleWrapper}
+                        data-slot="choicebox-group-item-title-description"
                     >
                         <span className={styles.title}>{title}</span>
                         {description && (
@@ -380,17 +354,10 @@ function ChoiceboxGroupRoot({
                         {label}
                     </Label>
                 )}
+                {/* geistcn generation: plain flex list (gap-3), no Stack vars */}
                 <ul
-                    className={cn(stackStyles.stack, listClassName)}
+                    className={cn(direction === 'column' && styles.vertical, listClassName)}
                     data-version="v1"
-                    style={{
-                        '--stack-flex': 'initial',
-                        '--stack-direction': direction,
-                        '--stack-align': 'stretch',
-                        '--stack-justify': 'stretch',
-                        '--stack-padding': '0px',
-                        '--stack-gap': '12px',
-                    } as React.CSSProperties}
                 >
                     {children}
                 </ul>

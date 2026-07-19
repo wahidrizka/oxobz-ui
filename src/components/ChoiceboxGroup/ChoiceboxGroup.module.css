@@ -1,192 +1,190 @@
 /**
- * ChoiceboxGroup — large-form radio / checkbox selector
+ * ChoiceboxGroup — geistcn generation (rebuilt 19 Jul 2026).
  *
- * 1:1 translation from production CSS (choicebox-group-module__kLcSnq)
- * Source: _nextstatic/chunks/1c419a75d7e589ae.css  L20
+ * The March choicebox-group-module (classic, incl. the deliberate upstream
+ * `heigth` typo) is gone from production. Rebuilt 1:1 from
+ * choicebox-jul2026.html — every value below is lifted from the captured
+ * item markup (base + checked/hover/disabled deltas across all items):
  *
- * No --geist-* tokens found in this module — no renames needed.
+ * - list <ul>: flex items-stretch justify-stretch gap-3 (12px), row/col
+ * - item <label>: flex-1 flex-col, border gray-400, rounded-md,
+ *   transition-colors 150ms ease-in; hover(enabled) border gray-500 +
+ *   bg gray-100; checked(!disabled) border blue-600 (hover keeps it);
+ *   focus-within: 2px outline, offset 2, literal indigo-600 (#4f46e5 —
+ *   production uses the raw Tailwind palette here, not a --ds token)
+ * - option row (data-slot="choicebox-group-item-option"): p-3, gap-6,
+ *   justify-between; checked bg blue-100 (hover blue-200); checked +
+ *   non-empty content adds a blue-600 bottom border; h-full when the
+ *   content slot is empty
+ * - title/description: 14px/20px (medium / gray-900); checked → blue-900;
+ *   disabled → gray-500; empty description hidden
+ * - embedded radio: same geistcn radio chrome but checked color blue-900
+ * - content slot (global `choicebox-content`): checked checkbox inside
+ *   flips --checkbox-color to blue-900
  */
 
-/* ── Group reset ──────────────────────────────────────── */
-/*
- * Production has no standalone `.choicebox-group` rule; the class is only
- * carried by the `.choicebox-group ul` selector below. The `choicebox-group`
- * key is still exported by CSS Modules from that descendant selector.
- */
+/* ── List ─────────────────────────────────────────────── */
 .choicebox-group ul {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 12px;
     margin: 0;
     padding: 0;
     list-style: none;
+    flex-direction: row;
+}
+
+.choicebox-group ul.vertical {
+    flex-direction: column;
 }
 
 /* ── Choicebox item (each <label>) ────────────────────── */
 .choicebox {
-    border: 1px solid var(--ds-gray-400);
-    cursor: pointer;
-    border-radius: 6px;
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     list-style: none;
-    transition: background 0.15s, border 0.15s;
-}
-
-/* ── Focus ring (bubbles from inner input) ────────────── */
-:is(.choicebox:has(:focus-visible),
-    .choicebox:has([data-focus-visible-added])) {
-    box-shadow: var(--ds-focus-ring);
-    outline: none;
-}
-
-:is(.choicebox:has(:focus-visible) input,
-    .choicebox:has([data-focus-visible-added]) input) {
-    outline: none;
-}
-
-/* ── Title & Description ──────────────────────────────── */
-.choicebox .title,
-.choicebox .description {
-    font-size: 14px;
-    line-height: 20px;
-}
-
-.choicebox .title {
-    font-weight: 500;
-}
-
-.choicebox .description {
-    color: var(--ds-gray-900);
-    font-weight: 400;
-}
-
-.choicebox .description:empty {
-    display: none;
-}
-
-/* ── Option row ───────────────────────────────────────── */
-.choicebox .option {
-    /*
-     * Faithful 1:1 reproduction of production CSS: the property is
-     * misspelled `heigth` upstream (1c419a75d7e589ae.css L20), so browsers
-     * ignore it and the option gets no explicit height. Do NOT "fix" this to
-     * `height` — that would deviate from production rendering.
-     */
-    heigth: 100%;
+    cursor: pointer;
+    overflow: hidden;
+    border: 1px solid var(--ds-gray-400);
     border-radius: 6px;
-    padding: 12px;
-    transition: background 0.15s, border 0.15s;
+    transition:
+        color 0.15s ease-in,
+        background-color 0.15s ease-in,
+        border-color 0.15s ease-in;
 }
 
-.choicebox .option:has(+.content:not(:empty)) {
-    border-radius: 6px 6px 0 0;
-}
-
-/* ── Custom content slot ──────────────────────────────── */
-.choicebox .content:not(:empty) {
-    border-top: 1px solid #0000;
-    border-top-color: inherit;
-}
-
-/* ── Hover (non-disabled) ─────────────────────────────── */
-@media (hover: hover) {
-    .choicebox:not(.disabled):hover {
-        background: var(--ds-gray-100);
-        border-color: var(--ds-gray-500);
-    }
-
-    .choicebox:not(.disabled):hover .checkbox input:not(:disabled):not(:checked):hover+span.icon {
-        border-color: var(--ds-gray-700);
-        background-color: var(--ds-background-200);
-    }
-}
-
-.choicebox:not(.disabled):hover span.radio {
-    --radio-color: var(--ds-gray-700);
-}
-
-@media (hover: hover) {
-    .choicebox:not(.disabled):hover .input:active+span.icon {
-        --checkbox-color: var(--ds-blue-400);
-    }
-
-    .choicebox:not(.disabled):hover .input:checked+.icon:not(:global(.indeterminate)):not(:global(.inverted)) {
-        --checkbox-color: var(--ds-blue-900);
-    }
-
-    .choicebox:not(.disabled):hover span.icon {
-        --checkbox-color: var(--ds-gray-500);
-    }
-}
-
-/* ── Active (non-disabled) ────────────────────────────── */
-.choicebox:not(.disabled):active .option {
+.choicebox:hover:not(.disabled) {
+    border-color: var(--ds-gray-500);
     background: var(--ds-gray-100);
 }
 
-.choicebox:not(.disabled):active {
-    border-color: var(--ds-gray-600);
+.choicebox.checked:not(.disabled),
+.choicebox.checked:not(.disabled):hover {
+    border-color: var(--ds-blue-600);
 }
 
-/* ── Checked (non-disabled) ───────────────────────────── */
-.choicebox:not(.disabled).checked .option {
+/* focus-within ring — production: outline-2 outline-offset-2 outline-indigo-600 */
+.choicebox:focus-within {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+.choicebox.disabled {
+    cursor: not-allowed;
+}
+
+/* ── Option row ───────────────────────────────────────── */
+.option {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 12px;
+}
+
+/* no content below → the option row stretches the whole box */
+.choicebox:not(.hasContent) .option {
+    height: 100%;
+}
+
+.choicebox.checked:not(.disabled) .option {
     background: var(--ds-blue-100);
 }
 
-@media (hover: hover) {
-    .choicebox:not(.disabled).checked .option:hover {
-        background: var(--ds-blue-200);
-    }
+.choicebox.checked:not(.disabled):hover .option {
+    background: var(--ds-blue-200);
 }
 
-.choicebox:not(.disabled).checked .title,
-.choicebox:not(.disabled).checked .description {
+.choicebox.checked:not(.disabled).hasContent .option {
+    border-bottom: 1px solid var(--ds-blue-600);
+}
+
+/* ── Title / description ──────────────────────────────── */
+.titleWrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 4px;
+    align-self: flex-start;
+}
+
+.title {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+}
+
+.description {
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--ds-gray-900);
+}
+
+.description:empty {
+    display: none;
+}
+
+.choicebox.checked:not(.disabled) .title,
+.choicebox.checked:not(.disabled) .description {
     color: var(--ds-blue-900);
-}
-
-.choicebox:not(.disabled).checked {
-    border: 1px solid var(--ds-blue-600);
-}
-
-/* ── Checkbox overrides inside choicebox ───────────────── */
-.choicebox:not(.disabled) .checkbox input:active+span.icon {
-    --checkbox-color: var(--ds-blue-400);
-}
-
-.choicebox:not(.disabled) .checkbox input:checked+.icon:not(:global(.indeterminate)):not(:global(.inverted)) {
-    --checkbox-color: var(--ds-blue-900);
-}
-
-.choicebox:not(.disabled) .checkbox input:focus-visible+span.icon {
-    box-shadow: none;
-}
-
-.choicebox:not(.disabled) .checkbox span.icon {
-    --checkbox-color: var(--ds-gray-500);
-}
-
-/* ── Radio overrides inside choicebox ─────────────────── */
-.choicebox:not(.disabled) span.radio {
-    --radio-color: var(--ds-gray-500);
-}
-
-@media (hover: hover) {
-    .choicebox:not(.disabled) span.radio:hover input:not(:checked):not(:active)+.icon {
-        --radio-color: var(--ds-blue-900);
-    }
-}
-
-.choicebox:not(.disabled) span.radio input.input:active+span.icon,
-.choicebox:not(.disabled) span.radio input.input:checked+span.icon {
-    --radio-color: var(--ds-blue-900);
-}
-
-.choicebox:not(.disabled) span.radio input.input:focus-visible+span.icon {
-    box-shadow: none;
-}
-
-/* ── Disabled ─────────────────────────────────────────── */
-.choicebox.disabled {
-    cursor: not-allowed;
 }
 
 .choicebox.disabled .title,
 .choicebox.disabled .description {
     color: var(--ds-gray-500);
+}
+
+/* ── Embedded radio control ───────────────────────────── */
+/* Wrapper mirrors the standalone Radio (-m-0.5 p-0.5 flex items-center);
+   the circle itself reuses Radio.module.css via composition in the TSX.
+   Only the choicebox-specific color overrides live here. */
+.radio {
+    --radio-color: var(--ds-gray-700);
+    display: flex;
+    align-items: center;
+    margin: -2px;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.choicebox.disabled .radio {
+    --radio-color: var(--ds-gray-500);
+    cursor: not-allowed;
+}
+
+/* checked → blue-900 (choicebox deviates from the standalone radio's gray-1000) */
+.input:checked + .icon {
+    --radio-color: var(--ds-blue-900);
+}
+
+.input:active:not(:disabled) + .icon {
+    --radio-color: var(--ds-blue-900);
+}
+
+/* ── Embedded checkbox control (type="checkbox") ──────── */
+.checkbox {
+    display: flex;
+    align-items: center;
+    margin: -2px;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.checkbox .input:checked + .icon {
+    --checkbox-color: var(--ds-blue-900);
+}
+
+/* ── Content slot ─────────────────────────────────────── */
+.content {
+    display: block;
+}
+
+.content:empty {
+    display: none;
 }
