@@ -43,7 +43,11 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
                 {...props}
             >
                 <span className={styles.contentContainer}>
-                    {icon && <span className={styles.iconContainer}>{icon}</span>}
+                    {icon && (
+                        <span className={styles.iconContainer} data-slot="icon">
+                            {icon}
+                        </span>
+                    )}
                     {children}
                 </span>
             </Tag>

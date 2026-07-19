@@ -1,13 +1,20 @@
 /**
  * Badge — CSS Module
- * Production source: _nextstatic/chunks/b4b9d0dd5348b0c3.css
- * Module: badge-module__TiDnQG — 100% production-exact
+ * Production sources:
+ * - badge-jul2026.html (geistcn generation, fresh capture 19 Jul 2026) —
+ *   metrics re-verified against ALL rendered badges: md px-3 (12px, was
+ *   10px in the stale March badge-module), sm icon size-3 (12px) + gap-1
+ *   (4px), icons pulled left -2px via margin (production -ml-0.5, replacing
+ *   the old asymmetric-padding approach), pill (Link recipe) shares the
+ *   plain badge paddings. Color variants + dark-theme overrides were
+ *   already identical and are unchanged.
+ * - _nextstatic/chunks/20v_289ahbeyd.css — Tailwind scale for the utilities.
  */
 
 .badge {
     --badge-font-size: 12px;
     --badge-height: 24px;
-    --badge-padding-x: 10px;
+    --badge-padding-x: 12px;
     --badge-color: #fff;
     --badge-bg-color: #000;
 
@@ -39,15 +46,15 @@
     --badge-font-size: 11px;
     --badge-height: 20px;
     --badge-padding-x: 6px;
-    --badge-icon-size: 11px;
-    --badge-icon-spacing: 3px;
+    --badge-icon-size: 12px;
+    --badge-icon-spacing: 4px;
     --badge-letter-spacing: .2px;
 }
 
 .md {
     --badge-font-size: 12px;
     --badge-height: 24px;
-    --badge-padding-x: 10px;
+    --badge-padding-x: 12px;
     --badge-icon-size: 14px;
     --badge-icon-spacing: 4px;
 }
@@ -60,13 +67,12 @@
     --badge-icon-spacing: 6px;
 }
 
-/* Icon padding adjustments — CSS :has() (matches production exactly) */
-.sm:has(.iconContainer) {
-    padding: 0 6px 0 4px;
-}
-
-.md:has(.iconContainer) {
-    padding: 0 12px 0 10px;
+/* Icons are pulled 2px left (production `-ml-0.5` on the icon slot) on
+   sm/md; lg has no negative margin — replaces the stale generation's
+   asymmetric :has() padding hack. */
+.sm .iconContainer,
+.md .iconContainer {
+    margin-left: -2px;
 }
 
 /* === Color Variants === */
@@ -183,31 +189,9 @@
     text-decoration: none;
 }
 
-/* Pill size-specific padding (production-exact) */
-.pill.md {
-    --badge-padding-x: 8px;
-}
-
-.pill.sm {
-    --badge-padding-x: 6px;
-}
-
-.pill.lg {
-    --badge-padding-x: 10px;
-}
-
-/* Pill + icon padding (production-exact :has()) */
-.pill.md:has(.iconContainer) {
-    padding: 0 8px 0 6px;
-}
-
-.pill.sm:has(.iconContainer) {
-    padding: 0 6px 0 4px;
-}
-
-.pill.lg:has(.iconContainer) {
-    padding: 0 10px 0 8px;
-}
+/* geistcn generation: the pill (Link recipe) shares the plain badge
+   paddings — the fresh capture's pill <a> carries the base px-3 with no
+   override, so the stale per-size pill paddings are gone. */
 
 /* Pill hover — production-exact: bare .pill:hover (tag-agnostic) + button.pill:hover, no @media */
 .pill:hover,
@@ -217,11 +201,17 @@ button.pill:hover {
 
 /* === Icon & Content Containers === */
 
-/* Target svg child (production-exact: .iconContainer svg { ... }) */
+/* Icon slot — production `**:data-[slot=icon]:block/shrink-0` + per-size
+   size-3/3.5/4; no stroke-width in the geistcn generation (icons are
+   fill-based). */
+.iconContainer {
+    display: block;
+    flex-shrink: 0;
+}
+
 .iconContainer svg {
     height: var(--badge-icon-size);
     width: var(--badge-icon-size);
-    stroke-width: 1.5px;
     display: block;
 }
 
