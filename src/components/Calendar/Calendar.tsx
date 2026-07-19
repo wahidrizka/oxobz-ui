@@ -145,6 +145,19 @@ function formatDate(date: Date): string {
 }
 
 /**
+ * Parse an `HH:MM` time-input string into `[hours, minutes]`, or `null` when
+ * malformed / out of range. Used by the Apply commit (see {@link Calendar}).
+ */
+function parseTimeParts(value: string): [number, number] | null {
+    const match = /^(\d{1,2}):(\d{1,2})$/.exec(value.trim());
+    if (!match) return null;
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return [hours, minutes];
+}
+
+/**
  * Trigger label for a committed range, e.g. `"Jul 4 - 18"` (same month) or
  * `"Jul 4 - Aug 2"` (cross-month), mirroring the Geist docs.
  */
@@ -292,6 +305,37 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             if (!isControlled) setInternalRange(null);
         }, [isControlled]);
 
+        /**
+         * Commits the typed Start/End time-of-day (HH:MM) onto the current
+         * range, firing onChange. Wired to the Apply button's click and to
+         * Enter inside either time input (see calendar-open.html: every
+         * popover with the Start/End input header shows an "Apply ↵"
+         * button directly below the End row). No-op without a range or with
+         * unparsable time text — there is nothing to attach a time to, and
+         * no runtime evidence dictates otherwise (decision, not measured).
+         */
+        const commitTimeInputs = useCallback((): void => {
+            if (!range) return;
+            const startParts = parseTimeParts(startTime);
+            const endParts = parseTimeParts(endTime);
+            if (!startParts || !endParts) return;
+            const nextStart = new Date(range.start);
+            nextStart.setHours(startParts[0], startParts[1], 0, 0);
+            const nextEnd = new Date(range.end);
+            nextEnd.setHours(endParts[0], endParts[1], 0, 0);
+            applyRange({ start: nextStart, end: nextEnd });
+        }, [range, startTime, endTime, applyRange]);
+
+        const handleTimeKeyDown = useCallback(
+            (event: KeyboardEvent<HTMLInputElement>): void => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    commitTimeInputs();
+                }
+            },
+            [commitTimeInputs],
+        );
+
         // Dismiss the popover(s) on outside pointer-down (Combobox idiom).
         useEffect(() => {
             if (!isOpen && !presetsOpen) return;
@@ -364,9 +408,22 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     >
                         Combobox Menu
                     </button>
-                    <span className={styles.comboboxInputPrefix}>
-                        <CalendarIcon size={16} />
-                    </span>
+                    {/*
+                     * Prefix icon: geist-icon (calendar) rendered before the
+                     * text in every evidenced combobox EXCEPT compact — the
+                     * compact "Compact" example in calendar-open.html shows
+                     * no such icon at all (only the chevron suffix, and the
+                     * input's own padding drops to `pl-2`/8px with nothing
+                     * reserving the icon's spot). Rendering it unconditionally
+                     * there is what caused the icon to sit on top of
+                     * "Combobox Menu" — root cause confirmed against the DOM,
+                     * not padding math alone.
+                     */}
+                    {!compact ? (
+                        <span className={styles.comboboxInputPrefix}>
+                            <CalendarIcon size={16} />
+                        </span>
+                    ) : null}
                     <span className={styles.comboboxInputSuffix}>
                         <ChevronDown size={16} />
                     </span>
@@ -401,6 +458,39 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             ) : null;
 
         /*
+         * ---- Trigger button ----
+         * Extracted to a variable (rather than inlined in the JSX below) so
+         * it can swap render order with `presetCombobox`: production's
+         * "Compact" example places the BUTTON first (its left edge rounded,
+         * right edge square) and the combobox second (left square, right
+         * rounded) — the opposite of the default/"Stacked" order, where the
+         * combobox comes first. Verified from calendar-open.html via the
+         * `rounded-l-*`/`rounded-r-*` pairs on each element (the wrapper's
+         * own arbitrary-variant classes are overridden by these `!important`
+         * utilities, so the element's own class list is what actually wins).
+         */
+        const triggerButton: ReactNode = (
+            <Button
+                variant="secondary"
+                typeName="button"
+                size={small ? 'small' : 'medium'}
+                prefix={<CalendarIcon size={16} className={styles.triggerIcon} />}
+                disabled={disabled}
+                aria-haspopup="dialog"
+                aria-expanded={isOpen}
+                aria-controls={dialogId}
+                data-state={isOpen ? 'open' : 'closed'}
+                data-testid="calendar/trigger/button"
+                title={TRIGGER_PLACEHOLDER}
+                className={styles.trigger}
+                onClick={() => setIsOpen((o) => !o)}
+                onKeyDown={handleTriggerKeyDown}
+            >
+                {triggerLabel}
+            </Button>
+        );
+
+        /*
          * ---- Date / time / timezone inputs (popover header) ----
          * Always rendered: the Geist snapshot shows the Start/End date rows
          * and a timezone control (built-in select, or pinned read-only text)
@@ -428,6 +518,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             className={styles.timeInput}
                             data-testid="calendar/input/start-time"
                             onChange={(e) => setStartTime(e.target.value)}
+                            onKeyDown={handleTimeKeyDown}
                         />
                     ) : null}
                 </div>
@@ -449,8 +540,35 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             className={styles.timeInput}
                             data-testid="calendar/input/end-time"
                             onChange={(e) => setEndTime(e.target.value)}
+                            onKeyDown={handleTimeKeyDown}
                         />
                     ) : null}
+                </div>
+
+                {/*
+                 * ---- Apply (commits typed time onto the range) ----
+                 * Evidenced in every one of the 32 Start/End popovers
+                 * surveyed in calendar-open.html (with time inputs, with
+                 * pinnedTimezone, and even the two `showTimeInput={false}`
+                 * horizontalLayout instances) — always directly below the
+                 * End row, always directly above the timezone row. Rendered
+                 * unconditionally here to match; the click/Enter → commit
+                 * wiring (not closing the popover) is a documented decision,
+                 * not something the static snapshot can prove.
+                 */}
+                <div>
+                    <Button
+                        variant="secondary"
+                        typeName="button"
+                        size="small"
+                        disabled={disabled}
+                        className={styles.applyButton}
+                        data-testid="calendar/apply"
+                        onClick={commitTimeInputs}
+                    >
+                        Apply
+                        <span className={styles.applyHint}>↵</span>
+                    </Button>
                 </div>
 
                 <div className={styles.timezoneRow}>
@@ -495,26 +613,17 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 data-disabled={disabled || undefined}
                 style={{ '--width': widthVar, ...rest.style } as React.CSSProperties}
             >
-                {presetCombobox}
-
-                <Button
-                    variant="secondary"
-                    typeName="button"
-                    size={small ? 'small' : 'medium'}
-                    prefix={<CalendarIcon size={16} className={styles.triggerIcon} />}
-                    disabled={disabled}
-                    aria-haspopup="dialog"
-                    aria-expanded={isOpen}
-                    aria-controls={dialogId}
-                    data-state={isOpen ? 'open' : 'closed'}
-                    data-testid="calendar/trigger/button"
-                    title={TRIGGER_PLACEHOLDER}
-                    className={styles.trigger}
-                    onClick={() => setIsOpen((o) => !o)}
-                    onKeyDown={handleTriggerKeyDown}
-                >
-                    {triggerLabel}
-                </Button>
+                {compact ? (
+                    <>
+                        {triggerButton}
+                        {presetCombobox}
+                    </>
+                ) : (
+                    <>
+                        {presetCombobox}
+                        {triggerButton}
+                    </>
+                )}
 
                 {allowClear && range ? (
                     <button

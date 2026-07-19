@@ -17,7 +17,15 @@
  *   (.popoverCenter — only "start"/default and "center" are evidenced), and
  *   the timezone control: no visible "Timezone" caption in production (just
  *   the select or the pinned span, centered) — .timezoneRow/.pinnedTimezone
- *   below were adjusted from an earlier guess to match.
+ *   below were adjusted from an earlier guess to match. Also the source for
+ *   the "Compact" example's own DOM (button first, no prefix icon on its
+ *   combobox, `pl-2` padding) behind .compact/.comboboxInputPrefix's
+ *   suppression in Calendar.tsx, and for the Apply button surveyed across
+ *   all 32 Start/End popovers (.applyButton/.applyHint below;
+ *   .timezoneRow's margin-top corrected to the 4px measured from Apply).
+ * - _nextstatic/chunks/20v_289ahbeyd.css, 3qv8jvk0udmxc.css
+ *   Resolve the Tailwind utilities on the Apply button/hint to px values:
+ *   text-xs=12px, top-2.5=10px, ml-2=8px.
  *
  * Legacy geist tokens absent from oxobz are inlined at their production value:
  *   --geist-radius 6px, --geist-gap-half 8px, --geist-space-2x 8px,
@@ -33,14 +41,32 @@
     width: fit-content;
 }
 
-/* When a preset combobox sits next to the trigger the wrapper is a flex row. */
+/*
+ * When a preset combobox sits next to the trigger the wrapper is a flex row.
+ * align-items: center matches the `items-center` class present on every
+ * evidenced hasSelect wrapper (default "Presets", "Compact", and "Stacked"
+ * examples in calendar-open.html) — previously only .compact carried it,
+ * leaving the plain (non-compact, non-stacked) preset row mis-aligned.
+ */
 .hasSelect {
     display: flex;
+    align-items: center;
 }
 
 /* Compact: button + combobox on one row, button rounded-left, combobox rounded-right. */
 .compact {
     align-items: center;
+}
+
+/*
+ * Compact squares only the button's RIGHT edge (its left edge stays rounded
+ * — it is the leftmost/outer element in this layout, opposite of the
+ * default order). Verified against the "Compact" example's own
+ * `rounded-l-[5px] rounded-r-none` classes on `[data-geist-button]`.
+ */
+.compact .trigger {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 /* Stacked: combobox on top, trigger button below. */
@@ -116,11 +142,21 @@
     box-shadow: var(--ds-focus-ring);
 }
 
-/* Compact: combobox is the right-hand element, so round only its right side. */
+/*
+ * Compact: combobox is the right-hand element (button now renders first —
+ * see Calendar.tsx), so round only its right side. padding-left: 8px
+ * (not the 40px reserved by the base rule above) matches the "Compact"
+ * example's own `pl-2` override — production renders NO prefix icon in this
+ * layout at all (chevron suffix only), which is also why Calendar.tsx no
+ * longer renders `.comboboxInputPrefix` when `compact`. Previously this rule
+ * only tightened the padding (to 12px) while the icon kept rendering
+ * absolutely-positioned at left:12px — the icon and "Combobox Menu" text
+ * then started at the same x position, i.e. the reported overlap bug.
+ */
 .compact .comboboxInput {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
-    padding-left: 12px;
+    padding-left: 8px;
 }
 
 /* Stacked: combobox is on top, square its bottom edge against the button. */
@@ -307,14 +343,40 @@
 }
 
 /*
+ * Apply button (commits typed Start/End time onto the range). Evidenced in
+ * every Start/End popover in calendar-open.html, always the plain <div>
+ * directly below the End row (no margin-top of its own — the "mt-1"/4px gap
+ * belongs to the *next* row, see .timezoneRow below).
+ */
+.applyButton {
+    width: 100%;
+}
+
+/*
+ * The "↵" Enter-key hint. Positioned absolutely within the button (which is
+ * `position: relative`, matching production's own `.base`/`.reset` Button
+ * styling) — verified values from the "Apply" button's own
+ * `absolute top-2.5 ml-2 text-xs` classes.
+ */
+.applyHint {
+    position: absolute;
+    top: 10px;
+    margin-left: 8px;
+    font-size: 12px;
+}
+
+/*
  * Timezone control row (built-in select, or pinned read-only text). The
  * snapshot has no visible "Timezone" caption — just this centered control,
  * so unlike Start/End this row does not pair with an .inputGroupLabel.
+ * margin-top: 4px (not 10px) — matches the "mt-1" gap measured from the
+ * Apply button above it (Apply always renders directly above this row; see
+ * .applyButton).
  */
 .timezoneRow {
     display: flex;
     justify-content: center;
-    margin-top: 10px;
+    margin-top: 4px;
 }
 
 .pinnedTimezone {

@@ -126,7 +126,18 @@ describe('SplitButton', () => {
         openMenu();
         fireEvent.click(screen.getByText('Save + Redeploy'));
         expect(onRedeploy).toHaveBeenCalledTimes(1);
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        // The composed Menu defers its unmount to play the exit fade — see
+        // Menu.test.tsx's "Exit animation" tests for the full lifecycle.
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'closed');
+    });
+
+    it('defers the dropdown unmount on close, inherited from the composed Menu', async () => {
+        renderSplitButton();
+        openMenu();
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'open');
+        openMenu();
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'closed');
+        await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
     });
 
     it('does not activate or close on a disabled menu item', () => {

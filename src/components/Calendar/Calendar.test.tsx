@@ -468,6 +468,76 @@ describe('Calendar', () => {
         expect(screen.getByTestId('calendar/input/end-date')).toBeInTheDocument();
     });
 
+    // ── Apply (commits typed Start/End time onto the range) ──
+    // Surveyed 32/32 Start/End popovers in calendar-open.html: Apply always
+    // renders directly below the End row, regardless of showTimeInput,
+    // pinnedTimezone, or whether the range already has a value.
+
+    it('renders an Apply button with an Enter-key hint below the End row', () => {
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
+        fireEvent.click(trigger());
+        const apply = screen.getByTestId('calendar/apply');
+        expect(apply).toHaveTextContent('Apply');
+        expect(apply).toHaveTextContent('↵');
+    });
+
+    it('still renders Apply when showTimeInput is false (matches every surveyed popover, not gated on time inputs)', () => {
+        render(<Calendar showTimeInput={false} />);
+        fireEvent.click(trigger());
+        expect(screen.getByTestId('calendar/apply')).toBeInTheDocument();
+    });
+
+    it('still renders Apply with pinnedTimezone', () => {
+        render(<Calendar pinnedTimezone="America/Los_Angeles" />);
+        fireEvent.click(trigger());
+        expect(screen.getByTestId('calendar/apply')).toBeInTheDocument();
+    });
+
+    it('commits typed Start/End time onto the range on Apply click, without closing the popover', () => {
+        const onChange = vi.fn();
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} onChange={onChange} />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        const endTime = screen.getByTestId('calendar/input/end-time') as HTMLInputElement;
+        fireEvent.change(startTime, { target: { value: '09:30' } });
+        fireEvent.change(endTime, { target: { value: '17:45' } });
+        fireEvent.click(screen.getByTestId('calendar/apply'));
+
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
+        expect(arg.start.getHours()).toBe(9);
+        expect(arg.start.getMinutes()).toBe(30);
+        expect(arg.end.getHours()).toBe(17);
+        expect(arg.end.getMinutes()).toBe(45);
+        // The date portion of the range is preserved — only the time changes.
+        expect(arg.start.getDate()).toBe(JUL_RANGE.start.getDate());
+        // Apply must not close the popover — no evidence it should (documented decision).
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('commits typed time when Enter is pressed inside a time input', () => {
+        const onChange = vi.fn();
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} onChange={onChange} />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        fireEvent.change(startTime, { target: { value: '08:15' } });
+        fireEvent.keyDown(startTime, { key: 'Enter' });
+
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
+        expect(arg.start.getHours()).toBe(8);
+        expect(arg.start.getMinutes()).toBe(15);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('does nothing on Apply when no range is selected yet', () => {
+        const onChange = vi.fn();
+        render(<Calendar onChange={onChange} />);
+        fireEvent.click(trigger());
+        fireEvent.click(screen.getByTestId('calendar/apply'));
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
     // ── Timezone (built-in UTC/Local select, or pinnedTimezone) ──
 
     it('always renders the built-in UTC / Local timezone select when no pinnedTimezone is given', () => {
@@ -523,6 +593,68 @@ describe('Calendar', () => {
         expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
             'stacked',
         );
+    });
+
+    // ── Compact combobox overlap fix ──
+    // Root cause (calendar-open.html "Compact" example): production renders
+    // NO prefix icon at all on the compact combobox, and the trigger button
+    // renders FIRST (button-left, combobox-right) — the opposite order of
+    // the default/stacked layouts. Rendering the icon unconditionally, with
+    // the combobox always first, is what made the icon sit on top of
+    // "Combobox Menu".
+
+    function triggerAndComboboxOrder(container: HTMLElement): string[] {
+        const triggerEl = container.querySelector('[data-testid="calendar/trigger/button"]');
+        const comboboxEl = container.querySelector('[data-testid="calendar/combobox-input"]');
+        if (!triggerEl || !comboboxEl) return [];
+        // eslint-disable-next-line no-bitwise
+        const comboboxFollowsTrigger = Boolean(
+            triggerEl.compareDocumentPosition(comboboxEl) & Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+        return comboboxFollowsTrigger
+            ? ['calendar/trigger/button', 'calendar/combobox-input']
+            : ['calendar/combobox-input', 'calendar/trigger/button'];
+    }
+
+    it('does not render a prefix icon on the compact combobox (no icon to overlap the text)', () => {
+        const { container } = render(<Calendar compact presets={PRESETS} />);
+        expect(container.querySelector('[class*="comboboxInputPrefix"]')).not.toBeInTheDocument();
+        // The chevron suffix icon is still there — only the prefix is suppressed.
+        expect(container.querySelector('[class*="comboboxInputSuffix"]')).toBeInTheDocument();
+    });
+
+    it('renders a prefix icon on the combobox for the default (non-compact) layout', () => {
+        const { container } = render(<Calendar presets={PRESETS} />);
+        expect(container.querySelector('[class*="comboboxInputPrefix"]')).toBeInTheDocument();
+    });
+
+    it('renders a prefix icon on the combobox for the stacked layout', () => {
+        const { container } = render(<Calendar stacked presets={PRESETS} />);
+        expect(container.querySelector('[class*="comboboxInputPrefix"]')).toBeInTheDocument();
+    });
+
+    it('renders the trigger button before the combobox in compact layout (matches production order)', () => {
+        const { container } = render(<Calendar compact presets={PRESETS} />);
+        expect(triggerAndComboboxOrder(container)).toEqual([
+            'calendar/trigger/button',
+            'calendar/combobox-input',
+        ]);
+    });
+
+    it('renders the combobox before the trigger button in the default (non-compact) layout', () => {
+        const { container } = render(<Calendar presets={PRESETS} />);
+        expect(triggerAndComboboxOrder(container)).toEqual([
+            'calendar/combobox-input',
+            'calendar/trigger/button',
+        ]);
+    });
+
+    it('renders the combobox before the trigger button in stacked layout', () => {
+        const { container } = render(<Calendar stacked presets={PRESETS} />);
+        expect(triggerAndComboboxOrder(container)).toEqual([
+            'calendar/combobox-input',
+            'calendar/trigger/button',
+        ]);
     });
 
     it('applies the horizontal content-wrapper class inside the popover', () => {

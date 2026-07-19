@@ -115,13 +115,10 @@ export interface SplitButtonProps extends Omit<HTMLAttributes<HTMLDivElement>, '
  * `md:translate-x-*` class), reproduced here by only applying
  * `.menuOffsetStart` for `menuAlignment="bottom-start"`.
  *
- * Known gap (inherited, out of scope for this component): production also
- * plays an exit fade (`data-[state='closed']:animate-fade-popover-out`, a
- * plain opacity animation — chunk `2dd69db0a79ce415.css`). The shared Menu
- * popover unmounts immediately on close and does not expose a hook to defer
- * that unmount for an exit transition; that limitation belongs to Menu
- * (already documented in `Menu.module.css`'s own header), not to this
- * SplitButton-only pass.
+ * The dropdown's exit fade (`data-[state='closed']:animate-fade-popover-out`,
+ * chunk `2dd69db0a79ce415.css`) is handled entirely by the composed Menu
+ * (deferred unmount + `fadePopoverOut`, see `Menu.tsx` / `Menu.module.css`) —
+ * nothing SplitButton-specific was needed to inherit it.
  */
 const SplitButton = forwardRef<HTMLDivElement, SplitButtonProps>(
     (

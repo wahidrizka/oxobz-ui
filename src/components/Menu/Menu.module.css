@@ -21,8 +21,19 @@
  * - Hover feedback is expressed with `:hover` mirroring the production
  *   `[data-selected]/[data-highlighted]` background (production toggles those
  *   via react-aria on pointer move); keyboard navigation sets `data-highlighted`.
- * - The popover exit animation is not implemented (the panel unmounts on close);
- *   the enter fade/scale uses the popover motion tokens.
+ * - Exit fade: snapshot `split-button-open.html` carries
+ *   `data-[state='closed']:animate-fade-popover-out` on the menu `<ul>`;
+ *   chunk `2dd69db0a79ce415.css` defines
+ *   `@keyframes fade-out{0%{opacity:1}to{opacity:0}}` and
+ *   `.animate-fade-popover-out{animation:fade-out var(--ds-motion-popover-timing)
+ *   var(--ds-motion-popover-duration)}` — the same popover motion tokens the
+ *   enter transition below already uses. Reproduced as `fadePopoverOut`,
+ *   gated by `[data-state='closed']` (set by Menu.tsx while it defers the
+ *   panel's actual unmount so the fade has time to play). The enter
+ *   animation is untouched: it stays JS-driven (opacity/transform inline
+ *   style + the `transition` below), so only `opacity` needs its own
+ *   keyframe for the exit — `transform` still eases back to `POPOVER_SCALE`
+ *   via that same `transition`, symmetric with the enter motion.
  */
 
 /* Container — positioning reference for the trigger. */
@@ -63,6 +74,26 @@
         border-bottom-right-radius: 0;
         border-bottom-left-radius: 0;
         width: unset !important;
+    }
+}
+
+/* Exit fade (animate-fade-popover-out) — see the header note above. Disables
+   pointer interaction while the panel is fading out and no longer logically
+   open. */
+.menu[data-state='closed'] {
+    animation-name: fadePopoverOut;
+    animation-duration: var(--ds-motion-popover-duration);
+    animation-timing-function: var(--ds-motion-popover-timing);
+    animation-fill-mode: forwards;
+    pointer-events: none;
+}
+
+@keyframes fadePopoverOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
     }
 }
 

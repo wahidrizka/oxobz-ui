@@ -30,6 +30,19 @@ import styles from './Menu.module.css';
 const POPOVER_GAP = 8;
 /** Closed-state scale for the popover enter animation. */
 const POPOVER_SCALE = 0.96;
+/**
+ * Duration (ms) the popover stays mounted after closing, so the exit fade
+ * (`data-state="closed"` -> `fadePopoverOut`, Menu.module.css) has time to
+ * play before the panel is actually removed. Mirrors
+ * `--ds-motion-popover-duration` (200ms, motion.css) plus a small margin, the
+ * same "JS timer matching a CSS duration" approach `Feedback` already uses
+ * for its own popover (`POPOVER_EXIT_MS`) — deliberately not a real
+ * `animationend` listener: jsdom has no `AnimationEvent` implementation, so
+ * a CSS-animation completion event can't be dispatched in tests at all (only
+ * `TransitionEvent` exists there), making a timer the only mechanism that is
+ * reliable in both real browsers and this test environment.
+ */
+const POPOVER_EXIT_FALLBACK_MS = 250;
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -57,6 +70,18 @@ export type MenuPosition =
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Feature-detected `prefers-reduced-motion` check (jsdom has no
+ * `window.matchMedia`, mirroring the `ResizeObserver` guard convention in
+ * `SplitButton`). No chunk captures how production's popover behaves under
+ * reduced motion, so — per this component's own accessibility policy — the
+ * exit fade is skipped outright (immediate unmount) rather than guessed at.
+ */
+function prefersReducedMotion(): boolean {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /** Merge several refs into a single ref callback. */
 function mergeRefs<T>(...refs: (Ref<T> | undefined)[]): (node: T | null) => void {
@@ -361,13 +386,21 @@ function getItems(list: HTMLElement | null): HTMLElement[] {
 }
 
 /**
- * Menu — the popover panel, rendered in a portal on `document.body` while open.
- * Handles roving highlight (`data-highlighted` + `aria-activedescendant`),
- * arrow / Home / End navigation, Enter / Space activation and typeahead.
+ * Menu — the popover panel, rendered in a portal on `document.body` while open
+ * or closing. Handles roving highlight (`data-highlighted` +
+ * `aria-activedescendant`), arrow / Home / End navigation, Enter / Space
+ * activation and typeahead.
  *
  * Styling: `menu-module` (`.menu-module__ktVwuW__*`) in chunk
  * `b4b9d0dd5348b0c3.css` + the `.material-menu` preset (chunk
  * `2dd69db0a79ce415.css`). DOM shape from the `menu.html` snapshot.
+ *
+ * Mount / unmount lifecycle: mounts synchronously on open; on close it stays
+ * mounted (with `data-state="closed"`) for `POPOVER_EXIT_FALLBACK_MS` so the
+ * exit fade (`fadePopoverOut` in Menu.module.css) has time to play before
+ * actually unmounting. See the CSS module header for the production values
+ * this reproduces, and the `POPOVER_EXIT_FALLBACK_MS` doc comment above for
+ * why this is a timer rather than an `animationend` listener.
  */
 const Menu = forwardRef<HTMLUListElement, MenuProps>(
     ({ width, className, children, style, ...rest }, ref) => {
@@ -376,6 +409,8 @@ const Menu = forwardRef<HTMLUListElement, MenuProps>(
         const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
         const [visible, setVisible] = useState(false);
         const [activeId, setActiveId] = useState<string | null>(null);
+        // Deferred-unmount gate — see the lifecycle note above.
+        const [mounted, setMounted] = useState(false);
 
         const setListRef = mergeRefs<HTMLUListElement>(ref, (node) => {
             listRef.current = node;
@@ -391,6 +426,25 @@ const Menu = forwardRef<HTMLUListElement, MenuProps>(
             const raf = requestAnimationFrame(() => setVisible(true));
             return () => cancelAnimationFrame(raf);
         }, [ctx.open]);
+
+        // Mount immediately on open. On close, keep the popover mounted long
+        // enough for the CSS exit fade to play; a reopen before that timer
+        // fires cancels it cleanly via this effect's own cleanup (deps
+        // change -> React tears down the previous effect first), so rapid
+        // toggling never leaves a stray timer or a duplicated popover.
+        useEffect(() => {
+            if (ctx.open) {
+                setMounted(true);
+                return undefined;
+            }
+            if (!mounted) return undefined;
+            if (prefersReducedMotion()) {
+                setMounted(false);
+                return undefined;
+            }
+            const timer = window.setTimeout(() => setMounted(false), POPOVER_EXIT_FALLBACK_MS);
+            return () => window.clearTimeout(timer);
+        }, [ctx.open, mounted]);
 
         // Position the popover against the trigger.
         useEffect(() => {
@@ -469,7 +523,7 @@ const Menu = forwardRef<HTMLUListElement, MenuProps>(
             [activeId, highlight],
         );
 
-        if (!ctx.open || typeof document === 'undefined') return null;
+        if (!mounted || typeof document === 'undefined') return null;
 
         return createPortal(
             <div
@@ -488,6 +542,7 @@ const Menu = forwardRef<HTMLUListElement, MenuProps>(
                     aria-activedescendant={activeId ?? undefined}
                     data-oxobz-menu=""
                     data-version="v1"
+                    data-state={ctx.open ? 'open' : 'closed'}
                     className={cn(styles.menu, className)}
                     style={{
                         width: width !== undefined ? `${width}px` : undefined,

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import {
@@ -56,14 +56,18 @@ describe('Menu', () => {
         expect(document.body.contains(menu)).toBe(true);
         expect(menu).toHaveAttribute('data-oxobz-menu');
         expect(menu).toHaveAttribute('data-version', 'v1');
+        expect(menu).toHaveAttribute('data-state', 'open');
     });
 
-    it('toggles closed on a second trigger click', () => {
+    it('toggles closed on a second trigger click (deferred unmount: data-state flips to closed)', () => {
         renderMenu();
         open();
         expect(screen.getByRole('menu')).toBeInTheDocument();
         open();
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        // The panel stays mounted (data-state="closed") so the exit fade can
+        // play — see the "Exit animation" describe block below for the
+        // eventual-removal assertion.
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'closed');
     });
 
     // ── Trigger ARIA wiring ──
@@ -220,7 +224,7 @@ describe('Menu', () => {
         open();
         fireEvent.click(screen.getByText('One'));
         expect(onOne).toHaveBeenCalledTimes(1);
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'closed');
     });
 
     it('does not activate a disabled item', () => {
@@ -280,7 +284,7 @@ describe('Menu', () => {
         fireEvent.keyDown(menu, { key: 'ArrowDown' });
         fireEvent.keyDown(menu, { key: 'Enter' });
         expect(onOne).toHaveBeenCalledTimes(1);
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'closed');
     });
 
     it('supports typeahead', () => {
@@ -318,6 +322,71 @@ describe('Menu', () => {
         expect(screen.getByRole('menu')).toBeInTheDocument();
         fireEvent.pointerDown(screen.getByRole('button', { name: 'outside' }));
         await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    });
+
+    // ── Exit animation (deferred unmount) ──
+
+    it('stays in the DOM with data-state="closed" right after closing, then is removed once the exit fade ends', async () => {
+        renderMenu();
+        open();
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'open');
+        open();
+        const menu = screen.getByRole('menu');
+        expect(menu).toHaveAttribute('data-state', 'closed');
+        // Proves the POPOVER_EXIT_FALLBACK_MS timer (Menu.tsx) does the
+        // unmounting — jsdom has no AnimationEvent implementation, so this
+        // component deliberately unmounts via a timer rather than an
+        // `animationend` listener (see that constant's doc comment).
+        await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+    });
+
+    it('disables pointer interaction while the exit fade is playing', () => {
+        renderMenu();
+        open();
+        open();
+        const menu = screen.getByRole('menu');
+        expect(menu).toHaveAttribute('data-state', 'closed');
+        expect(menu.className).toContain('menu');
+        // The pointer-events: none rule is CSS-only (Menu.module.css,
+        // `.menu[data-state='closed']`) — data-state is the hook it keys off.
+    });
+
+    it('cancels a pending unmount and shows a single menu when reopened before the exit finishes', async () => {
+        renderMenu();
+        open();
+        open(); // closes -> schedules the deferred unmount
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'closed');
+        open(); // reopens before the fallback timer ever fires
+        expect(screen.getAllByRole('menu')).toHaveLength(1);
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'open');
+        // Wait past the fallback window to prove the earlier close's timer
+        // was really cancelled, not just racing the reopen.
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+        });
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+        expect(screen.getByRole('menu')).toHaveAttribute('data-state', 'open');
+    });
+
+    it('unmounts immediately when prefers-reduced-motion is set, skipping the exit fade', () => {
+        const matchMediaMock = vi.fn().mockReturnValue({
+            matches: true,
+            media: '(prefers-reduced-motion: reduce)',
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        });
+        vi.stubGlobal('matchMedia', matchMediaMock);
+        try {
+            renderMenu();
+            open();
+            open();
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        } finally {
+            vi.unstubAllGlobals();
+        }
     });
 
     // ── Props: width / chevron / unstyled ──
