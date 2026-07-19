@@ -88,6 +88,13 @@
     text-align: left;
     font-weight: 400;
     width: var(--width, 250px);
+    /* text-gray-1000! when a range is committed (see .triggerPlaceholder). */
+    color: var(--ds-gray-1000);
+}
+
+/* No range yet: production swaps text-gray-1000! for text-gray-700!. */
+.triggerPlaceholder {
+    color: var(--ds-gray-700);
 }
 
 .triggerIcon {
@@ -99,21 +106,27 @@
     color: var(--ds-gray-700);
 }
 
-/* ---- Preset combobox (real text input + clock prefix + chevron suffix) ---- */
+/* ---- Preset combobox (real text input + clock prefix + chevron suffix) ----
+   Height follows the calendar size — verified across ALL 10 combobox
+   instances in calendar-open.html: h-(--ds-size-medium) (40px) everywhere
+   except the Sizes small group's h-(--ds-size-small) (32px). (An earlier
+   pass wrongly generalized 32px from a single small instance.) */
 .comboboxWrapper {
     position: relative;
     display: flex;
-    /* h-(--ds-size-small): the combobox input is 32px tall in EVERY size —
-       verified on the default/"Presets" (medium) example, not just small. */
+    height: 40px;
+}
+
+.calendar[data-size='small'] .comboboxWrapper {
     height: 32px;
 }
 
 .comboboxInput {
     position: relative;
     width: var(--width, 250px);
-    height: 32px;
-    /* px-[34px]: room for the clock prefix (left) and chevron (right). */
-    padding: 0 34px;
+    height: 40px;
+    /* medium: px-9 (36px); small: px-[34px] — room for clock + chevron. */
+    padding: 0 36px;
     border: none;
     border-radius: 5px;
     outline: none;
@@ -130,6 +143,11 @@
     cursor: pointer;
     white-space: nowrap;
     transition: box-shadow 0.15s;
+}
+
+.calendar[data-size='small'] .comboboxInput {
+    height: 32px;
+    padding: 0 34px;
 }
 
 .comboboxInput::placeholder {
@@ -164,18 +182,24 @@
     border-bottom-left-radius: 0;
 }
 
-/* Clock prefix icon — absolute top-[9px] left-[9px], gray-700.
+/* Clock prefix icon — medium: top-[11px] left-[13px]; small: top/left 9px
+   (per-instance evidence across both Sizes groups).
    inline-flex: collapse the span to the svg box — without it the inline svg
    sits on the text baseline inside the span's 21px line box and drifts off
-   its 9px offset (production relies on Tailwind preflight's svg{display:block}). */
+   its offset (production relies on Tailwind preflight's svg{display:block}). */
 .comboboxInputPrefix {
     position: absolute;
-    top: 9px;
-    left: 9px;
+    top: 11px;
+    left: 13px;
     z-index: 10;
     display: inline-flex;
     pointer-events: none;
     color: var(--ds-gray-700);
+}
+
+.calendar[data-size='small'] .comboboxInputPrefix {
+    top: 9px;
+    left: 9px;
 }
 
 /* Chevron suffix — same inline-flex reason as the prefix: keeps the svg
@@ -342,6 +366,30 @@
     transform: translateX(-50%);
 }
 
+/* Radix-style flip: when there is not enough room below the trigger the
+   dialog opens ABOVE it (data-side="top") — and the column is NOT reversed
+   there (production's flex-col-reverse is gated on data-side='bottom'), so
+   the inputs header sits on top and the grid stays nearest the trigger on
+   either side. */
+.popover[data-side='top'] {
+    top: auto;
+    bottom: calc(100% + 6px);
+}
+
+.popover[data-side='top'] .calendarContentWrapper {
+    flex-direction: column;
+}
+
+/* side=top inputs header: the non-reversed variant — mb-3 pb-3 border-b
+   (below the header), no top border/margin. */
+.popover[data-side='top'] .inputsWrapper {
+    margin-top: 0;
+    margin-bottom: 12px;
+    padding: 0 12px 12px;
+    border-top: none;
+    border-bottom: 1px solid var(--ds-gray-100);
+}
+
 .content {
     --padding: 12px;
     padding: var(--padding);
@@ -485,11 +533,17 @@
     color: var(--ds-gray-800);
     font-size: 14px;
     cursor: pointer;
-    max-width: 100%;
+    /* Production sizes the select via a JS-measured inline width capped so
+       long zone labels truncate ("Local (Asia/Ja…" at width:146px in the
+       snapshot); the ellipsis + cap live here, the measurement in
+       Calendar.tsx. transition-width mirrors the label's own class. */
+    width: var(--tz-width, auto);
+    max-width: 146px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     transition:
+        width 0.2s,
         box-shadow 0.2s,
         color 0.2s;
 }

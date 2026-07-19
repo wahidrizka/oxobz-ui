@@ -188,12 +188,36 @@ function parseTimeParts(value: string): [number, number] | null {
     return [hours, minutes];
 }
 
+const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+function isSameDay(a: Date, b: Date): boolean {
+    return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+    );
+}
+
 /**
- * Trigger label for a committed range, e.g. `"Jul 4 - 18"` (same month) or
- * `"Jul 4 - Aug 2"` (cross-month), mirroring the Geist docs.
+ * Trigger label. Rules observed live on the Geist docs (user-verified):
+ * - different days                → `"Jul 4 - 18"` / `"Jul 4 - Aug 2"`
+ * - same day, full-day (00:00→23:59) → `"Sun, Jul 19"` (e.g. typing "today")
+ * - same day, partial times       → `"12.45 - 23.59"` (locale time range,
+ *   e.g. typing "45m")
  */
 function formatRangeLabel(range: RangeValue<Date>): string {
     const { start, end } = range;
+    if (isSameDay(start, end)) {
+        const fullDay =
+            start.getHours() === 0 &&
+            start.getMinutes() === 0 &&
+            end.getHours() === 23 &&
+            end.getMinutes() === 59;
+        if (fullDay) {
+            return `${WEEKDAY_ABBR[start.getDay()]}, ${MONTH_ABBR[start.getMonth()]} ${start.getDate()}`;
+        }
+        return `${formatTime(start.getHours(), start.getMinutes())} - ${formatTime(end.getHours(), end.getMinutes())}`;
+    }
     const left = `${MONTH_ABBR[start.getMonth()]} ${start.getDate()}`;
     const right =
         start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
@@ -443,8 +467,65 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         });
 
         const rootRef = useRef<HTMLDivElement | null>(null);
+        const dialogRef = useRef<HTMLDivElement | null>(null);
+        const tzSelectRef = useRef<HTMLSelectElement | null>(null);
         const dialogId = useId();
         const listboxId = useId();
+
+        /**
+         * Radix-style flip: open below the trigger by default; when the
+         * viewport has less room below than the dialog needs AND more room
+         * above, flip to `data-side="top"` (grid stays nearest the trigger
+         * on either side — the column reversal is bottom-side-only, exactly
+         * like production's `group-data-[side='bottom']` gating).
+         */
+        const [side, setSide] = useState<'bottom' | 'top'>('bottom');
+        useEffect(() => {
+            if (!isOpen) {
+                setSide('bottom');
+                return;
+            }
+            const measure = (): void => {
+                const anchor = rootRef.current;
+                const dialog = dialogRef.current;
+                if (!anchor || !dialog) return;
+                const rect = anchor.getBoundingClientRect();
+                const height = dialog.getBoundingClientRect().height;
+                const spaceBelow = window.innerHeight - rect.bottom - 6;
+                const spaceAbove = rect.top - 6;
+                setSide(spaceBelow < height && spaceAbove > spaceBelow ? 'top' : 'bottom');
+            };
+            measure();
+            window.addEventListener('resize', measure);
+            return () => window.removeEventListener('resize', measure);
+        }, [isOpen]);
+
+        /**
+         * Production sizes the timezone select with a JS-measured inline
+         * width (146px cap — the snapshot's own value for
+         * "Local (Asia/Jakarta)", which is what makes long zones render as
+         * "Local (Asia/Ja…"). Measured off a canvas at the select's 14px
+         * font; the CSS max-width provides the cap + ellipsis.
+         */
+        const [tzWidth, setTzWidth] = useState<number | null>(null);
+        useEffect(() => {
+            if (!isOpen || pinnedTimezone) return;
+            const select = tzSelectRef.current;
+            if (!select) return;
+            const label =
+                TIMEZONE_OPTIONS.find((tz) => tz.value === tzValue)?.label ?? tzValue;
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                const font = window.getComputedStyle(select);
+                ctx.font = `${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
+                // text + px-3 (12) left + pr-9 (36) right
+                setTzWidth(Math.ceil(ctx.measureText(label).width) + 48);
+            } catch {
+                setTzWidth(null);
+            }
+        }, [isOpen, pinnedTimezone, tzValue]);
 
         const small = size === 'small';
 
@@ -701,7 +782,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 data-state={isOpen ? 'open' : 'closed'}
                 data-testid="calendar/trigger/button"
                 title={TRIGGER_PLACEHOLDER}
-                className={styles.trigger}
+                className={cn(styles.trigger, !range && styles.triggerPlaceholder)}
                 onClick={() => setIsOpen((o) => !o)}
                 onKeyDown={handleTriggerKeyDown}
             >
@@ -822,8 +903,14 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     ) : (
                         <div className={styles.timezoneSelectWrapper}>
                             <select
+                                ref={tzSelectRef}
                                 aria-label="Timezone"
                                 className={styles.timezoneSelect}
+                                style={
+                                    tzWidth != null
+                                        ? ({ '--tz-width': `${tzWidth}px` } as React.CSSProperties)
+                                        : undefined
+                                }
                                 value={tzValue}
                                 onChange={handleTimezoneChange}
                                 data-testid="calendar/timezone-select"
@@ -887,10 +974,13 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
 
                 {isOpen ? (
                     <div
+                        ref={dialogRef}
                         role="dialog"
                         id={dialogId}
                         aria-label="Choose date range"
                         data-state="open"
+                        data-side={side}
+                        data-align={popoverAlignment}
                         className={cn(
                             styles.popover,
                             horizontalLayout && styles.popoverHorizontal,

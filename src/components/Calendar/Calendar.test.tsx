@@ -526,6 +526,82 @@ describe('Calendar', () => {
         expect(range.end.getTime()).toBeGreaterThan(range.start.getTime());
     });
 
+    // ── Trigger label formats + placeholder tone (user-verified live rules) ──
+
+    it('uses gray-700 placeholder tone without a range, gray-1000 with one', () => {
+        const { rerender } = render(<Calendar />);
+        expect(trigger().className).toContain('triggerPlaceholder');
+        rerender(<Calendar value={{ start: new Date(2026, 6, 4), end: new Date(2026, 6, 18) }} />);
+        expect(trigger().className).not.toContain('triggerPlaceholder');
+    });
+
+    it('formats a same-day full-day range as "EEE, MMM d" (e.g. "today")', () => {
+        render(
+            <Calendar
+                value={{
+                    start: new Date(2026, 6, 19, 0, 0),
+                    end: new Date(2026, 6, 19, 23, 59),
+                }}
+            />,
+        );
+        expect(trigger()).toHaveTextContent('Sun, Jul 19');
+    });
+
+    it('formats a same-day partial range as a locale time range (e.g. "45m")', () => {
+        render(
+            <Calendar
+                value={{
+                    start: new Date(2026, 6, 19, 12, 45),
+                    end: new Date(2026, 6, 19, 23, 59),
+                }}
+            />,
+        );
+        // "12:45 - 23:59" or "12.45 - 23.59" depending on the runner locale.
+        expect(trigger().textContent).toMatch(/12[:.]45 - 23[:.]59/);
+    });
+
+    it('sizes the combobox with the calendar (data-size drives 40px vs 32px styling)', () => {
+        const { container, rerender } = render(<Calendar presets={PRESETS} />);
+        expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
+            'data-size',
+            'medium',
+        );
+        rerender(<Calendar presets={PRESETS} size="small" />);
+        expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
+            'data-size',
+            'small',
+        );
+    });
+
+    it('opens with data-side="bottom" by default and flips to "top" when space below is short', () => {
+        const { container, unmount } = render(<Calendar />);
+        fireEvent.click(trigger());
+        expect(container.querySelector('[role="dialog"]')).toHaveAttribute('data-side', 'bottom');
+        unmount();
+
+        // Anchor near the viewport bottom: dialog (400px tall) no longer fits below.
+        const anchorRect = {
+            top: 700, bottom: 732, left: 0, right: 250, width: 250, height: 32, x: 0, y: 700,
+            toJSON: () => ({}),
+        } as DOMRect;
+        const dialogRect = { ...anchorRect, height: 400 } as DOMRect;
+        const spy = vi
+            .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+            .mockImplementation(function (this: HTMLElement) {
+                return this.getAttribute('role') === 'dialog' ? dialogRect : anchorRect;
+            });
+        try {
+            const second = render(<Calendar />);
+            fireEvent.click(screen.getByTestId('calendar/trigger/button'));
+            expect(second.container.querySelector('[role="dialog"]')).toHaveAttribute(
+                'data-side',
+                'top',
+            );
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
     it('applies a typed period on Enter (e.g. "2 weeks")', () => {
         const onChange = vi.fn();
         render(<Calendar presets={PRESETS} onChange={onChange} />);
