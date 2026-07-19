@@ -1,54 +1,58 @@
 /* ================================================================
- *  Spinner — CSS Module
+ *  Spinner — CSS Module, geistcn generation (rebuilt 19 Jul 2026)
  *
- *  Bar geometry, timing and keyframes verified against production Geist:
- *    _nextstatic/chunks/b4b9d0dd5348b0c3.css  (line 2, canonical chunk)
- *    _nextstatic/component-inspect-element/spinner.html
+ *  The March spinner-module generation is gone from production. Fresh
+ *  capture (spinner-jul2026.html): root is a single element
+ *  `role="status" aria-label="Loading"` with
+ *  `text-gray-700 relative inline-block aspect-square transform-gpu size-N`
+ *  and NO inner wrapper; bars are absolutely centered children placed by
+ *  inline `rotate(Ndeg) translate(146%)` with --animation-delay/-duration.
  *
- *  Production class:  .spinner-module__gyz83a__line
- *  Production keyframes: @keyframes spinner-module__gyz83a__spin
+ *  Keyframes: @keyframes spinner-opacity { 0% {opacity:1} to {opacity:.15} }
+ *  (verbatim in 20v_289ahbeyd.css + 3qv8jvk0udmxc.css). The applying rule
+ *  is not present in any captured chunk (only the keyframes + per-bar
+ *  vars are) — applying it on .line below is the documented inference;
+ *  the animation demonstrably runs in production with these exact
+ *  keyframes, delays and durations.
  * ================================================================ */
 
-/* ---- Container (data-oxobz-spinner wrapper) ----
- *  .spinner class for CSS module binding; sized via inline width/height.
- *  `inline-block` matches the current production spinner, whose cva base
- *  class includes `inline-block` (chunk 2aacxal9r7gff.js).
+/* ---- Root ----
+ * text-gray-700 relative inline-block aspect-square transform-gpu;
+ * sized via inline width/height (size-N). Color overridable via the
+ * `color` prop → --spinner-color.
  */
 .spinner {
-    display: inline-block;
-}
-
-/* ---- Inner container (holds all the bars) ---- */
-.inner {
     position: relative;
-    left: 50%;
-    top: 50%;
+    display: inline-block;
+    aspect-ratio: 1 / 1;
+    transform: translateZ(0);
+    color: var(--spinner-color, var(--ds-gray-700));
 }
 
-/* ---- Individual bar / line ----
- *  Production: .spinner-module__gyz83a__line
- *  Tailwind equivalents converted to vanilla CSS:
- *    absolute  → position: absolute
- *    left-[-10%] → left: -10%
- *    top-[-3.9%] → top: -3.9%
- *    bg-current → background-color: currentColor
- *    h-[8%] / w-[24%] → handled via inline or default
+/* ---- Individual bar ----
+ * absolute top-1/2 left-1/2 origin-center -translate-x/y-1/2 (folded into
+ * the inline transform's base position via top/left + margin), rounded-full,
+ * bg-current, will-change-transform; dimensions + rotate/translate inline.
  */
+/* Note: production's class list carries -translate-x/y-1/2 utilities, but
+   the inline `transform: rotate(...) translate(146%)` overrides them — the
+   effective geometry is exactly top/left 50% + the inline transform, which
+   is what this rule reproduces. */
 .line {
     position: absolute;
-    left: -10%;
-    top: -3.9%;
-    background-color: currentColor;
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+    border-radius: 9999px;
+    background: currentColor;
+    will-change: transform;
 
-    /* Production: animation from .spinner-module__gyz83a__line */
-    animation: spin var(--animation-duration, 1.2s) linear infinite;
-    animation-delay: var(--animation-delay, 0);
-    background: var(--spinner-color, var(--ds-gray-700));
-    border-radius: var(--oxobz-radius);
+    animation: spinner-opacity var(--animation-duration, 1s) linear infinite;
+    animation-delay: var(--animation-delay, 0s);
 }
 
-/* ---- Keyframes (exact from production) ---- */
-@keyframes spin {
+/* ---- Keyframes (verbatim from the geistcn chunks) ---- */
+@keyframes spinner-opacity {
     0% {
         opacity: 1;
     }

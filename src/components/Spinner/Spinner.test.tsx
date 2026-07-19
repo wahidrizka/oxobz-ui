@@ -1,268 +1,115 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { createRef } from 'react';
 import { Spinner } from './Spinner';
 
+/**
+ * Spinner — geistcn generation tests.
+ * All expectations below mirror measured values from the fresh capture
+ * (spinner-jul2026.html): single root (role="status", no inner wrapper),
+ * per-size bar counts/durations/dimensions, rotate+translate(146%).
+ */
+
+function rootOf(container: HTMLElement): HTMLElement {
+    return container.querySelector('[data-oxobz-spinner]') as HTMLElement;
+}
+
+function barsOf(container: HTMLElement): HTMLElement[] {
+    return Array.from(rootOf(container).children) as HTMLElement[];
+}
+
 describe('Spinner', () => {
-    // ---- Rendering ----
-
-    it('renders a spinner element', () => {
+    it('renders a single status root — no inner wrapper (production structure)', () => {
         const { container } = render(<Spinner />);
-        const el = container.querySelector('[data-oxobz-spinner]');
-        expect(el).toBeInTheDocument();
+        const root = rootOf(container);
+        expect(root).toHaveAttribute('role', 'status');
+        expect(root).toHaveAttribute('aria-label', 'Loading');
+        expect(root).toHaveAttribute('data-testid', 'oxobz/spinner');
+        // children are the bars themselves, not a wrapper
+        expect(root.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
     });
 
-    // ---- Data attributes ----
-
-    it('has data-oxobz-spinner attribute', () => {
+    it('sizes the root via inline width/height (default 20px)', () => {
         const { container } = render(<Spinner />);
-        const el = container.querySelector('[data-oxobz-spinner]');
-        expect(el).toHaveAttribute('data-oxobz-spinner', '');
+        const root = rootOf(container);
+        expect(root.style.width).toBe('20px');
+        expect(root.style.height).toBe('20px');
     });
 
-    it('has data-version="v1" attribute', () => {
-        const { container } = render(<Spinner />);
-        const el = container.querySelector('[data-oxobz-spinner]');
-        expect(el).toHaveAttribute('data-version', 'v1');
-    });
-
-    // ---- Default size ----
-
-    it('default size is 20px', () => {
-        const { container } = render(<Spinner />);
-        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
-        expect(el.style.width).toBe('20px');
-        expect(el.style.height).toBe('20px');
-    });
-
-    // ---- Custom sizes ----
-
-    it('renders at custom size 12px', () => {
-        const { container } = render(<Spinner size={12} />);
-        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
-        expect(el.style.width).toBe('12px');
-        expect(el.style.height).toBe('12px');
-    });
-
-    it('renders at custom size 32px', () => {
-        const { container } = render(<Spinner size={32} />);
-        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
-        expect(el.style.width).toBe('32px');
-        expect(el.style.height).toBe('32px');
-    });
-
-    it('renders at custom size 40px', () => {
-        const { container } = render(<Spinner size={40} />);
-        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
-        expect(el.style.width).toBe('40px');
-        expect(el.style.height).toBe('40px');
-    });
-
-    // ---- Named size tokens (Geist API parity) ----
+    // ---- Per-size bar parameters (measured table) ----
 
     it.each([
-        ['sm', '12px'],
-        ['md', '16px'],
-        ['lg', '20px'],
-        ['xl', '24px'],
-        ['2xl', '32px'],
-        ['3xl', '40px'],
-        ['4xl', '56px'],
-    ] as const)('maps named token size="%s" to %s', (token, expected) => {
-        const { container } = render(<Spinner size={token} />);
-        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
-        expect(el.style.width).toBe(expected);
-        expect(el.style.height).toBe(expected);
-    });
+        ['sm', 12, 8, '1000ms', '1.5px', '3px'],
+        ['md', 16, 10, '1000ms', '1.5px', '4px'],
+        ['lg', 20, 12, '1200ms', '2px', '5px'],
+        ['xl', 24, 12, '1200ms', '2.5px', '6px'],
+        ['2xl', 32, 15, '1200ms', '2.5px', '8px'],
+    ] as const)(
+        'token %s (%dpx): %d bars, %s, bar %s x %s',
+        (token, px, count, duration, h, w) => {
+            const { container } = render(<Spinner size={token} />);
+            const root = rootOf(container);
+            expect(root.style.width).toBe(`${px}px`);
+            const bars = barsOf(container);
+            expect(bars).toHaveLength(count);
+            expect(bars[0].style.getPropertyValue('--animation-duration')).toBe(duration);
+            expect(bars[0].style.height).toBe(h);
+            expect(bars[0].style.width).toBe(w);
+        },
+    );
 
-    it('inner container matches token size', () => {
-        const { container } = render(<Spinner size="xl" />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div') as HTMLElement;
-        expect(inner.style.width).toBe('24px');
-        expect(inner.style.height).toBe('24px');
-    });
-
-    it('renders 8 bars for the small token "sm" (12px)', () => {
-        const { container } = render(<Spinner size="sm" />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(8);
-    });
-
-    it('renders 12 bars for the "lg" token (20px)', () => {
-        const { container } = render(<Spinner size="lg" />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(12);
-    });
-
-    // ---- Bar count ----
-
-    it('renders 12 bars for default size (20px)', () => {
-        const { container } = render(<Spinner />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(12);
-    });
-
-    it('renders 8 bars for small size (12px)', () => {
-        const { container } = render(<Spinner size={12} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(8);
-    });
-
-    it('renders 12 bars for size 32px', () => {
-        const { container } = render(<Spinner size={32} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(12);
-    });
-
-    it('renders 8 bars for size exactly 16px (threshold)', () => {
+    it('accepts raw pixel numbers (16 → 10 bars @1000ms)', () => {
         const { container } = render(<Spinner size={16} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(8);
+        expect(barsOf(container)).toHaveLength(10);
+        expect(barsOf(container)[0].style.getPropertyValue('--animation-duration')).toBe('1000ms');
     });
 
-    it('renders 12 bars for size 17px (above threshold)', () => {
-        const { container } = render(<Spinner size={17} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        expect(bars?.length).toBe(12);
+    it('positions bars with rotate + translate(146%) at equal steps', () => {
+        const { container } = render(<Spinner size={16} />);
+        const bars = barsOf(container);
+        expect(bars[0].style.transform).toBe('rotate(0deg) translate(146%)');
+        expect(bars[1].style.transform).toBe('rotate(36deg) translate(146%)');
+        expect(bars[9].style.transform).toBe('rotate(324deg) translate(146%)');
     });
 
-    // ---- CSS animation variables ----
+    it('staggers delays from -(duration - slot) to 0 (16px: -900ms … 0ms)', () => {
+        const { container } = render(<Spinner size={16} />);
+        const bars = barsOf(container);
+        expect(bars[0].style.getPropertyValue('--animation-delay')).toBe('-900ms');
+        expect(bars[9].style.getPropertyValue('--animation-delay')).toBe('0ms');
+    });
 
-    it('applies correct animation-duration for default size', () => {
+    // ---- Color ----
+
+    it('uses the default gray-700 via the CSS var fallback (no inline color)', () => {
         const { container } = render(<Spinner />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const firstBar = inner?.querySelector('div') as HTMLElement;
-        expect(firstBar.style.getPropertyValue('--animation-duration')).toBe('1200ms');
+        expect(rootOf(container).style.color).toBe('');
     });
 
-    it('applies correct animation-duration for small size', () => {
-        const { container } = render(<Spinner size={12} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const firstBar = inner?.querySelector('div') as HTMLElement;
-        expect(firstBar.style.getPropertyValue('--animation-duration')).toBe('1000ms');
-    });
-
-    // ---- Bar rotation ----
-
-    it('bars are rotated at 30° intervals for 12-bar spinner', () => {
-        const { container } = render(<Spinner size={20} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        bars?.forEach((bar, i) => {
-            const rotation = 30 * i;
-            expect(bar.style.transform).toContain(`rotate(${rotation}deg)`);
-        });
-    });
-
-    it('bars are rotated at 45° intervals for 8-bar spinner', () => {
-        const { container } = render(<Spinner size={12} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const bars = inner?.querySelectorAll('div');
-        bars?.forEach((bar, i) => {
-            const rotation = 45 * i;
-            expect(bar.style.transform).toContain(`rotate(${rotation}deg)`);
-        });
-    });
-
-    it('bars use translate(146%) for positioning', () => {
-        const { container } = render(<Spinner />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const firstBar = inner?.querySelector('div') as HTMLElement;
-        expect(firstBar.style.transform).toContain('translate(146%)');
-    });
-
-    // ---- Bar dimensions ----
-
-    it('large spinner bars use percentage dimensions (8% height, 24% width)', () => {
-        const { container } = render(<Spinner size={20} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const firstBar = inner?.querySelector('div') as HTMLElement;
-        expect(firstBar.style.height).toBe('8%');
-        expect(firstBar.style.width).toBe('24%');
-    });
-
-    it('small spinner bars use fixed dimensions (1.5px height, 3px width)', () => {
-        const { container } = render(<Spinner size={12} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const firstBar = inner?.querySelector('div') as HTMLElement;
-        expect(firstBar.style.height).toBe('1.5px');
-        expect(firstBar.style.width).toBe('3px');
-    });
-
-    // ---- Inner container size ----
-
-    it('inner container matches spinner size', () => {
-        const { container } = render(<Spinner size={32} />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div') as HTMLElement;
-        expect(inner.style.width).toBe('32px');
-        expect(inner.style.height).toBe('32px');
-    });
-
-    // ---- Default color ----
-
-    it('inner container has default color var(--ds-gray-700)', () => {
-        const { container } = render(<Spinner />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div') as HTMLElement;
-        expect(inner.style.color).toBe('var(--ds-gray-700)');
-    });
-
-    // ---- Custom color ----
-
-    it('applies custom color via prop', () => {
+    it('color prop sets both color and --spinner-color on the root', () => {
         const { container } = render(<Spinner color="red" />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div') as HTMLElement;
-        expect(inner.style.color).toBe('red');
+        const root = rootOf(container);
+        expect(root.style.color).toBe('red');
+        expect(root.style.getPropertyValue('--spinner-color')).toBe('red');
     });
 
-    // ---- Custom className ----
+    // ---- Misc ----
 
-    it('applies custom className', () => {
-        const { container } = render(<Spinner className="my-spinner" />);
-        const el = container.querySelector('[data-oxobz-spinner]');
-        expect(el?.className).toContain('my-spinner');
+    it('merges a custom className', () => {
+        const { container } = render(<Spinner className="my-spin" />);
+        expect(rootOf(container).className).toContain('my-spin');
+        expect(rootOf(container).className).toContain('spinner');
     });
 
-    // ---- Ref forwarding ----
-
-    it('forwards ref', () => {
-        const ref = { current: null } as React.RefObject<HTMLDivElement | null>;
+    it('forwards its ref to the root element', () => {
+        const ref = createRef<HTMLDivElement>();
         render(<Spinner ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
+        expect(ref.current).toHaveAttribute('data-oxobz-spinner');
     });
 
-    // ---- Custom style ----
-
-    it('merges custom style with size styles', () => {
-        const { container } = render(<Spinner style={{ margin: '10px' }} />);
-        const el = container.querySelector('[data-oxobz-spinner]') as HTMLElement;
-        expect(el.style.margin).toBe('10px');
-        expect(el.style.width).toBe('20px');
-        expect(el.style.height).toBe('20px');
-    });
-
-    // ---- Structure (CSS classes) ----
-
-    it('spinner wrapper has .spinner class', () => {
+    it('keeps data-version="v1"', () => {
         const { container } = render(<Spinner />);
-        const el = container.querySelector('[data-oxobz-spinner]');
-        expect(el?.className).toContain('spinner');
-    });
-
-    it('inner container has .inner class', () => {
-        const { container } = render(<Spinner />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        expect(inner?.className).toContain('inner');
-    });
-
-    it('bars have .line class', () => {
-        const { container } = render(<Spinner />);
-        const inner = container.querySelector('[data-oxobz-spinner] > div');
-        const firstBar = inner?.querySelector('div');
-        expect(firstBar?.className).toContain('line');
+        expect(rootOf(container)).toHaveAttribute('data-version', 'v1');
     });
 });

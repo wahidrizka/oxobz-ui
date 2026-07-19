@@ -47,16 +47,33 @@ const SIZE_MAP: Record<SpinnerSize, number> = {
 
 // ---- Constants (from spinner.html inspect) ----
 
-/** Below this threshold the spinner uses 8 bars instead of 12. */
-const SMALL_THRESHOLD = 16;
+/**
+ * Per-size bar parameters, measured from EVERY spinner instance in the
+ * fresh geistcn capture (spinner-jul2026.html — the March snapshot's
+ * spinner-module generation is gone from production):
+ *   12px → 8 bars (45° step), 1000ms, bar 1.5×3px
+ *   16px → 10 bars (36°),     1000ms, bar 1.5×4px
+ *   20px → 12 bars (30°),     1200ms, bar 2×5px
+ *   24px → 12 bars (30°),     1200ms, bar 2.5×6px
+ *   32px → 15 bars (24°),     1200ms, bar 2.5×8px
+ * Bars are placed with `rotate(Ndeg) translate(146%)` at every size.
+ * 40/56px have no captured example — they extrapolate the 32px row
+ * (documented inference, largest evidenced tier).
+ */
+interface BarParams {
+    bars: number;
+    duration: number;
+    barHeight: string;
+    barWidth: string;
+}
 
-/** Bars / timing for small spinners (size ≤ 16px). */
-const SMALL_BARS = 8;
-const SMALL_DURATION = 1000; // ms
-
-/** Bars / timing for normal/large spinners (size > 16px). */
-const NORMAL_BARS = 12;
-const NORMAL_DURATION = 1200; // ms
+function getBarParams(px: number): BarParams {
+    if (px <= 12) return { bars: 8, duration: 1000, barHeight: '1.5px', barWidth: '3px' };
+    if (px <= 16) return { bars: 10, duration: 1000, barHeight: '1.5px', barWidth: '4px' };
+    if (px <= 20) return { bars: 12, duration: 1200, barHeight: '2px', barWidth: '5px' };
+    if (px <= 24) return { bars: 12, duration: 1200, barHeight: '2.5px', barWidth: '6px' };
+    return { bars: 15, duration: 1200, barHeight: '2.5px', barWidth: '8px' };
+}
 
 /**
  * Spinner component — Geist activity indicator.
@@ -74,24 +91,20 @@ const NORMAL_DURATION = 1200; // ms
 export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
     ({ size = 20, color, className, style, ...props }, ref) => {
         const px = typeof size === 'number' ? size : SIZE_MAP[size];
-        const isSmall = px <= SMALL_THRESHOLD;
-        const barCount = isSmall ? SMALL_BARS : NORMAL_BARS;
-        const duration = isSmall ? SMALL_DURATION : NORMAL_DURATION;
+        const { bars: barCount, duration, barHeight, barWidth } = getBarParams(px);
         const step = 360 / barCount; // rotation degrees per bar
-
-        // Bar dimensions — small uses fixed px, larger uses percentages (from inspect)
-        const barHeight = isSmall ? '1.5px' : '8%';
-        const barWidth = isSmall ? '3px' : '24%';
 
         const bars = [];
         for (let i = 0; i < barCount; i++) {
             const rotation = step * i;
-            // Stagger: first bar starts at -(duration - step_time), last at 0
+            // Stagger measured from the capture: first bar -900ms … last 0ms
+            // at 10 bars/1000ms, i.e. -(duration) + slot*(i+1).
             const delay = -duration + (duration / barCount) * (i + 1);
 
             bars.push(
                 <div
                     key={i}
+                    aria-hidden="true"
                     className={styles.line}
                     style={{
                         height: barHeight,
@@ -104,25 +117,26 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
             );
         }
 
+        // Production root (geistcn generation): a single element — no inner
+        // wrapper — with role/aria-label and the testid (geistcn→oxobz brand).
         return (
             <div
                 ref={ref}
+                role="status"
+                aria-label="Loading"
                 className={cn(styles.spinner, className)}
                 data-oxobz-spinner=""
+                data-testid="oxobz/spinner"
                 data-version="v1"
-                style={{ height: px, width: px, ...style }}
+                style={{
+                    height: px,
+                    width: px,
+                    ...(color ? ({ color, '--spinner-color': color } as React.CSSProperties) : {}),
+                    ...style,
+                }}
                 {...props}
             >
-                <div
-                    className={styles.inner}
-                    style={{
-                        height: px,
-                        width: px,
-                        ...(color ? { color, '--spinner-color': color } as React.CSSProperties : { color: 'var(--ds-gray-700)' }),
-                    }}
-                >
-                    {bars}
-                </div>
+                {bars}
             </div>
         );
     },
