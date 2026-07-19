@@ -35,7 +35,7 @@
  *   <Avatar placeholder size={90} />
  */
 
-import React, {
+import {
     forwardRef,
     type HTMLAttributes,
     type ImgHTMLAttributes,
@@ -208,21 +208,16 @@ export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
  *   slot 0 gets the highest value so, when off, natural DOM order applies and
  *   the markup stays byte-identical to the production snapshot (no z-index).
  */
-function slotStyle(
-    index: number,
-    count: number,
-    overlap: 'auto' | number,
-    reverse: boolean,
-): CSSProperties | undefined {
-    const s: CSSProperties = {};
-    if (typeof overlap === 'number' && index >= 1) {
-        s.marginLeft = -overlap;
-    }
-    if (reverse) {
-        s.position = 'relative';
-        s.zIndex = count - index;
-    }
-    return Object.keys(s).length > 0 ? s : undefined;
+/**
+ * geistcn generation: every slot carries an inline z-index (evidence: all
+ * captured stacks are descending — first avatar on top). `reverse` flips to
+ * ascending so the LAST member sits on top (documented inference — no
+ * captured reverse example distinguishes itself in static markup).
+ * Overlap now flows through the wrapper's --avatar-overlap variable, not
+ * per-slot margins.
+ */
+function slotStyle(index: number, count: number, reverse: boolean): CSSProperties {
+    return { zIndex: reverse ? index + 1 : count - index };
 }
 
 export function AvatarGroup({
@@ -251,13 +246,21 @@ export function AvatarGroup({
         const showBubble = noteCount >= 2;
         const slotCount = normalCount + 1;
 
+        // Wrapper carries the overlap variable (production: inline
+        // `--avatar-overlap: 10px` on the flex wrapper, consumed by the
+        // nth-child(n+2) negative margin in the CSS module).
+        const groupStyle =
+            typeof overlap === 'number'
+                ? ({ '--avatar-overlap': `${overlap}px` } as CSSProperties)
+                : undefined;
+
         return (
-            <div className={cn(styles.group, className)} {...props}>
+            <div className={cn(styles.group, className)} style={groupStyle} {...props}>
                 {normal.map((m, i) => (
                     <span
                         key={m.username || i}
                         className={styles.groupAvatar}
-                        style={slotStyle(i, slotCount, overlap, reverse)}
+                        style={slotStyle(i, slotCount, reverse)}
                     >
                         <Avatar src={m.src} username={m.username} alt={m.alt} size={size} />
                     </span>
@@ -266,7 +269,7 @@ export function AvatarGroup({
                     aria-label={`${noteCount} more avatars in this group`}
                     title={`${noteCount} more avatars in this group`}
                     className={cn(styles.note, styles.groupAvatar)}
-                    style={slotStyle(normalCount, slotCount, overlap, reverse)}
+                    style={slotStyle(normalCount, slotCount, reverse)}
                 >
                     <Avatar
                         src={noteMember.src}
@@ -275,17 +278,9 @@ export function AvatarGroup({
                         size={size}
                     />
                     {showBubble && (
-                        <span
-                            className={cn(styles.noteText, 'dark-theme')}
-                            data-version="v1"
-                            style={{
-                                '--text-color': 'var(--ds-gray-1000)',
-                                '--text-size': '0.625rem',
-                                '--text-line-height': '0.75rem',
-                                '--text-letter-spacing': 'initial',
-                                '--text-weight': '600',
-                            } as React.CSSProperties}
-                        >+{noteCount}</span>
+                        <span className={cn(styles.noteText, 'dark-theme')} data-version="v1">
+                            +{noteCount}
+                        </span>
                     )}
                 </span>
             </div>
@@ -294,13 +289,17 @@ export function AvatarGroup({
 
     /* Children mode — wrap each child in groupAvatar span */
     const childArray = Children.toArray(children);
+    const childGroupStyle =
+        typeof overlap === 'number'
+            ? ({ '--avatar-overlap': `${overlap}px` } as CSSProperties)
+            : undefined;
     return (
-        <div className={cn(styles.group, className)} {...props}>
+        <div className={cn(styles.group, className)} style={childGroupStyle} {...props}>
             {childArray.map((child, i) => (
                 <span
                     key={i}
                     className={styles.groupAvatar}
-                    style={slotStyle(i, childArray.length, overlap, reverse)}
+                    style={slotStyle(i, childArray.length, reverse)}
                 >
                     {child}
                 </span>

@@ -10,24 +10,23 @@
  *   --accents-6        : light=#444, dark=#999
  */
 
+/* geistcn generation (avatar-jul2026.html): no own border — the ring is the
+   ::after pseudo only; rounded-full, transition-[background] 200ms,
+   BOTH mask-image forms (standard + -webkit) present in production now. */
 .avatar {
     width: var(--size);
     height: var(--size);
-    border: 1px solid var(--ds-background-100);
     vertical-align: top;
     box-sizing: border-box;
-    border-radius: 100%;
+    border-radius: 9999px;
     flex-shrink: 0;
     line-height: 0;
-    transition: border .2s, background .2s;
+    transition: background 0.2s ease-in-out;
     display: inline-block;
     position: relative;
     overflow: hidden;
-    /* Production ships only the -webkit-prefixed mask (d2f6d4dcdb88e56d.css:13).
-     * The standard `mask-image` is intentionally omitted to stay 1:1 with the
-     * production chunk — border-radius:100% + overflow:hidden already clip the
-     * circle in every browser, so the mask is a cosmetic edge-fade only. */
-    -webkit-mask-image: -webkit-radial-gradient(circle, #fff, #000);
+    mask-image: radial-gradient(circle, white, black);
+    -webkit-mask-image: radial-gradient(circle, white, black);
 }
 
 /* Inner ring overlay */
@@ -52,16 +51,33 @@
     display: none;
 }
 
-/* Loading shimmer — shown when data-resolved=false */
+/* Loading shimmer — data-resolved=false (geistcn: gradient-to-r
+   accents-1 -> accents-2 -> accents-1, bg-size 400% 100%, rounded-full,
+   animate-loading = `loading 8s ease-in-out infinite` with keyframes
+   background-position 200% -> -200% — all verbatim from 20v_289ahbeyd.css). */
 .avatar:not([data-resolved="true"])::before {
     content: "";
-    background: linear-gradient(90deg,
-            var(--ds-gray-100),
-            var(--ds-gray-200),
-            var(--ds-gray-100)) 0 0 / 50% 100%;
-    animation: 1.5s ease-in-out infinite reverse loading;
     position: absolute;
-    inset: 0 -200% 0 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 9999px;
+    background-image: linear-gradient(to right,
+            var(--accents-1),
+            var(--accents-2),
+            var(--accents-1));
+    background-size: 400% 100%;
+    animation: loading 8s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
 }
 
 .avatar img {
@@ -88,14 +104,11 @@
     display: flex;
 }
 
-@keyframes loading {
-    to {
-        transform: translate(-50%);
-    }
-}
-
 /* ============================================
- * Group — from group-module__Dj5yHG
+ * Group — geistcn generation: wrapper carries --avatar-overlap (10px
+ * default, overridden inline by the `overlap` prop); each slot is a
+ * relative inline-flex pill with a 1px page-background ring and the
+ * nth-child(n+2) negative margin.
  * ============================================ */
 
 .group {
@@ -104,12 +117,15 @@
 }
 
 .groupAvatar {
+    position: relative;
     align-items: center;
     display: inline-flex;
+    border-radius: 9999px;
+    box-shadow: 0 0 0 1px var(--oxobz-background, var(--ds-background-100));
 }
 
 .groupAvatar:nth-child(n+2) {
-    margin-left: -10px;
+    margin-left: calc(-1 * var(--avatar-overlap, 10px));
 }
 
 /* "+N" note (non-avatar label) */
@@ -127,25 +143,26 @@
     position: relative;
 }
 
+/* geistcn "+N" bubble — `absolute inset-0 flex h-full w-full scale-[1.01]
+   items-center justify-center rounded-full border border-gray-400
+   bg-gray-100 text-[10px] font-semibold leading-[12px] text-gray-1000`
+   (plus the literal `dark-theme` class production adds — kept in the TSX). */
 .noteText {
-    background: var(--ds-gray-100);
-    border: 1px solid var(--ds-gray-400);
-    border-radius: 50%;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
     justify-content: center;
     align-items: center;
-    width: calc(100% - 2px);
-    height: calc(100% - 2px);
-    display: flex;
-    position: absolute;
-    top: 1px;
-    left: 1px;
+    border: 1px solid var(--ds-gray-400);
+    border-radius: 9999px;
+    background: var(--ds-gray-100);
     transform: scale(1.01);
-    /* text-module__eElGjq__wrapper — maps inline --text-* vars to CSS properties */
-    color: var(--text-color);
-    font-size: var(--text-size);
-    line-height: var(--text-line-height);
-    font-weight: var(--text-weight);
-    letter-spacing: var(--text-letter-spacing);
+    color: var(--ds-gray-1000);
+    font-size: 10px;
+    line-height: 12px;
+    font-weight: 600;
 }
 
 /* noteText dark-theme override — inspect element shows dark-theme class on noteText

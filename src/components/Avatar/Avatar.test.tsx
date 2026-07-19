@@ -217,16 +217,20 @@ describe('AvatarGroup', () => {
         expect(container.textContent).toContain('+2');
     });
 
-    it('does not set inline margin or z-index by default (snapshot-identical)', () => {
+    // geistcn generation: every slot carries an inline z-index (all captured
+    // stacks are descending — first avatar on top by default).
+    it('assigns descending inline z-indexes by default (first slot on top)', () => {
         const members = [{ username: 'a' }, { username: 'b' }];
         const { container } = render(<AvatarGroup members={members} />);
         const group = container.querySelector('div') as HTMLElement;
         const first = group.children[0] as HTMLElement;
+        const last = group.children[1] as HTMLElement;
+        expect(Number(first.style.zIndex)).toBeGreaterThan(Number(last.style.zIndex));
+        // margins come from the CSS module's --avatar-overlap, not inline styles
         expect(first.style.marginLeft).toBe('');
-        expect(first.style.zIndex).toBe('');
     });
 
-    it('applies a fixed pixel overlap as negative margin-left on stacked slots', () => {
+    it('applies a fixed pixel overlap via --avatar-overlap on the wrapper', () => {
         const members = [
             { username: 'a' },
             { username: 'b' },
@@ -234,12 +238,11 @@ describe('AvatarGroup', () => {
         ];
         const { container } = render(<AvatarGroup members={members} overlap={6} />);
         const group = container.querySelector('div') as HTMLElement;
-        const slots = group.children;
-        expect((slots[0] as HTMLElement).style.marginLeft).toBe('');
-        expect((slots[1] as HTMLElement).style.marginLeft).toBe('-6px');
+        expect(group.style.getPropertyValue('--avatar-overlap')).toBe('6px');
+        expect((group.children[1] as HTMLElement).style.marginLeft).toBe('');
     });
 
-    it('reverse assigns descending z-index so the first slot sits on top', () => {
+    it('reverse assigns ascending z-index so the LAST slot sits on top', () => {
         const members = [
             { username: 'a' },
             { username: 'b' },
@@ -250,7 +253,7 @@ describe('AvatarGroup', () => {
         const slots = group.children;
         const firstZ = Number((slots[0] as HTMLElement).style.zIndex);
         const lastZ = Number((slots[slots.length - 1] as HTMLElement).style.zIndex);
-        expect(firstZ).toBeGreaterThan(lastZ);
+        expect(lastZ).toBeGreaterThan(firstZ);
     });
 
     it('renders children mode when no members prop', () => {
