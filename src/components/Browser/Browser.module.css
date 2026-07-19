@@ -10,15 +10,17 @@
     container-type: inline-size;
 }
 
-/* Outer shell — material-small + rounded-md + overflow-hidden + bg-background-200 */
+/* Outer shell — material-small rounded-md overflow-hidden bg-background-200
+   md:rounded-[1.5cqw] (July capture: 6px radius, container-relative on md+) */
 .browser {
     background-color: var(--ds-background-200);
     box-shadow: var(--ds-shadow-border-small);
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
 }
 
-/* Header bar — px-4 py-2 flex justify-between gap-4 bg-background-100 */
+/* Header bar — px-4 py-2 md:px-5 md:py-2.5 flex justify-between gap-4
+   md:gap-6 bg-background-100 (July capture) */
 .header {
     padding: 8px 16px;
     display: flex;
