@@ -89,18 +89,18 @@ describe('Button', () => {
         expect(el?.className).toContain('tertiary');
     });
 
-    it('applies error + themed classes for variant="error"', () => {
+    // geistcn generation: error/warning are single preset classes (the old
+    // `themed` marker class no longer exists — presets fold their vars in).
+    it('applies the error class for variant="error"', () => {
         render(<Button variant="error">error btn</Button>);
         const el = screen.getByText('error btn').closest('[data-oxobz-button]');
         expect(el?.className).toContain('error');
-        expect(el?.className).toContain('themed');
     });
 
-    it('applies warning + themed classes for variant="warning"', () => {
+    it('applies the warning class for variant="warning"', () => {
         render(<Button variant="warning">warning btn</Button>);
         const el = screen.getByText('warning btn').closest('[data-oxobz-button]');
         expect(el?.className).toContain('warning');
-        expect(el?.className).toContain('themed');
     });
 
     // ---- Sizes ----
@@ -273,19 +273,19 @@ describe('Button', () => {
         expect(el).not.toHaveAttribute('data-hover');
     });
 
-    it('adds data-active on pointerDown', () => {
-        render(<Button>active test</Button>);
-        const el = screen.getByText('active test').closest('[data-oxobz-button]') as HTMLElement;
-        fireEvent.pointerDown(el);
-        expect(el).toHaveAttribute('data-active');
+    // geistcn generation: production emits NO data-active attribute — the
+    // only runtime state attributes are data-hover / data-focus (proven by
+    // custom-module's selectors) plus the static data-react-aria-pressable.
+    it('marks the button as a React Aria pressable', () => {
+        render(<Button>pressable</Button>);
+        const el = screen.getByText('pressable').closest('[data-oxobz-button]');
+        expect(el).toHaveAttribute('data-react-aria-pressable', 'true');
     });
 
-    it('removes data-active on pointerUp', () => {
-        render(<Button>active up</Button>);
-        const el = screen.getByText('active up').closest('[data-oxobz-button]') as HTMLElement;
+    it('does not emit a data-active attribute on pointerDown', () => {
+        render(<Button>no active</Button>);
+        const el = screen.getByText('no active').closest('[data-oxobz-button]') as HTMLElement;
         fireEvent.pointerDown(el);
-        expect(el).toHaveAttribute('data-active');
-        fireEvent.pointerUp(el);
         expect(el).not.toHaveAttribute('data-active');
     });
 
@@ -313,22 +313,20 @@ describe('Button', () => {
         expect(el.style.getPropertyValue('--oxobz-icon-size')).toBe('16px');
     });
 
-    // ---- Base CSS classes ----
+    // ---- Base CSS classes (geistcn generation: single .button + size class) ----
 
-    it('always has base, reset, button, and invert classes', () => {
+    it('always has the button class and its size class', () => {
         render(<Button>base classes</Button>);
         const el = screen.getByText('base classes').closest('[data-oxobz-button]');
-        expect(el?.className).toContain('base');
-        expect(el?.className).toContain('reset');
         expect(el?.className).toContain('button');
-        expect(el?.className).toContain('invert');
+        expect(el?.className).toContain('medium');
     });
 
-    it('does not duplicate the reset class', () => {
-        render(<Button>reset once</Button>);
-        const el = screen.getByText('reset once').closest('[data-oxobz-button]');
-        const resetOccurrences = el?.className.match(/reset/g) ?? [];
-        expect(resetOccurrences).toHaveLength(1);
+    it('does not duplicate the button class', () => {
+        render(<Button>button once</Button>);
+        const el = screen.getByText('button once').closest('[data-oxobz-button]');
+        const occurrences = el?.className.match(/\bbutton\b/g) ?? [];
+        expect(occurrences).toHaveLength(1);
     });
 });
 
@@ -356,12 +354,11 @@ describe('ButtonLink', () => {
         expect(el).not.toHaveAttribute('data-hover');
     });
 
-    it('adds data-active on pointerDown and removes on pointerUp', () => {
+    it('is a React Aria pressable and emits no data-active (geistcn generation)', () => {
         render(<ButtonLink href="#">link active</ButtonLink>);
         const el = screen.getByText('link active').closest('[data-oxobz-button]') as HTMLElement;
+        expect(el).toHaveAttribute('data-react-aria-pressable', 'true');
         fireEvent.pointerDown(el);
-        expect(el).toHaveAttribute('data-active');
-        fireEvent.pointerUp(el);
         expect(el).not.toHaveAttribute('data-active');
     });
 

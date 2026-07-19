@@ -1,347 +1,202 @@
-/* ==========================================================================
- * Button.module.css — exact from production button-module__QyrFCa + reset-module__ylizOa
- * Source: _nextstatic/chunks/9be0a455333005ab.css
- * ========================================================================== */
-
-/* ---- Reset ---- */
-.reset {
-    border: 0;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    text-align: inherit;
-    appearance: none;
-    cursor: inherit;
-    color: inherit;
-    text-decoration: none;
-    outline: none;
-    line-height: normal;
-    -webkit-font-smoothing: inherit;
-    -moz-osx-font-smoothing: inherit;
-}
-
-/* ---- Base ---- */
-.base {
-    cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
-    background: transparent;
-    position: relative;
-    transform: translateZ(0);
-}
-
-.base::-moz-focus-inner {
-    border: 0;
-}
-
-.base[data-focus][data-oxobz-button] {
-    outline: var(--ds-focus-ring-outline);
-}
-
-/*
- * Keyboard focus ring fallback. Production sets `data-focus` via react-aria on keyboard
- * focus; `.reset` clears the native outline, so without this rule keyboard focus shows no
- * ring. `:focus-visible` matches keyboard focus only (same visual result as data-focus).
+/**
+ * Button — CSS Module, geistcn generation (rebuilt 19 Jul 2026).
+ *
+ * The March-2026 reference (button-module__QyrFCa, classic generation) was
+ * proven stale: fresh captures (button-jul2026.html, split-button-open.html)
+ * show production buttons on the geistcn Tailwind system with React Aria
+ * press/hover/focus state attributes. This file is a 1:1 flatten of that
+ * generation, extracted from ALL 45 buttons / 32 unique class sets in
+ * button-jul2026.html (base = intersection; variants = per-set deltas).
+ *
+ * Production sources:
+ * - _nextstatic/component-inspect-element/button-jul2026.html — markup,
+ *   per-variant/size/shape deltas, span structure, state variant classes.
+ * - _nextstatic/chunks/20v_289ahbeyd.css + 3qv8jvk0udmxc.css — compound
+ *   presets `.geist-new-<variant>.geist-new-themed` (error/warning fills
+ *   carry their own --themed-hover-bg/--themed-press-bg/--themed-focus-ring,
+ *   incl. separate dark-theme values); Tailwind scale for utilities.
+ * - _nextstatic/chunks/0ir705xyqq90d.css — custom-module__gbx7Ca (CustomButton)
+ *   proves the runtime state attributes are literally [data-hover] and
+ *   [data-focus] (set from React Aria useHover/useFocusRing in Button.tsx).
+ *
+ * State model (matches production exactly):
+ * - [data-hover]                → hover styling (React Aria useHover)
+ * - [data-focus]                → focus-visible ring (useFocusRing)
+ * - data-react-aria-pressable   → set by React Aria usePress (no styling)
+ * - :disabled / [aria-disabled] → disabled styling (loading uses aria-disabled)
+ *
+ * `default` variant has NO preset class in production — its colors are the
+ * base fallbacks (bg gray-1000 / fg background-100). geist-new-* classes in
+ * production markup are preset markers; their custom-property effects are
+ * folded into the variant classes below.
  */
-.button[data-oxobz-button]:focus-visible {
-    outline: var(--ds-focus-ring-outline);
-}
 
-/* ---- Button ---- */
+/* ---- Base (intersection of all 45 production buttons) ---- */
 .button {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    vertical-align: baseline;
+    text-decoration: none;
+    appearance: none;
+
+    position: relative;
     display: flex;
-}
-
-.button[data-oxobz-button] {
-    outline-offset: 2px;
-    color: var(--themed-fg, var(--ds-background-100));
-    background: var(--themed-bg, var(--ds-gray-1000)) none;
-    padding: 0 var(--oxobz-gap-half);
-    max-width: 100%;
-    font-weight: 500;
-    font-size: var(--oxobz-form-font);
-    line-height: var(--oxobz-form-line-height);
-    height: var(--oxobz-form-height);
-    border-radius: 6px;
-    justify-content: center;
     align-items: center;
-    transition-property: border-color, background, color, transform, box-shadow;
-    transition-duration: 0.15s;
-    transition-timing-function: ease;
-}
+    justify-content: center;
+    max-width: 100%;
+    box-sizing: border-box;
 
-/* ---- Sizing (new v1) ---- */
-.button {
-    --x-padding: 10px;
-    --height: 40px;
-    font-size: 14px;
-}
-
-.button.small {
-    --x-padding: 6px;
-    --height: 32px;
-    font-size: 14px;
-}
-
-.button.large {
-    --x-padding: 14px;
-    --height: 48px;
-    font-size: 16px;
-}
-
-.button[data-oxobz-button]:not(.shape) {
     padding-left: var(--x-padding);
     padding-right: var(--x-padding);
     height: var(--height);
-}
 
-/* ---- Content ---- */
-.content {
-    text-overflow: ellipsis;
+    background: var(--themed-bg, var(--ds-gray-1000));
+    color: var(--themed-fg, var(--ds-background-100));
+    font-family: inherit;
+    font-weight: 500;
     white-space: nowrap;
-    padding: 0 6px;
-    display: inline-block;
-    overflow: hidden;
-}
 
-.content.flex {
-    justify-content: center;
-    align-items: center;
-    display: flex;
-}
-
-.content.start {
-    margin-right: auto;
-}
-
-.content.grow {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.content.flexGrow {
-    flex-grow: 1;
-}
-
-.content.center {
-    justify-content: center;
-    align-items: center;
-    display: flex;
+    cursor: pointer;
+    user-select: none;
+    transform: translateZ(0);
+    transition:
+        border-color 0.15s ease-in-out,
+        background 0.15s ease-in-out,
+        color 0.15s ease-in-out,
+        transform 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out;
 }
 
 .button svg {
     flex-shrink: 0;
 }
 
-/* ---- Prefix & Suffix ---- */
-.button .prefix,
-.button .suffix {
-    flex-shrink: 0;
-    display: flex;
+/* default-variant hover: bg hsl(0,0%,22%) light / hsl(0,0%,80%) dark */
+.button[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--themed-hover-bg, hsl(0, 0%, 22%));
+    --themed-border: var(--themed-hover-bg, var(--ds-gray-200));
 }
 
-.button[data-prefix='true'] .prefix,
-.button .prefix {
-    margin-right: 2px;
+:global(.dark-theme) .button[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--themed-hover-bg, hsl(0, 0%, 80%));
 }
 
-.button .suffix {
-    margin-left: 2px;
+/* focus-visible ring (data-[focus]:shadow-[var(--ds-focus-ring)] transition-none) */
+.button[data-focus] {
+    box-shadow: var(--ds-focus-ring);
+    transition: none;
 }
 
-.prefix {
-    justify-content: center;
-    align-items: center;
-    min-width: 20px;
-    margin-right: 10px;
-}
-
-.suffix {
-    justify-content: center;
-    align-items: center;
-    min-width: 20px;
-    margin-left: 10px;
-    display: flex;
-}
-
-/* ---- Disabled / Loading ---- */
-.button[disabled][data-oxobz-button],
-.button.loading[data-oxobz-button],
+/* disabled + aria-disabled (loading buttons are aria-disabled in production) */
+.button:disabled,
 .button[aria-disabled='true'] {
-    background: var(--ds-gray-100);
-    color: var(--ds-gray-700);
     cursor: not-allowed;
-    --themed-border: var(--ds-gray-400) !important;
+    color: var(--ds-gray-700);
+    background: var(--ds-gray-100);
+    --themed-border: var(--ds-gray-400);
 }
 
-.button[disabled][data-oxobz-button].tertiary,
-.button.loading[data-oxobz-button].tertiary,
-.button[aria-disabled='true'].tertiary {
-    box-shadow: none;
-    opacity: 0.5;
-    background: transparent;
+.button[data-hover]:disabled,
+.button[data-hover][aria-disabled='true'] {
+    background: var(--ds-gray-100);
 }
 
-/* ---- Shape (icon-only) ---- */
-.shape[data-oxobz-button] {
-    width: var(--oxobz-form-height);
-    padding: 0;
-}
-
-/* ---- Size modifiers ---- */
-.small[data-oxobz-button] {
-    font-size: var(--oxobz-form-small-font);
-    --spinner-size: 16px;
-    height: 32px;
-}
-
-.small.shape[data-oxobz-button] {
-    width: var(--oxobz-form-small-height);
-}
-
-.large[data-oxobz-button] {
-    height: var(--oxobz-form-large-height);
-    font-size: var(--oxobz-form-large-font);
-    line-height: var(--oxobz-form-large-line-height);
-    border-radius: 8px;
-}
-
-.large.shape {
-    width: var(--oxobz-form-large-height);
-}
-
-.tiny[data-oxobz-button] {
-    border-radius: 4px;
-    width: 24px;
+/* ---- Sizes ---- */
+/* tiny: fixed 24x24 icon button, radius 4, 16px icons */
+.tiny {
+    --height: 24px;
     height: 24px;
+    width: 24px;
+    padding: 0;
+    border-radius: 4px;
+    font-size: 16px;
 }
 
-.tiny[data-oxobz-button] svg {
+.tiny svg {
     width: 16px;
     height: 16px;
 }
 
-/* ---- Rounded ---- */
-.rounded[data-oxobz-button],
-.rounded.large[data-oxobz-button] {
-    border-radius: 100px;
+.small {
+    --height: 32px;
+    --x-padding: 6px;
+    --spinner-size: 16px;
+    border-radius: 6px;
+    font-size: var(--geist-form-small-font, 14px);
 }
 
-/* ---- Circle ---- */
-.circle[data-oxobz-button] {
-    border-radius: 100% !important;
+.medium {
+    --height: var(--ds-size-medium, 40px);
+    --x-padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
 }
 
-/* ---- Shadow ---- */
-.shadow {
-    box-shadow: var(--ds-shadow-small);
+.large {
+    --height: var(--ds-size-large, 48px);
+    --x-padding: 14px;
+    border-radius: 8px;
+    font-size: var(--geist-form-large-font, 16px);
+    line-height: var(--geist-form-large-line-height, 24px);
 }
 
-:global(.dark-theme) .button.shadow:not([data-focus-visible-added]) {
-    box-shadow: none;
-}
-
-.shadow[data-hover].secondary[data-oxobz-button] {
-    color: var(--oxobz-foreground);
-}
-
-.shadow[data-active][data-oxobz-button] {
-    box-shadow: var(--oxobz-shadow-small);
-    transform: translateY(1px);
-}
-
-.shadow[data-active][data-oxobz-button][data-hover] {
-    transform: none;
-}
-
-/* ---- Invert (hover/active states) ---- */
-.invert[data-hover][data-oxobz-button],
-.invert[data-active][data-oxobz-button] {
-    background: var(--themed-hover-bg, #383838);
-}
-
-:global(.dark-theme) .invert[data-hover][data-oxobz-button],
-:global(.dark-theme) .invert[data-active][data-oxobz-button] {
-    background: var(--themed-hover-bg, #ccc);
-}
-
-.invert[data-hover][data-oxobz-button][aria-disabled='true'],
-.invert[data-active][data-oxobz-button][aria-disabled='true'] {
-    background: var(--ds-gray-100);
-}
-
-/* ---- Secondary ---- */
-.secondary[data-oxobz-button] {
-    color: var(--oxobz-foreground);
-}
-
-.secondary[data-oxobz-button] {
+/* ---- Variants ---- */
+/* secondary: bordered background-100 button (local var overrides + ring) */
+.secondary {
     --themed-bg: var(--ds-background-100);
-    --themed-hover-bg: var(--ds-gray-alpha-200);
-    --themed-fg: var(--ds-gray-1000);
     --themed-border: var(--ds-gray-400);
-    box-shadow: 0 0 0 1px var(--themed-border);
+    --themed-fg: var(--ds-gray-1000);
+    --themed-hover-bg: var(--ds-gray-alpha-200);
+    box-shadow: 0 0 0 1px var(--themed-border, transparent);
 }
 
-.secondary[data-oxobz-button].invert[data-oxobz-button][data-hover][data-oxobz-button] {
-    background-color: var(--ds-gray-100);
-    box-shadow: 0 0 0 1px var(--themed-border);
+.secondary[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--ds-gray-100);
     color: var(--themed-fg);
 }
 
-.secondary[data-oxobz-button].invert[data-oxobz-button][data-active][data-oxobz-button] {
-    color: var(--oxobz-foreground);
+:global(.dark-theme) .secondary[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--ds-gray-200);
 }
 
-:global(.dark-theme) .secondary[data-oxobz-button].invert[data-oxobz-button][data-hover][data-oxobz-button] {
-    background-color: var(--ds-gray-200);
+.secondary[data-focus] {
+    box-shadow:
+        0 0 0 1px var(--themed-border, transparent),
+        0 0 0 2px var(--ds-background-100),
+        0 0 0 4px var(--ds-focus-color);
 }
 
-.secondary[data-oxobz-button].shadow[data-oxobz-button] {
-    box-shadow: var(--ds-shadow-border-small);
-}
-
-.secondary[data-oxobz-button].tertiary[data-oxobz-button] {
-    color: var(--themed-fg);
-}
-
-.secondary[data-oxobz-button].tertiary[data-oxobz-button][data-hover][data-oxobz-button] {
-    background-color: var(--ds-gray-alpha-200);
-}
-
-/* ---- Tertiary ---- */
-.tertiary[data-oxobz-button] {
+/* tertiary: transparent, text takes the themed-bg fallback color */
+.tertiary {
+    background: transparent;
     color: var(--themed-bg, var(--ds-gray-1000));
     --themed-border: transparent;
     --themed-hover-bg: var(--ds-gray-alpha-200);
-    --lighten-color: #fffc;
-    outline-offset: 0px;
+    --lighten-color: rgba(255, 255, 255, 0.8);
+}
+
+.tertiary[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--themed-hover-bg, hsl(0, 0%, 22%));
+    color: var(--themed-bg, var(--ds-gray-1000));
+    --themed-border: var(--ds-gray-alpha-200);
+}
+
+:global(.dark-theme) .tertiary[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--themed-hover-bg, hsl(0, 0%, 80%));
+}
+
+/* disabled tertiary keeps transparency: production dims it (opacity-50) */
+.tertiary:disabled,
+.tertiary[aria-disabled='true'] {
     background: transparent;
+    opacity: 0.5;
+    box-shadow: none;
 }
 
-.tertiary[data-hover][data-oxobz-button] {
-    background-color: var(--ds-gray-alpha-200);
-    --themed-border: var(--ds-gray-alpha-200) !important;
-}
-
-:global(.dark-theme) .tertiary[data-hover][data-oxobz-button] {
-    background-color: var(--ds-gray-alpha-200);
-    --themed-border: var(--ds-gray-alpha-200) !important;
-}
-
-:global(.dark-theme) .tertiary[data-active][data-oxobz-button] {
-    --lighten-color: #000000b3;
-}
-
-/* ---- Themed: Error ---- */
-.themed.error {
-    --themed-fg: var(--ds-red-900);
-    --themed-bg: var(--ds-red-100);
-    --themed-border: var(--ds-red-400);
-}
-
-.themed.errorFill {
+/* error (fill): preset .geist-new-error-fill.geist-new-themed */
+.error {
     --themed-fg: var(--ds-contrast-fg);
     --themed-bg: var(--ds-red-800);
     --themed-hover-bg: var(--ds-red-900);
@@ -350,21 +205,15 @@
     --themed-focus-ring: #ffaba3;
 }
 
-:global(html:not(.dark-theme)) .themed.errorFill {
+:global(.dark-theme) .error {
     --themed-fg: #f5f5f5;
     --themed-hover-bg: #ae292f;
     --themed-press-bg: #7c1316;
     --themed-focus-ring: #7c1316;
 }
 
-/* ---- Themed: Warning ---- */
-.themed.warning {
-    --themed-fg: var(--ds-amber-900);
-    --themed-bg: var(--ds-amber-100);
-    --themed-border: var(--ds-amber-400);
-}
-
-.themed.warningFill {
+/* warning (fill): preset .geist-new-warning-fill.geist-new-themed */
+.warning {
     --themed-fg: #0a0a0a;
     --themed-bg: var(--ds-amber-800);
     --themed-hover-bg: #d27504;
@@ -373,54 +222,127 @@
     --themed-focus-ring: #a35200;
 }
 
-/* ---- Custom (CustomButton per-state color overrides) ---- */
-.custom[data-oxobz-custom-button]:not([disabled]) {
+/* outline (non-fill) presets — retained for theming parity */
+.errorOutline {
+    --themed-fg: var(--ds-red-900);
+    --themed-bg: var(--ds-red-100);
+    --themed-border: var(--ds-red-400);
+}
+
+.warningOutline {
+    --themed-fg: var(--ds-amber-900);
+    --themed-bg: var(--ds-amber-100);
+    --themed-border: var(--ds-amber-400);
+}
+
+/* ---- Shapes ---- */
+/* square (shape="square"): icon-only, width equals the size height */
+.shape {
+    padding: 0;
+    width: var(--geist-form-height, var(--ds-size-medium, 40px));
+}
+
+.shape.small {
+    width: var(--geist-form-small-height, 32px);
+}
+
+.shape.large {
+    width: var(--geist-form-large-height, 48px);
+}
+
+.shape.tiny {
+    width: 24px;
+}
+
+/* circle: square + full rounding (production !rounded-full) */
+.circle {
+    border-radius: 9999px;
+}
+
+/* rounded (pill label button): full radius wins over the size radius */
+.rounded {
+    border-radius: 9999px;
+}
+
+/* shadow: pill + border ring + small elevation (secondary-toned vars) */
+.shadow {
+    --themed-bg: var(--ds-background-100);
+    --themed-border: var(--ds-gray-400);
+    --themed-fg: var(--ds-gray-1000);
+    --themed-hover-bg: var(--ds-gray-alpha-200);
+    border-radius: 9999px;
+    box-shadow:
+        0 0 0 1px var(--themed-border, transparent),
+        var(--ds-shadow-border-small);
+}
+
+.shadow[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--ds-gray-100);
+    color: var(--themed-fg);
+}
+
+:global(.dark-theme) .shadow[data-hover]:not(:disabled):not([aria-disabled='true']) {
+    background: var(--ds-gray-200);
+}
+
+/* ---- Loading (aria-disabled in production; spinner sized by --spinner-size) ---- */
+.loading {
+    cursor: not-allowed;
+}
+
+/* ---- Content spans (production span structure) ---- */
+/* label: <span class="truncate inline-block px-1.5"> */
+.content {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+/* prefix/suffix: <span class="truncate px-1.5 shrink-0 flex items-center justify-center"> */
+.prefix,
+.suffix {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+/* svgOnly content wrapper keeps icons centered without label truncation */
+.flex {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+/* ---- CustomButton (custom-module__gbx7Ca, from 0ir705xyqq90d.css) ---- */
+.custom[data-custom-button]:not(:disabled) {
     color: var(--button-custom-fg) !important;
     background: var(--button-custom-bg) !important;
     --themed-border: var(--button-custom-border) !important;
 }
 
-.custom[data-oxobz-custom-button]:focus-visible {
-    box-shadow: 0 0 0 1px var(--oxobz-background),
-        0 0 0 3px var(--button-custom-bg-hover, var(--button-custom-bg, var(--oxobz-foreground))) !important;
+.custom[data-custom-button][data-hover] {
     color: var(--button-custom-fg-hover) !important;
     background: var(--button-custom-bg-hover) !important;
     --themed-border: var(--button-custom-border-hover) !important;
 }
 
-.custom[data-oxobz-custom-button][data-hover] {
+.custom[data-custom-button][data-focus] {
+    box-shadow:
+        0 0 0 1px var(--geist-background),
+        0 0 0 3px var(--button-custom-bg-hover, var(--button-custom-bg, var(--geist-foreground))) !important;
     color: var(--button-custom-fg-hover) !important;
     background: var(--button-custom-bg-hover) !important;
     --themed-border: var(--button-custom-border-hover) !important;
-}
-
-.custom[data-oxobz-custom-button][data-active] {
-    color: var(--button-custom-fg-active, var(--button-custom-fg-hover)) !important;
-    background: var(--button-custom-bg-active, var(--button-custom-bg-hover)) !important;
-    --themed-border: var(--button-custom-border-active, var(--button-custom-border-hover)) !important;
-}
-
-/* ---- Responsive ---- */
-@media screen and (min-width: 0) {
-    .button.responsive {
-        --x-padding: var(--sm-x-padding);
-        --height: var(--sm-height);
-        font-size: 14px;
-    }
-}
-
-@media screen and (min-width: 601px) {
-    .button.responsive {
-        --x-padding: var(--md-x-padding);
-        --height: var(--md-height);
-        font-size: 14px;
-    }
-}
-
-@media screen and (min-width: 961px) {
-    .button.responsive {
-        --x-padding: var(--lg-x-padding);
-        --height: var(--lg-height);
-        font-size: 16px;
-    }
 }

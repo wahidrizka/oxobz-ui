@@ -46,6 +46,14 @@ export default defineConfig({
                 '@oxobz/icons',
                 /^prismjs/,
                 /^prism-react-renderer/,
+                // Primitive libraries mirroring Geist production (approved 19 Jul 2026)
+                /^react-aria/,
+                /^@react-aria\//,
+                /^@react-stately\//,
+                /^@internationalized\//,
+                /^@radix-ui\//,
+                /^@base-ui\//,
+                'cmdk',
             ],
             output: {
                 preserveModules: true,

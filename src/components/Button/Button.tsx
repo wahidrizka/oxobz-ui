@@ -1,34 +1,23 @@
 import {
     forwardRef,
+    useRef,
     type AnchorHTMLAttributes,
     type ButtonHTMLAttributes,
     type ReactNode,
-    useCallback,
-    useState,
+    type Ref,
 } from 'react';
+import { mergeProps, useFocusRing, useHover, usePress } from 'react-aria';
 import { cn } from '../../utils/cn';
 import { Spinner } from '../Spinner';
 import styles from './Button.module.css';
 
-// ---- Types (exact from button.md JSX API) ----
+// ---- Types (exact from the Geist docs JSX API — unchanged by the geistcn rebuild) ----
 
 export type ButtonVariant = 'default' | 'secondary' | 'tertiary' | 'error' | 'warning';
 export type ButtonSize = 'tiny' | 'small' | 'medium' | 'large';
 export type ButtonShape = 'square' | 'circle' | 'rounded';
 
 // ---- Shared helpers ----
-
-/** Variant → themed marker classes (error/warning render the `themed` + fill classes). */
-function getVariantClasses(variant: ButtonVariant): (string | undefined)[] {
-    switch (variant) {
-        case 'error':
-            return [styles.error, styles.errorFill];
-        case 'warning':
-            return [styles.warning, styles.warningFill];
-        default:
-            return [];
-    }
-}
 
 interface BuildClassNameArgs {
     variant: ButtonVariant;
@@ -51,27 +40,20 @@ function buildButtonClassName({
     className,
     extra,
 }: BuildClassNameArgs): string {
-    const isThemed = variant !== 'default' && variant !== 'secondary';
-    const sizeClass = size !== 'medium' ? styles[size] : undefined;
-    // .shape (icon-only, width=height) only for square/circle, NOT rounded.
-    const shapeClass = shape && shape !== 'rounded' ? styles.shape : undefined;
-    const circleClass = shape === 'circle' ? styles.circle : undefined;
-    const roundedClass = shape === 'rounded' ? styles.rounded : undefined;
-
     return cn(
-        styles.base,
-        styles.reset,
         styles.button,
-        isThemed ? styles.themed : undefined,
-        ...getVariantClasses(variant),
+        // Every size class carries its own --height/--x-padding vars now
+        // (geistcn generation) — medium included.
+        styles[size],
         variant === 'secondary' ? styles.secondary : undefined,
         variant === 'tertiary' ? styles.tertiary : undefined,
-        sizeClass,
-        shapeClass,
-        circleClass,
-        roundedClass,
+        variant === 'error' ? styles.error : undefined,
+        variant === 'warning' ? styles.warning : undefined,
+        // .shape (icon-only, width=height) only for square/circle, NOT rounded.
+        shape && shape !== 'rounded' ? styles.shape : undefined,
+        shape === 'circle' ? styles.circle : undefined,
+        shape === 'rounded' ? styles.rounded : undefined,
         shadow ? styles.shadow : undefined,
-        styles.invert,
         loading ? styles.loading : undefined,
         extra,
         className,
@@ -79,70 +61,31 @@ function buildButtonClassName({
 }
 
 /**
- * Pointer interaction state (hover / active), mirroring production which toggles
- * `data-hover` / `data-active` via react-aria. Shared by Button, ButtonLink and CustomButton.
+ * Production interaction states via the same React Aria hooks Geist uses
+ * (`data-react-aria-pressable` in every production button; the geistcn CSS
+ * targets `[data-hover]` and `[data-focus]` — proven by custom-module's own
+ * selectors in 0ir705xyqq90d.css):
+ * - useHover     → data-hover (present while hovered, ignoring disabled)
+ * - useFocusRing → data-focus (keyboard focus-visible only)
+ * - usePress     → press semantics + data-react-aria-pressable
  */
-function useButtonInteraction<T extends HTMLElement>(handlers: {
-    onPointerEnter?: React.PointerEventHandler<T>;
-    onPointerLeave?: React.PointerEventHandler<T>;
-    onPointerDown?: React.PointerEventHandler<T>;
-    onPointerUp?: React.PointerEventHandler<T>;
-}): {
-    isHovered: boolean;
-    isActive: boolean;
-    pointerHandlers: {
-        onPointerEnter: React.PointerEventHandler<T>;
-        onPointerLeave: React.PointerEventHandler<T>;
-        onPointerDown: React.PointerEventHandler<T>;
-        onPointerUp: React.PointerEventHandler<T>;
-    };
+function useAriaButtonStates(isDisabled: boolean): {
+    stateProps: ReturnType<typeof mergeProps>;
+    stateAttrs: Record<string, string>;
 } {
-    const { onPointerEnter, onPointerLeave, onPointerDown, onPointerUp } = handlers;
-    const [isHovered, setIsHovered] = useState(false);
-    const [isActive, setIsActive] = useState(false);
+    const { hoverProps, isHovered } = useHover({ isDisabled });
+    const { pressProps } = usePress({ isDisabled });
+    const { focusProps, isFocusVisible } = useFocusRing();
 
-    const handlePointerEnter = useCallback<React.PointerEventHandler<T>>(
-        (e) => {
-            setIsHovered(true);
-            onPointerEnter?.(e);
-        },
-        [onPointerEnter],
-    );
-
-    const handlePointerLeave = useCallback<React.PointerEventHandler<T>>(
-        (e) => {
-            setIsHovered(false);
-            setIsActive(false);
-            onPointerLeave?.(e);
-        },
-        [onPointerLeave],
-    );
-
-    const handlePointerDown = useCallback<React.PointerEventHandler<T>>(
-        (e) => {
-            setIsActive(true);
-            onPointerDown?.(e);
-        },
-        [onPointerDown],
-    );
-
-    const handlePointerUp = useCallback<React.PointerEventHandler<T>>(
-        (e) => {
-            setIsActive(false);
-            onPointerUp?.(e);
-        },
-        [onPointerUp],
-    );
+    const stateAttrs: Record<string, string> = {
+        'data-react-aria-pressable': 'true',
+    };
+    if (isHovered && !isDisabled) stateAttrs['data-hover'] = '';
+    if (isFocusVisible) stateAttrs['data-focus'] = '';
 
     return {
-        isHovered,
-        isActive,
-        pointerHandlers: {
-            onPointerEnter: handlePointerEnter,
-            onPointerLeave: handlePointerLeave,
-            onPointerDown: handlePointerDown,
-            onPointerUp: handlePointerUp,
-        },
+        stateProps: mergeProps(hoverProps, pressProps, focusProps),
+        stateAttrs,
     };
 }
 
@@ -171,6 +114,13 @@ function ButtonSlots({
             {suffixNode ? <span className={styles.suffix}>{suffixNode}</span> : null}
         </>
     );
+}
+
+/** Merge a forwarded ref with the local ref used by the interaction hooks. */
+function setRefs<T>(node: T | null, forwarded: Ref<T> | undefined, local: React.MutableRefObject<T | null>): void {
+    local.current = node;
+    if (typeof forwarded === 'function') forwarded(node);
+    else if (forwarded) (forwarded as React.MutableRefObject<T | null>).current = node;
 }
 
 // ---- Button ----
@@ -202,11 +152,12 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 /**
- * Button component — 100% consistent with production Geist.
+ * Button — geistcn generation (rebuilt 19 Jul 2026 from button-jul2026.html).
  *
- * Production data attributes: data-oxobz-button, data-prefix, data-suffix, data-version="v1".
- * Hover/active handled via data-hover/data-active attributes (same as production).
- * Keyboard focus ring is provided by the `:focus-visible` fallback in the CSS module.
+ * Production data attributes: data-oxobz-button, data-prefix, data-suffix,
+ * data-version="v1", data-react-aria-pressable. Interaction states come from
+ * the same React Aria hooks production uses: [data-hover] (useHover),
+ * [data-focus] (useFocusRing, keyboard-visible only), press via usePress.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     (
@@ -223,20 +174,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             disabled,
             className,
             children,
-            onPointerEnter,
-            onPointerLeave,
-            onPointerDown,
-            onPointerUp,
             ...props
         },
         ref,
     ) => {
-        const { isHovered, isActive, pointerHandlers } = useButtonInteraction<HTMLButtonElement>({
-            onPointerEnter,
-            onPointerLeave,
-            onPointerDown,
-            onPointerUp,
-        });
+        const localRef = useRef<HTMLButtonElement | null>(null);
+
+        // Loading → disabled (production behavior).
+        const isDisabled = Boolean(disabled) || loading;
+        const { stateProps, stateAttrs } = useAriaButtonStates(isDisabled);
 
         const buttonClasses = buildButtonClassName({ variant, size, shape, shadow, loading, className });
 
@@ -245,15 +191,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         const hasPrefix = Boolean(effectivePrefix);
         const hasSuffix = Boolean(suffixIcon);
 
-        // Loading → disabled (production behavior).
-        const isDisabled = disabled || loading;
-
         return (
             <button
-                ref={ref}
+                ref={(node) => setRefs(node, ref, localRef)}
                 type={typeName}
                 tabIndex={0}
-                data-react-aria-pressable="true"
                 className={buttonClasses}
                 data-oxobz-button=""
                 data-prefix={String(hasPrefix)}
@@ -261,10 +203,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 data-version="v1"
                 style={{ '--oxobz-icon-size': '16px' } as React.CSSProperties}
                 disabled={isDisabled || undefined}
-                {...(isHovered && !isDisabled ? { 'data-hover': '' } : {})}
-                {...(isActive && !isDisabled ? { 'data-active': '' } : {})}
-                {...pointerHandlers}
-                {...props}
+                {...stateAttrs}
+                {...mergeProps(stateProps, props)}
             >
                 <ButtonSlots
                     prefixNode={effectivePrefix}
@@ -295,9 +235,8 @@ export interface ButtonLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorEle
 }
 
 /**
- * ButtonLink — an `<a>` tag rendered with Button styling.
- * Production equivalent of Geist's ButtonLink: same hover/active feedback via
- * data-hover / data-active, wired through the shared interaction hook.
+ * ButtonLink — an `<a>` tag rendered with Button styling and the same
+ * React Aria interaction states as Button.
  */
 export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
     (
@@ -312,20 +251,12 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
             loading = false,
             className,
             children,
-            onPointerEnter,
-            onPointerLeave,
-            onPointerDown,
-            onPointerUp,
             ...props
         },
         ref,
     ) => {
-        const { isHovered, isActive, pointerHandlers } = useButtonInteraction<HTMLAnchorElement>({
-            onPointerEnter,
-            onPointerLeave,
-            onPointerDown,
-            onPointerUp,
-        });
+        const localRef = useRef<HTMLAnchorElement | null>(null);
+        const { stateProps, stateAttrs } = useAriaButtonStates(false);
 
         const linkClasses = buildButtonClassName({ variant, size, shape, shadow, loading, className });
 
@@ -335,20 +266,17 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
 
         return (
             <a
-                ref={ref}
+                ref={(node) => setRefs(node, ref, localRef)}
                 role="link"
                 tabIndex={0}
-                data-react-aria-pressable="true"
                 className={linkClasses}
                 data-oxobz-button=""
                 data-prefix={String(hasPrefix)}
                 data-suffix={String(hasSuffix)}
                 data-version="v1"
                 style={{ '--oxobz-icon-size': '16px' } as React.CSSProperties}
-                {...(isHovered ? { 'data-hover': '' } : {})}
-                {...(isActive ? { 'data-active': '' } : {})}
-                {...pointerHandlers}
-                {...props}
+                {...stateAttrs}
+                {...mergeProps(stateProps, props)}
             >
                 <ButtonSlots
                     prefixNode={effectivePrefix}
@@ -398,9 +326,10 @@ export interface CustomButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonE
 }
 
 /**
- * CustomButton — a Button whose foreground / background / border can be overridden per
- * interaction state (normal / hover / active), matching Geist's `CustomButton`.
- * Overrides are applied through CSS custom properties consumed by the `.custom` rules.
+ * CustomButton — a Button whose foreground / background / border can be
+ * overridden per interaction state, matching production's
+ * custom-module__gbx7Ca (state selectors [data-hover]/[data-focus] +
+ * data-custom-button gate — see Button.module.css `.custom`).
  */
 export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
     (
@@ -420,20 +349,13 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
             disabled,
             className,
             children,
-            onPointerEnter,
-            onPointerLeave,
-            onPointerDown,
-            onPointerUp,
             ...props
         },
         ref,
     ) => {
-        const { isHovered, isActive, pointerHandlers } = useButtonInteraction<HTMLButtonElement>({
-            onPointerEnter,
-            onPointerLeave,
-            onPointerDown,
-            onPointerUp,
-        });
+        const localRef = useRef<HTMLButtonElement | null>(null);
+        const isDisabled = Boolean(disabled) || loading;
+        const { stateProps, stateAttrs } = useAriaButtonStates(isDisabled);
 
         // CustomButton is always the default variant; its colors come from the CSS overrides.
         const buttonClasses = buildButtonClassName({
@@ -449,7 +371,6 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
         const effectivePrefix = loading ? getSpinner(size) : prefixIcon;
         const hasPrefix = Boolean(effectivePrefix);
         const hasSuffix = Boolean(suffixIcon);
-        const isDisabled = disabled || loading;
 
         const customStyle = {
             '--oxobz-icon-size': '16px',
@@ -467,22 +388,20 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
 
         return (
             <button
-                ref={ref}
+                ref={(node) => setRefs(node, ref, localRef)}
                 type={typeName}
                 tabIndex={0}
-                data-react-aria-pressable="true"
                 className={buttonClasses}
                 data-oxobz-button=""
+                data-custom-button=""
                 data-oxobz-custom-button=""
                 data-prefix={String(hasPrefix)}
                 data-suffix={String(hasSuffix)}
                 data-version="v1"
                 style={customStyle}
                 disabled={isDisabled || undefined}
-                {...(isHovered && !isDisabled ? { 'data-hover': '' } : {})}
-                {...(isActive && !isDisabled ? { 'data-active': '' } : {})}
-                {...pointerHandlers}
-                {...props}
+                {...stateAttrs}
+                {...mergeProps(stateProps, props)}
             >
                 <ButtonSlots
                     prefixNode={effectivePrefix}
