@@ -187,10 +187,13 @@
     background: var(--themed-hover-bg, hsl(0, 0%, 80%));
 }
 
-/* disabled tertiary keeps transparency: production dims it (opacity-50) */
+/* Disabled tertiary — user-verified against the docs "Disabled variants"
+   example: production KEEPS the base disabled gray-100 background
+   (disabled:bg-gray-100 beats bg-transparent) and adds opacity-50 +
+   shadow-none. An earlier pass wrongly forced background: transparent here
+   (mis-attributed delta). */
 .tertiary:disabled,
 .tertiary[aria-disabled='true'] {
-    background: transparent;
     opacity: 0.5;
     box-shadow: none;
 }
