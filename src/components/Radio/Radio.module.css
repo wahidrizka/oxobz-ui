@@ -47,7 +47,8 @@
     border-radius: 50%;
     width: 1rem;
     height: 1rem;
-    transition: border-color 0.2s, background 0.2s;
+    /* geistcn July capture: transition-[border-color,background] 200ms ease-in */
+    transition: border-color 0.2s ease-in, background 0.2s ease-in;
     position: relative;
 }
 
@@ -58,7 +59,8 @@
     border-radius: 50%;
     width: 0.5rem;
     height: 0.5rem;
-    transition: transform 0.15s;
+    /* geistcn July capture: after:transition-transform 150ms ease-in */
+    transition: transform 0.15s ease-in;
     display: block;
     position: absolute;
     top: 50%;
