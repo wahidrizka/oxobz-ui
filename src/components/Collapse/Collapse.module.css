@@ -58,9 +58,18 @@
     padding: var(--oxobz-gap-half) 0;
 }
 
+/* July-2026 capture: focus:rounded + outline-none; focus-visible:ring-2
+   ring-[var(--ds-blue-700)] — a single 2px blue ring (was the old bg +
+   accents-3 pair). */
+.button:focus {
+    border-radius: 4px;
+    outline: none;
+}
+
+.button:focus-visible,
 .button:focus.focus-visible {
-    border-radius: var(--oxobz-radius);
-    box-shadow: 0 0 0 2px var(--oxobz-background), 0 0 0 4px var(--accents-3);
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--ds-blue-700);
 }
 
 .subtitle {
@@ -75,7 +84,8 @@
     will-change: height;
     font-size: 16px;
     line-height: 26px;
-    transition: height 0.2s;
+    /* July capture: transition-all duration-200 ease-in-out. */
+    transition: all 0.2s ease-in-out;
     overflow-y: hidden;
 }
 
@@ -98,7 +108,9 @@
 
 .icon {
     color: var(--ds-gray-1000);
-    transition: transform 0.2s;
+    /* July capture: transition-transform duration-200 ease-in-out, items-center. */
+    transition: transform 0.2s ease-in-out;
+    align-items: center;
     display: flex;
 }
 
@@ -110,8 +122,6 @@
     transform: rotate(90deg);
 }
 
-@media screen and (max-height: 780px) {
-    .collapseContent {
-        max-height: 65vh;
-    }
-}
+/* The July capture caps only the inner scroll area at 60vh (see
+   .collapseContent > div) with no viewport-height media query — the stale
+   `@media (max-height:780px){65vh}` from the old chunk is dropped. */
