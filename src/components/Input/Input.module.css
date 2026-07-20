@@ -167,6 +167,19 @@
     cursor: not-allowed;
 }
 
+/* July-2026 capture additions: number-input chrome is stripped
+   ([appearance:textfield] + webkit spin buttons appearance-none). */
+.input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.input::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
 /* Hide the native search decorations (chunk .input[type=search]::-webkit-*) */
 .input[type='search']::-webkit-search-decoration,
 .input[type='search']::-webkit-search-cancel-button,
