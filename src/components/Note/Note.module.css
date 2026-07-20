@@ -28,18 +28,20 @@
     --note-bg: transparent;
     --note-link: var(--ds-blue-700);
 
-    /* Layout (note-module) */
-    padding: 8px var(--oxobz-gap-half);
+    /* Layout — July-2026 capture: px-3 py-1.5 (12/6px), flex-wrap
+       items-center, text-copy-14 (14/20). */
+    padding: 6px 12px;
     min-height: var(--oxobz-form-height);
     word-break: break-word;
     box-sizing: border-box;
     border-radius: 6px;
     flex-grow: 1;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 20px;
     display: flex;
 
     /* Colors (v3-colors — !important as in production) */

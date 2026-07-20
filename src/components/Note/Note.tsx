@@ -132,7 +132,9 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(
                     className,
                 )}
                 data-oxobz-note=""
+                data-slot="note"
                 data-version={dataVersion}
+                role="note"
                 ref={ref}
             >
                 <div
@@ -140,10 +142,11 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(
                         styles.content,
                         hasCustomLabel && styles.hasLabel,
                     )}
+                    data-slot="note-body"
                     style={{ gap: contentGap }}
                 >
                     {showIcon && (
-                        <span className={styles.iconContainer}>
+                        <span className={styles.iconContainer} data-slot="note-icon">
                             <NoteTypeIcon type={type} />
                         </span>
                     )}
