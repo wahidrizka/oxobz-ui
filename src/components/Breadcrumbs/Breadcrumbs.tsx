@@ -22,20 +22,20 @@ import styles from './Breadcrumbs.module.css';
  * - `text`: plain-text crumbs joined by a chevron separator (default).
  * - `menu`: a row of pill buttons, no separators.
  */
-export type BreadcrumbsVariant = 'text' | 'menu';
+export type BreadcrumbType = 'text' | 'menu';
 
-export interface BreadcrumbsProps extends HTMLAttributes<HTMLElement> {
+export interface BreadcrumbProps extends HTMLAttributes<HTMLElement> {
     /** Trail style — text separators or menu pills. Default: 'text'. */
-    variant?: BreadcrumbsVariant;
+    type?: BreadcrumbType;
 
     /** data-version attribute matching Geist production output */
     'data-version'?: string;
 
-    /** Breadcrumbs.Item children. */
+    /** Breadcrumb.Item children. */
     children?: ReactNode;
 }
 
-export interface BreadcrumbsItemProps extends HTMLAttributes<HTMLElement> {
+export interface BreadcrumbItemProps extends HTMLAttributes<HTMLElement> {
     /**
      * Destination URL. When set (and the item isn't disabled), the label
      * renders as an `<a>`. Text variant only — the menu variant is always
@@ -63,11 +63,11 @@ export interface BreadcrumbsItemProps extends HTMLAttributes<HTMLElement> {
 /*  Context                                                            */
 /* ------------------------------------------------------------------ */
 
-interface BreadcrumbsContextValue {
-    variant: BreadcrumbsVariant;
+interface BreadcrumbContextValue {
+    variant: BreadcrumbType;
 }
 
-const BreadcrumbsContext = createContext<BreadcrumbsContextValue | null>(null);
+const BreadcrumbContext = createContext<BreadcrumbContextValue | null>(null);
 
 /* ------------------------------------------------------------------ */
 /*  Breadcrumbs.Item                                                   */
@@ -90,14 +90,14 @@ const BreadcrumbsContext = createContext<BreadcrumbsContextValue | null>(null);
  * </button>
  * ```
  */
-const BreadcrumbsItem = forwardRef<HTMLElement, BreadcrumbsItemProps>(
+const BreadcrumbItem = forwardRef<HTMLElement, BreadcrumbItemProps>(
     (
         { href, active = false, disabled = false, className, children, onClick, ...rest },
         ref,
     ) => {
-        const ctx = useContext(BreadcrumbsContext);
+        const ctx = useContext(BreadcrumbContext);
         if (!ctx) {
-            throw new Error('Breadcrumbs.Item must be used within a Breadcrumbs');
+            throw new Error('Breadcrumb.Item must be used within a Breadcrumb');
         }
 
         // Production renders the label as a raw text node directly inside the
@@ -154,7 +154,7 @@ const BreadcrumbsItem = forwardRef<HTMLElement, BreadcrumbsItemProps>(
     },
 );
 
-BreadcrumbsItem.displayName = 'Breadcrumbs.Item';
+BreadcrumbItem.displayName = 'Breadcrumb.Item';
 
 /* ------------------------------------------------------------------ */
 /*  Breadcrumbs (root)                                                 */
@@ -174,13 +174,13 @@ BreadcrumbsItem.displayName = 'Breadcrumbs.Item';
  * `Breadcrumbs.Item` itself switches between `<li>` and `<button>` based on
  * the variant read from context.
  */
-const BreadcrumbsRoot = forwardRef<HTMLElement, BreadcrumbsProps>(
+const BreadcrumbRoot = forwardRef<HTMLElement, BreadcrumbProps>(
     (
-        { variant = 'text', className, children, 'data-version': dataVersion = 'v1', ...rest },
+        { type: variant = 'text', className, children, 'data-version': dataVersion = 'v1', ...rest },
         ref,
     ) => {
         return (
-            <BreadcrumbsContext.Provider value={{ variant }}>
+            <BreadcrumbContext.Provider value={{ variant }}>
                 <nav
                     {...rest}
                     ref={ref}
@@ -196,19 +196,19 @@ const BreadcrumbsRoot = forwardRef<HTMLElement, BreadcrumbsProps>(
                         <ol className={styles.ol}>{children}</ol>
                     )}
                 </nav>
-            </BreadcrumbsContext.Provider>
+            </BreadcrumbContext.Provider>
         );
     },
 );
 
-BreadcrumbsRoot.displayName = 'Breadcrumbs';
+BreadcrumbRoot.displayName = 'Breadcrumb';
 
 /* ------------------------------------------------------------------ */
 /*  Compound export                                                    */
 /* ------------------------------------------------------------------ */
 
-const Breadcrumbs = Object.assign(BreadcrumbsRoot, {
-    Item: BreadcrumbsItem,
+const Breadcrumb = Object.assign(BreadcrumbRoot, {
+    Item: BreadcrumbItem,
 });
 
-export { Breadcrumbs, BreadcrumbsItem };
+export { Breadcrumb, BreadcrumbItem };

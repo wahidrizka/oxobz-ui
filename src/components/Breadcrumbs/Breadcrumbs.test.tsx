@@ -1,22 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
-import { Breadcrumbs, BreadcrumbsItem } from './Breadcrumbs';
+import { Breadcrumb, BreadcrumbItem } from './Breadcrumbs';
 
 /** Selects the root <nav>. */
 function getRoot(container: HTMLElement) {
     return container.querySelector('[data-oxobz-breadcrumbs]');
 }
 
-describe('Breadcrumbs', () => {
+describe('Breadcrumb', () => {
     // ── Rendering (text variant, default) ──
 
     it('renders a nav with data-oxobz-breadcrumbs, data-variant="text" and data-version="v1"', () => {
         const { container } = render(
-            <Breadcrumbs>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-                <BreadcrumbsItem>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+                <BreadcrumbItem>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
@@ -28,19 +28,19 @@ describe('Breadcrumbs', () => {
 
     it('allows a custom data-version', () => {
         const { container } = render(
-            <Breadcrumbs data-version="v2">
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb data-version="v2">
+                <BreadcrumbItem>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
 
     it('renders an <ol class="ol"> wrapping <li class="textItem"> items', () => {
         const { container } = render(
-            <Breadcrumbs>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-                <BreadcrumbsItem>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+                <BreadcrumbItem>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const list = container.querySelector('ol');
         expect(list).toBeInTheDocument();
@@ -53,10 +53,10 @@ describe('Breadcrumbs', () => {
 
     it('renders a chevron separator svg inside each text item', () => {
         const { container } = render(
-            <Breadcrumbs>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-                <BreadcrumbsItem>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+                <BreadcrumbItem>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const items = container.querySelectorAll('li[data-oxobz-breadcrumbs-item]');
         items.forEach((item) => {
@@ -66,9 +66,9 @@ describe('Breadcrumbs', () => {
 
     it('renders the label as a raw text node inside the item (no wrapper span)', () => {
         const { container } = render(
-            <Breadcrumbs>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const item = container.querySelector('[data-oxobz-breadcrumbs-item]');
         // The label text is a direct child of the <li>, not wrapped in a span.
@@ -78,12 +78,12 @@ describe('Breadcrumbs', () => {
 
     // ── Menu variant ──
 
-    it('renders a menuWrapper div with menuItem buttons for variant="menu"', () => {
+    it('renders a menuWrapper div with menuItem buttons for type="menu"', () => {
         const { container } = render(
-            <Breadcrumbs variant="menu">
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-                <BreadcrumbsItem>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb type="menu">
+                <BreadcrumbItem>Home</BreadcrumbItem>
+                <BreadcrumbItem>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const root = getRoot(container);
         expect(root).toHaveAttribute('data-variant', 'menu');
@@ -108,10 +108,10 @@ describe('Breadcrumbs', () => {
 
     it('applies the active class and aria-current="true" (text variant)', () => {
         render(
-            <Breadcrumbs>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-                <BreadcrumbsItem active>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+                <BreadcrumbItem active>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const active = screen.getByText('Dashboard').closest('li');
         expect(active?.className).toContain('active');
@@ -124,9 +124,9 @@ describe('Breadcrumbs', () => {
 
     it('applies the active class and aria-current="true" (menu variant)', () => {
         render(
-            <Breadcrumbs variant="menu">
-                <BreadcrumbsItem active>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb type="menu">
+                <BreadcrumbItem active>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const button = screen.getByText('Dashboard').closest('button');
         expect(button?.className).toContain('active');
@@ -138,11 +138,11 @@ describe('Breadcrumbs', () => {
     it('applies the disabled class and drops the link (text variant)', () => {
         const handleClick = vi.fn();
         render(
-            <Breadcrumbs>
-                <BreadcrumbsItem disabled href="/dashboard" onClick={handleClick}>
+            <Breadcrumb>
+                <BreadcrumbItem disabled href="/dashboard" onClick={handleClick}>
                     Dashboard
-                </BreadcrumbsItem>
-            </Breadcrumbs>,
+                </BreadcrumbItem>
+            </Breadcrumb>,
         );
         const item = screen.getByText('Dashboard').closest('li');
         expect(item?.className).toContain('disabled');
@@ -154,9 +154,9 @@ describe('Breadcrumbs', () => {
 
     it('sets the disabled attribute on the button (menu variant)', () => {
         render(
-            <Breadcrumbs variant="menu">
-                <BreadcrumbsItem disabled>Dashboard</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb type="menu">
+                <BreadcrumbItem disabled>Dashboard</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const button = screen.getByText('Dashboard').closest('button');
         expect(button?.className).toContain('disabled');
@@ -167,9 +167,9 @@ describe('Breadcrumbs', () => {
 
     it('renders the label inside an <a> when href is set and not disabled', () => {
         render(
-            <Breadcrumbs>
-                <BreadcrumbsItem href="/home">Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem href="/home">Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const link = screen.getByRole('link', { name: 'Home' });
         expect(link).toHaveAttribute('href', '/home');
@@ -177,9 +177,9 @@ describe('Breadcrumbs', () => {
 
     it('renders plain text (no <a>) when href is omitted', () => {
         const { container } = render(
-            <Breadcrumbs>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         expect(container.querySelector('a')).not.toBeInTheDocument();
     });
@@ -188,18 +188,18 @@ describe('Breadcrumbs', () => {
 
     it('appends a custom className after the root (no base class merge needed)', () => {
         const { container } = render(
-            <Breadcrumbs className="custom-nav">
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb className="custom-nav">
+                <BreadcrumbItem>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         expect(getRoot(container)?.className).toContain('custom-nav');
     });
 
     it('appends a custom className after the item module class', () => {
         render(
-            <Breadcrumbs>
-                <BreadcrumbsItem className="custom-item">Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem className="custom-item">Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         const item = screen.getByText('Home').closest('li');
         expect(item?.className).toContain('textItem');
@@ -212,9 +212,9 @@ describe('Breadcrumbs', () => {
     it('forwards ref to the root nav', () => {
         const ref = createRef<HTMLElement>();
         render(
-            <Breadcrumbs ref={ref}>
-                <BreadcrumbsItem>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb ref={ref}>
+                <BreadcrumbItem>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         expect(ref.current).toBeInstanceOf(HTMLElement);
         expect(ref.current?.tagName).toBe('NAV');
@@ -223,9 +223,9 @@ describe('Breadcrumbs', () => {
     it('forwards ref to the item <li> (text variant)', () => {
         const ref = createRef<HTMLElement>();
         render(
-            <Breadcrumbs>
-                <BreadcrumbsItem ref={ref}>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb>
+                <BreadcrumbItem ref={ref}>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         expect(ref.current?.tagName).toBe('LI');
     });
@@ -233,20 +233,20 @@ describe('Breadcrumbs', () => {
     it('forwards ref to the item <button> (menu variant)', () => {
         const ref = createRef<HTMLElement>();
         render(
-            <Breadcrumbs variant="menu">
-                <BreadcrumbsItem ref={ref}>Home</BreadcrumbsItem>
-            </Breadcrumbs>,
+            <Breadcrumb type="menu">
+                <BreadcrumbItem ref={ref}>Home</BreadcrumbItem>
+            </Breadcrumb>,
         );
         expect(ref.current?.tagName).toBe('BUTTON');
     });
 
     // ── Context guard ──
 
-    it('throws when BreadcrumbsItem is rendered outside Breadcrumbs', () => {
+    it('throws when BreadcrumbItem is rendered outside Breadcrumb', () => {
         // Suppress the expected React error boundary console noise.
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        expect(() => render(<BreadcrumbsItem>Home</BreadcrumbsItem>)).toThrow(
-            'Breadcrumbs.Item must be used within a Breadcrumbs',
+        expect(() => render(<BreadcrumbItem>Home</BreadcrumbItem>)).toThrow(
+            'Breadcrumb.Item must be used within a Breadcrumb',
         );
         spy.mockRestore();
     });
@@ -254,8 +254,8 @@ describe('Breadcrumbs', () => {
     // ── displayName ──
 
     it('has the correct displayName on both the root and Item', () => {
-        expect(Breadcrumbs.displayName).toBe('Breadcrumbs');
-        expect(Breadcrumbs.Item.displayName).toBe('Breadcrumbs.Item');
-        expect(BreadcrumbsItem.displayName).toBe('Breadcrumbs.Item');
+        expect(Breadcrumb.displayName).toBe('Breadcrumb');
+        expect(Breadcrumb.Item.displayName).toBe('Breadcrumb.Item');
+        expect(BreadcrumbItem.displayName).toBe('Breadcrumb.Item');
     });
 });

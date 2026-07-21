@@ -124,8 +124,8 @@ export type { GaugeProps, GaugeSize, GaugeArcPriority, GaugeColors } from './com
 export { Combobox, ComboboxInput, ComboboxList, ComboboxOption } from './components/Combobox';
 export type { ComboboxProps, ComboboxInputProps, ComboboxListProps, ComboboxOptionProps, ComboboxSize } from './components/Combobox';
 
-export { Breadcrumbs, BreadcrumbsItem } from './components/Breadcrumbs';
-export type { BreadcrumbsProps, BreadcrumbsItemProps, BreadcrumbsVariant } from './components/Breadcrumbs';
+export { Breadcrumb, BreadcrumbItem } from './components/Breadcrumbs';
+export type { BreadcrumbProps, BreadcrumbItemProps, BreadcrumbType } from './components/Breadcrumbs';
 
 export { Card } from './components/Card';
 export type { CardProps, CardDirection } from './components/Card';
