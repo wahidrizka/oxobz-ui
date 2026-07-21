@@ -17,7 +17,7 @@ import styles from './ProjectBanner.module.css';
  * (ProjectBannerProps['variant'] in the Geist docs). Omit for the neutral
  * gray look used when no `variant` is passed in the "Default" example.
  */
-export type ProjectBannerVariant = 'default' | 'success' | 'warning' | 'error';
+export type ProjectBannerVariant = 'gray' | 'success' | 'warning' | 'error';
 
 /**
  * The single resolving action of the banner (project-banner.html, "Behavior":
@@ -38,7 +38,7 @@ export interface ProjectBannerCallToAction {
 
 export interface ProjectBannerProps
     extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
-    /** Severity driving the color of text, background, and border. Default: `'default'`. */
+    /** Severity driving the color of text, background, and border. Default: `'gray'`. */
     variant?: ProjectBannerVariant;
 
     /** Icon shown at 16x16 before the message; always from `@oxobz/icons`. */
@@ -66,7 +66,7 @@ export interface ProjectBannerProps
  * use their own `-700` accent instead.
  */
 const FOCUS_COLOR: Record<ProjectBannerVariant, string> = {
-    default: 'var(--ds-blue-600)',
+    gray: 'var(--ds-blue-600)',
     success: 'var(--ds-blue-600)',
     warning: 'var(--ds-amber-700)',
     error: 'var(--ds-red-700)',
@@ -107,7 +107,7 @@ const ProjectBanner = forwardRef<HTMLElement, ProjectBannerProps>(
             className,
             icon,
             label,
-            variant = 'default',
+            variant = 'gray',
             'data-version': dataVersion = 'v1',
             ...rest
         },

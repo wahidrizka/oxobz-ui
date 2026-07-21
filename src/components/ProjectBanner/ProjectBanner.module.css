@@ -33,7 +33,7 @@
 }
 
 /* ---- Variants (snapshot: text-*-900 bg-*-100 border-*-400) ---- */
-.default {
+.gray {
     color: var(--ds-gray-900);
     background: var(--ds-gray-100);
     border-color: var(--ds-gray-400);
@@ -133,12 +133,12 @@
 }
 
 /* Underline + text color per variant (snapshot: decoration-*-400/500, text-*-1000, hover:text-*-900) */
-.default .cta {
+.gray .cta {
     color: var(--ds-gray-1000);
     text-decoration-color: var(--ds-gray-500);
 }
 
-.default .cta:hover {
+.gray .cta:hover {
     color: var(--ds-gray-900);
     text-decoration-color: var(--ds-gray-500);
 }

@@ -51,7 +51,7 @@ describe('ProjectBanner', () => {
     // ── Variants ──
 
     const variants: ProjectBannerVariant[] = [
-        'default',
+        'gray',
         'success',
         'warning',
         'error',
@@ -64,9 +64,9 @@ describe('ProjectBanner', () => {
         expect(getRoot(container)?.className).toContain(variant);
     });
 
-    it('defaults to the "default" variant when omitted', () => {
+    it('defaults to the "gray" variant when omitted', () => {
         const { container } = render(<ProjectBanner label="Message" />);
-        expect(getRoot(container)?.className).toContain('default');
+        expect(getRoot(container)?.className).toContain('gray');
     });
 
     // ── Call to action ──
