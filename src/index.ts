@@ -134,7 +134,7 @@ export { Separator } from './components/Separator';
 export type { SeparatorProps, SeparatorOrientation } from './components/Separator';
 
 export { Description } from './components/Description';
-export type { DescriptionProps, DescriptionAlign } from './components/Description';
+export type { DescriptionProps } from './components/Description';
 
 export { Error } from './components/Error';
 export type { ErrorProps, ErrorActionProps, ErrorSize } from './components/Error';

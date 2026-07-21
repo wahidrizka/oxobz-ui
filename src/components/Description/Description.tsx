@@ -8,15 +8,13 @@ import styles from './Description.module.css';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export type DescriptionAlign = 'left' | 'right';
-
 export interface DescriptionProps
-    extends Omit<HTMLAttributes<HTMLDListElement>, 'title'> {
+    extends Omit<HTMLAttributes<HTMLDListElement>, 'title' | 'content'> {
     /** Title Case key label rendered in `<dt>` (e.g. "Last Deployed"). */
     title: ReactNode;
 
     /** Value rendered in `<dd>` — the answer to the title's key. */
-    children: ReactNode;
+    content: ReactNode;
 
     /**
      * One-sentence definition shown in an info-icon tooltip next to the
@@ -25,14 +23,14 @@ export interface DescriptionProps
      */
     tooltip?: ReactNode;
 
-    /** Aligns the title and content. Default `'left'`. */
-    align?: DescriptionAlign;
+    /** Right-aligns the title and content. Default left. */
+    right?: boolean;
 
     /**
      * Truncates the title and content with an ellipsis instead of
      * wrapping. Requires the parent to constrain the width.
      */
-    truncate?: boolean;
+    ellipsis?: boolean;
 
     /** data-version attribute matching Geist production output */
     'data-version'?: string;
@@ -66,10 +64,10 @@ const Description = forwardRef<HTMLDListElement, DescriptionProps>(
     (
         {
             title,
-            children,
+            content,
             tooltip,
-            align = 'left',
-            truncate = false,
+            right = false,
+            ellipsis = false,
             className,
             'data-version': dataVersion = 'v1',
             ...rest
@@ -81,8 +79,8 @@ const Description = forwardRef<HTMLDListElement, DescriptionProps>(
                 {...rest}
                 className={cn(
                     styles.description,
-                    align === 'right' && styles.right,
-                    truncate && styles.ellipsis,
+                    right && styles.right,
+                    ellipsis && styles.ellipsis,
                     className,
                 )}
                 data-oxobz-description=""
@@ -99,7 +97,7 @@ const Description = forwardRef<HTMLDListElement, DescriptionProps>(
                         </span>
                     )}
                 </dt>
-                <dd data-oxobz-description-content="">{children}</dd>
+                <dd data-oxobz-description-content="">{content}</dd>
             </dl>
         );
     },

@@ -13,9 +13,7 @@ describe('Description', () => {
 
     it('renders a root dl with data-oxobz-description and data-version="v1"', () => {
         const { container } = render(
-            <Description title="Section Title">
-                Data about this section.
-            </Description>,
+            <Description content="Data about this section." title="Section Title" />,
         );
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
@@ -26,18 +24,14 @@ describe('Description', () => {
 
     it('allows a custom data-version', () => {
         const { container } = render(
-            <Description data-version="v2" title="Section Title">
-                Data about this section.
-            </Description>,
+            <Description content="Data about this section." data-version="v2" title="Section Title" />,
         );
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
 
     it('renders the title in a dt with data-oxobz-description-title', () => {
         const { container } = render(
-            <Description title="Section Title">
-                Data about this section.
-            </Description>,
+            <Description content="Data about this section." title="Section Title" />,
         );
         const dt = container.querySelector('dt');
         expect(dt).toBeInTheDocument();
@@ -45,11 +39,9 @@ describe('Description', () => {
         expect(dt).toHaveTextContent('Section Title');
     });
 
-    it('renders the children in a dd with data-oxobz-description-content', () => {
+    it('renders the content in a dd with data-oxobz-description-content', () => {
         const { container } = render(
-            <Description title="Section Title">
-                Data about this section.
-            </Description>,
+            <Description content="Data about this section." title="Section Title" />,
         );
         const dd = container.querySelector('dd');
         expect(dd).toBeInTheDocument();
@@ -57,38 +49,34 @@ describe('Description', () => {
         expect(dd).toHaveTextContent('Data about this section.');
     });
 
-    // ── align ──
+    // ── right ──
 
     it('applies no alignment class by default (left)', () => {
         const { container } = render(
-            <Description title="Section Title">Value</Description>,
+            <Description content="Value" title="Section Title" />,
         );
         expect(getRoot(container)?.className).not.toContain('right');
     });
 
-    it('applies the right class when align="right"', () => {
+    it('applies the right class when right', () => {
         const { container } = render(
-            <Description align="right" title="Section Title">
-                Value
-            </Description>,
+            <Description content="Value" right title="Section Title" />,
         );
         expect(getRoot(container)?.className).toContain('right');
     });
 
-    // ── truncate ──
+    // ── ellipsis ──
 
     it('applies no ellipsis class by default', () => {
         const { container } = render(
-            <Description title="Section Title">Value</Description>,
+            <Description content="Value" title="Section Title" />,
         );
         expect(getRoot(container)?.className).not.toContain('ellipsis');
     });
 
-    it('applies the ellipsis class when truncate', () => {
+    it('applies the ellipsis class when ellipsis', () => {
         const { container } = render(
-            <Description title="Section Title" truncate>
-                Value
-            </Description>,
+            <Description content="Value" ellipsis title="Section Title" />,
         );
         expect(getRoot(container)?.className).toContain('ellipsis');
     });
@@ -97,7 +85,7 @@ describe('Description', () => {
 
     it('renders no icon wrapper when tooltip is omitted', () => {
         const { container } = render(
-            <Description title="Section Title">Value</Description>,
+            <Description content="Value" title="Section Title" />,
         );
         expect(
             container.querySelector('dt > span[class*="icon"]'),
@@ -106,9 +94,7 @@ describe('Description', () => {
 
     it('renders a tooltip trigger next to the title when tooltip is set', () => {
         const { container } = render(
-            <Description title="Section Title" tooltip="Data about this section.">
-                Value
-            </Description>,
+            <Description content="Value" title="Section Title" tooltip="Data about this section." />,
         );
         const iconWrapper = container.querySelector('dt > span[class*="icon"]');
         expect(iconWrapper).toBeInTheDocument();
@@ -118,9 +104,7 @@ describe('Description', () => {
 
     it('shows the tooltip text on hover of the info icon', () => {
         const { container } = render(
-            <Description title="Section Title" tooltip="A one-sentence definition.">
-                Value
-            </Description>,
+            <Description content="Value" title="Section Title" tooltip="A one-sentence definition." />,
         );
         const trigger = container.querySelector(
             '[data-oxobz-tooltip]',
@@ -135,9 +119,7 @@ describe('Description', () => {
 
     it('appends a custom className after the module class', () => {
         const { container } = render(
-            <Description className="custom-desc" title="Section Title">
-                Value
-            </Description>,
+            <Description className="custom-desc" content="Value" title="Section Title" />,
         );
         const root = getRoot(container);
         expect(root?.className).toContain('description');
@@ -150,9 +132,7 @@ describe('Description', () => {
     it('forwards ref to the root dl', () => {
         const ref = createRef<HTMLDListElement>();
         render(
-            <Description ref={ref} title="Section Title">
-                Value
-            </Description>,
+            <Description content="Value" ref={ref} title="Section Title" />,
         );
         expect(ref.current).toBeInstanceOf(HTMLDListElement);
         expect(ref.current).toHaveAttribute('data-oxobz-description');
@@ -164,12 +144,11 @@ describe('Description', () => {
         const { container } = render(
             <Description
                 aria-hidden="true"
+                content="Value"
                 id="desc-1"
                 style={{ marginTop: '4px' }}
                 title="Section Title"
-            >
-                Value
-            </Description>,
+            />,
         );
         const root = getRoot(container);
         expect(root).toHaveAttribute('id', 'desc-1');
