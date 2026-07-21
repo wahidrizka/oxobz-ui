@@ -70,8 +70,15 @@ export type { SwitchProps, SwitchControlProps, SwitchSize } from './components/S
 export { Tooltip } from './components/Tooltip';
 export type { TooltipProps, TooltipPosition, TooltipType, TooltipBoxAlign } from './components/Tooltip';
 
-export { Note } from './components/Note';
-export type { NoteProps, NoteSize, NoteType } from './components/Note';
+export { Note, NoteContent, NoteAction, NoteLabel } from './components/Note';
+export type {
+    NoteProps,
+    NoteContentProps,
+    NoteActionProps,
+    NoteLabelProps,
+    NoteSize,
+    NoteVariant,
+} from './components/Note';
 
 export { Toggle } from './components/Toggle';
 export type { ToggleProps, ToggleSize, ToggleColor, ToggleDirection, ToggleLabelCasing, ToggleIcon } from './components/Toggle';

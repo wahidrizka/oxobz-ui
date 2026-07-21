@@ -1,4 +1,12 @@
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+'use client';
+
+import {
+    Children,
+    forwardRef,
+    isValidElement,
+    type HTMLAttributes,
+    type ReactNode,
+} from 'react';
 import { CheckCircle, Information, Stop, Warning } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import styles from './Note.module.css';
@@ -8,159 +16,207 @@ import styles from './Note.module.css';
 /* ------------------------------------------------------------------ */
 
 /**
- * Semantic type of the note (UseTypeTypes in the Geist docs).
- * Only secondary/success/error/warning/alert/violet/cyan have dedicated
- * colors in production — the rest fall back to the default gray look.
+ * Color variant of the note. Production Geist has exactly these six —
+ * `variant="info"` does not exist (Best Practices: "omit `variant` for the
+ * default info icon or use `variant=\"secondary\"` for neutral copy").
  */
-export type NoteType =
-    | 'default'
+export type NoteVariant =
     | 'secondary'
-    | 'tertiary'
     | 'success'
     | 'error'
     | 'warning'
-    | 'alert'
-    | 'lite'
-    | 'ghost'
     | 'violet'
-    | 'cyan'
-    | 'rotate-ccw';
+    | 'cyan';
 
-export type NoteSize = 'small' | 'medium' | 'large';
+/** Production renders only small + medium (default) notes — no large. */
+export type NoteSize = 'small' | 'medium';
 
 export interface NoteProps extends HTMLAttributes<HTMLDivElement> {
-    /** Semantic color type. Omit for the default info look. */
-    type?: NoteType;
+    /** Color variant. Omit for the default (gray, info-icon) look. */
+    variant?: NoteVariant;
 
-    /** Size of the note (default: medium) */
+    /** Size of the note. Default `'medium'`. */
     size?: NoteSize;
 
-    /** Filled background variant (only affects types with color rules) */
+    /** Filled background (only styled in combination with a variant). */
     fill?: boolean;
 
-    /** Grays out the note, its links, icon, and any action button */
+    /** Grays out the note, its links, and any action button. */
     disabled?: boolean;
 
     /**
-     * Label prefix. By default the type icon is shown; a string renders a
-     * bold "label: " text prefix instead; `false` hides the label entirely.
+     * Overrides the variant's default icon. Pass `null` to render no icon
+     * at all (Geist: "Pass a null icon to render no icon at all").
      */
-    label?: string | false;
-
-    /** Single inline CTA rendered at the end of the note */
-    action?: ReactNode;
+    icon?: ReactNode;
 
     /** data-version attribute matching Geist production output */
     'data-version'?: string;
+
+    /** NoteContent / NoteAction children. */
+    children?: ReactNode;
 }
 
+export interface NoteContentProps extends HTMLAttributes<HTMLDivElement> {}
+export interface NoteActionProps extends HTMLAttributes<HTMLDivElement> {}
+export interface NoteLabelProps extends HTMLAttributes<HTMLSpanElement> {}
+
 /* ------------------------------------------------------------------ */
-/*  Default label icon                                                 */
+/*  Default variant icon                                               */
 /* ------------------------------------------------------------------ */
 
 /**
- * Default label icon per type (verified against note.html snapshot):
- * success → CheckCircle (blue-900), error → Stop (red-900),
- * warning → Warning (amber-900), everything else → Information
- * (currentcolor). Production renders every icon at 14×14.
+ * Default icon per variant (mapping verified against the note.html
+ * snapshot; the current generation inherits currentColor from the note's
+ * variant text color — production svg carries style="color:currentColor").
  */
-function NoteTypeIcon({ type }: { type?: NoteType }) {
-    switch (type) {
+function NoteVariantIcon({ variant }: { variant?: NoteVariant }) {
+    switch (variant) {
         case 'success':
-            return <CheckCircle color="var(--ds-blue-900)" size={14} />;
+            return <CheckCircle size={14} />;
         case 'error':
-            return <Stop color="var(--ds-red-900)" size={14} />;
+            return <Stop size={14} />;
         case 'warning':
-            return <Warning color="var(--ds-amber-900)" size={14} />;
+            return <Warning size={14} />;
         default:
             return <Information size={14} />;
     }
 }
 
 /* ------------------------------------------------------------------ */
-/*  Component                                                          */
+/*  NoteContent / NoteAction / NoteLabel                               */
+/* ------------------------------------------------------------------ */
+
+/** Body copy of the note (production: `<div class="min-w-0 flex-1">`). */
+const NoteContent = forwardRef<HTMLDivElement, NoteContentProps>(
+    ({ className, ...rest }, ref) => (
+        <div
+            {...rest}
+            ref={ref}
+            className={cn(styles.content, className)}
+            data-slot="note-content"
+        />
+    ),
+);
+NoteContent.displayName = 'NoteContent';
+
+/** Action area (buttons) — rendered as a sibling of the note body. */
+const NoteAction = forwardRef<HTMLDivElement, NoteActionProps>(
+    ({ className, ...rest }, ref) => (
+        <div
+            {...rest}
+            ref={ref}
+            className={cn(styles.actionSlot, className)}
+            data-slot="note-action"
+        />
+    ),
+);
+NoteAction.displayName = 'NoteAction';
+
+/** Bold 1–2 word Title Case prefix inside NoteContent (`Region Change:`). */
+const NoteLabel = forwardRef<HTMLSpanElement, NoteLabelProps>(
+    ({ className, ...rest }, ref) => (
+        <span
+            {...rest}
+            ref={ref}
+            className={cn(styles.label, className)}
+            data-slot="note-label"
+        />
+    ),
+);
+NoteLabel.displayName = 'NoteLabel';
+
+/* ------------------------------------------------------------------ */
+/*  Note (root)                                                        */
 /* ------------------------------------------------------------------ */
 
 /**
  * Display text that requires attention or provides additional information.
  *
- * Rendered DOM (Geist production structure):
+ * Rendered DOM (Geist production structure, live SSR 2026-07-21):
  * ```html
- * <div class="note [size] [action] [type] [fill] [disabled]"
- *      data-oxobz-note="" data-version="v1">
- *   <div class="content" style="gap: 12px">
- *     <span class="iconContainer">…svg…</span>
- *     <span>{children}</span>
+ * <div data-slot="note" role="note" [data-disabled="true"]>
+ *   <div data-slot="note-body">
+ *     <span data-slot="note-icon">…svg…</span>
+ *     <div data-slot="note-content">…<span data-slot="note-label"/>…</div>
  *   </div>
- *   <div>{action}</div>
+ *   <div data-slot="note-action">…buttons…</div>
  * </div>
  * ```
+ * NoteAction children are hoisted out of the body; everything else renders
+ * inside it after the icon.
  */
-const Note = forwardRef<HTMLDivElement, NoteProps>(
+const NoteRoot = forwardRef<HTMLDivElement, NoteProps>(
     (
         {
-            action,
             children,
             className,
             disabled = false,
             fill = false,
-            label,
+            icon,
             size = 'medium',
-            type,
+            variant,
             'data-version': dataVersion = 'v1',
             ...rest
         },
         ref,
     ) => {
-        const hasCustomLabel = typeof label === 'string';
-        const showIcon = !hasCustomLabel && label !== false;
-
-        // Content gap set inline in production: 4px in custom-label mode,
-        // otherwise 8px (small) / 12px (medium, large).
-        const contentGap = hasCustomLabel ? 4 : size === 'small' ? 8 : 12;
+        const kids = Children.toArray(children);
+        const actionKids = kids.filter(
+            (k) => isValidElement(k) && k.type === NoteAction,
+        );
+        const contentKids = kids.filter(
+            (k) => !(isValidElement(k) && k.type === NoteAction),
+        );
 
         return (
             <div
                 {...rest}
                 className={cn(
+                    size === 'small' ? 'text-copy-13' : 'text-copy-14',
                     styles.note,
-                    size !== 'medium' && styles[size],
-                    action != null && styles.action,
-                    type && styles[type],
-                    type && fill && styles.fill,
+                    size === 'small' && styles.small,
+                    variant && styles[variant],
+                    fill && styles.fill,
+                    actionKids.length > 0 && styles.hasAction,
                     disabled && styles.disabled,
                     className,
                 )}
                 data-oxobz-note=""
                 data-slot="note"
+                data-disabled={disabled ? 'true' : undefined}
                 data-version={dataVersion}
                 role="note"
                 ref={ref}
             >
-                <div
-                    className={cn(
-                        styles.content,
-                        hasCustomLabel && styles.hasLabel,
-                    )}
-                    data-slot="note-body"
-                    style={{ gap: contentGap }}
-                >
-                    {showIcon && (
+                <div className={styles.body} data-slot="note-body">
+                    {icon !== null && (
                         <span className={styles.iconContainer} data-slot="note-icon">
-                            <NoteTypeIcon type={type} />
+                            {icon !== undefined ? (
+                                icon
+                            ) : (
+                                <NoteVariantIcon variant={variant} />
+                            )}
                         </span>
                     )}
-                    {hasCustomLabel && (
-                        <span className={styles.label}>{`${label}: `}</span>
-                    )}
-                    <span>{children}</span>
+                    {contentKids}
                 </div>
-                {action != null && <div>{action}</div>}
+                {actionKids}
             </div>
         );
     },
 );
 
-Note.displayName = 'Note';
+NoteRoot.displayName = 'Note';
 
-export { Note };
+/* ------------------------------------------------------------------ */
+/*  Compound export                                                    */
+/* ------------------------------------------------------------------ */
+
+const Note = Object.assign(NoteRoot, {
+    Content: NoteContent,
+    Action: NoteAction,
+    Label: NoteLabel,
+});
+
+export { Note, NoteContent, NoteAction, NoteLabel };

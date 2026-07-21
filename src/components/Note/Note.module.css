@@ -1,285 +1,315 @@
 /**
  * Note — CSS Module
  *
- * Production sources:
- * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
- *   Module: note-module__Y57kBW — .note, .action, .disabled, .small, .large,
- *   .content, .hasLabel + the 600px / 450px breakpoints.
- * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   Global color classes referenced by the production DOM:
- *   .v3-colors and .v3-colors.geist-<type>(-fill) → folded into .note and
- *   the per-type classes below. .dark-theme --note-selection overrides kept.
- * - _nextstatic/component-inspect-element/note.html
- *   Snapshot-only utility classes translated here: icon wrapper
- *   ("flex h-4" / "flex h-3.5") and custom label ("whitespace-nowrap
- *   font-semibold", spans flex + items-center in label mode).
+ * Production source (current geistcn generation, flattened from Tailwind
+ * utilities in the live SSR DOM of vercel.com/geist/note, captured
+ * 2026-07-21; 44 note roots, all slot elements):
+ * - root  : gap-3 relative box-border flex w-full flex-wrap items-center
+ *           border break-words py-1.5 px-3 min-h-[--ds-size-medium]
+ *           text-copy-14 rounded-md (+ link rules on a:not([data-geist-button]))
+ * - small : px-2 min-h-[--ds-size-small] text-copy-13
+ * - action: rounded-[10px] sm:pr-2 max-sm:py-3 (sm = 640px — Geist only
+ *           overrides md=601/lg=961, sm keeps the Tailwind default)
+ * - body  : min-w-0 gap-3 flex flex-1 items-start
+ * - content: min-w-0 flex-1
+ * - icon  : flex shrink-0 [&>svg]:h-[1lh]
+ * - actionSlot: gap-2 flex shrink-0 items-center justify-end self-center
+ *           max-sm:w-full max-sm:basis-full max-sm:justify-stretch
+ *           max-sm:*:flex-1
+ * - label : mr-1 font-semibold whitespace-nowrap
+ * - variants (border-X-400 + text-X-900 + link/selection colors):
+ *           default=gray, secondary=gray-alpha, success=blue, error=red,
+ *           warning=amber, violet=purple, cyan=teal
+ * - fill  : border-X-100 + bg-X-200 (secondary: border-transparent +
+ *           bg-gray-alpha-200). No fill styling exists without a variant.
+ * - disabled: border-gray-alpha-200 bg-transparent text-gray-700
+ *           [&_a]:text-gray-700 [&_button]:pointer-events-none
+ *           [&_button]:border-gray-alpha-400 bg-gray-100 text-gray-700
+ *           + data-disabled="true" on the root.
  *
- * Var mapping: --geist-gap-half → --oxobz-gap-half,
- * --geist-form-height → --oxobz-form-height,
- * --geist-form-large-height → --oxobz-form-large-height,
- * --geist-form-large-font → --oxobz-form-large-font.
+ * --ds-size-medium/small have no token in @oxobz tokens — literal 40px/32px
+ * (form sizes). text-copy-14/13 are applied as global classes in Note.tsx.
  */
 
-/* ---- Root (note-module __note + global .v3-colors) ---- */
-.note {
-    /* Color variables (v3-colors defaults — gray / info) */
-    --note-border-color: var(--ds-gray-400);
-    --note-fg: var(--ds-gray-900);
-    --note-bg: transparent;
-    --note-link: var(--ds-blue-700);
+/* ---- Root ---- */
 
-    /* Layout — July-2026 capture: px-3 py-1.5 (12/6px), flex-wrap
-       items-center, text-copy-14 (14/20). */
-    padding: 6px 12px;
-    min-height: var(--oxobz-form-height);
-    word-break: break-word;
+.note {
+    position: relative;
     box-sizing: border-box;
-    border-radius: 6px;
-    flex-grow: 1;
+    display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
     align-items: center;
     gap: 12px;
-    font-size: 14px;
-    line-height: 20px;
-    display: flex;
-
-    /* Colors (v3-colors — !important as in production) */
-    border: 1px solid var(--note-border-color) !important;
-    background: var(--note-bg) !important;
-    color: var(--note-fg) !important;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 12px;
+    border: 1px solid var(--ds-gray-400);
+    border-radius: 6px;
+    color: var(--ds-gray-900);
+    overflow-wrap: break-word;
 }
 
-.note svg {
-    height: 1lh !important;
+/* Links inside the note (production: a:not([data-geist-button])). */
+.note a:not([data-oxobz-button]) {
+    font-weight: 500;
+    text-underline-offset: 2px;
+    color: var(--ds-blue-700);
 }
 
-/* ---- Text selection (v3-colors) ---- */
-.note ::selection {
-    background: var(--note-selection, var(--note-fg)) !important;
-}
-
-/* ---- Links inside a note (v3-colors) ---- */
-.note a {
-    color: var(--note-link);
-}
-
-.note a:not([class*='highlight']) {
-    font-weight: 500 !important;
-}
-
-.note a:hover:not([class*='highlight']) {
+.note a:not([data-oxobz-button]):hover {
     text-decoration: underline;
 }
 
-.note a:focus-visible {
-    box-shadow: var(--ds-focus-ring);
+.note a:not([data-oxobz-button]):focus-visible {
     border-radius: 2px;
+    box-shadow: var(--ds-focus-ring);
     outline: none;
 }
 
-/* ---- Action slot present (note-module __action) ---- */
-.note.action {
-    border-radius: 10px;
+.note ::selection {
+    background: var(--ds-gray-900);
+}
+
+:global(.dark-theme) .note ::selection {
+    background: var(--ds-gray-500);
+    color: var(--ds-gray-1000);
+}
+
+/* ---- Size ---- */
+
+.small {
+    min-height: 32px;
+    padding-left: 8px;
     padding-right: 8px;
 }
 
-/* ---- Disabled (note-module __disabled) ---- */
-.note.disabled,
-.note.disabled a {
-    color: var(--ds-gray-700) !important;
+/* ---- Action presence (root modifiers) ---- */
+
+.hasAction {
+    border-radius: 10px;
 }
 
+@media (min-width: 640px) {
+    .hasAction {
+        padding-right: 8px;
+    }
+}
+
+@media (max-width: 639.98px) {
+    .hasAction {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+}
+
+/* ---- Variants ---- */
+
+.secondary {
+    border-color: var(--ds-gray-alpha-400);
+    color: var(--ds-gray-alpha-900);
+}
+
+.secondary a:not([data-oxobz-button]) {
+    color: var(--ds-gray-1000);
+}
+
+.secondary ::selection {
+    background: var(--ds-gray-alpha-900);
+}
+
+:global(.dark-theme) .secondary ::selection {
+    background: var(--ds-gray-alpha-900);
+    color: var(--ds-gray-1000);
+}
+
+.success {
+    border-color: var(--ds-blue-400);
+    color: var(--ds-blue-900);
+}
+
+.success a:not([data-oxobz-button]) {
+    color: var(--ds-blue-1000);
+}
+
+.success ::selection {
+    background: var(--ds-blue-700);
+}
+
+:global(.dark-theme) .success ::selection {
+    background: var(--ds-blue-700);
+    color: var(--ds-blue-1000);
+}
+
+.error {
+    border-color: var(--ds-red-400);
+    color: var(--ds-red-900);
+}
+
+.error a:not([data-oxobz-button]) {
+    color: var(--ds-red-1000);
+}
+
+.error ::selection {
+    background: var(--ds-red-800);
+}
+
+:global(.dark-theme) .error ::selection {
+    background: var(--ds-red-800);
+    color: var(--ds-red-1000);
+}
+
+.warning {
+    border-color: var(--ds-amber-400);
+    color: var(--ds-amber-900);
+}
+
+.warning a:not([data-oxobz-button]) {
+    color: var(--ds-amber-1000);
+}
+
+.warning ::selection {
+    background: var(--ds-amber-900);
+}
+
+:global(.dark-theme) .warning ::selection {
+    background: var(--ds-amber-500);
+    color: var(--ds-amber-1000);
+}
+
+.violet {
+    border-color: var(--ds-purple-400);
+    color: var(--ds-purple-900);
+}
+
+.violet a:not([data-oxobz-button]) {
+    color: var(--ds-purple-1000);
+}
+
+.violet ::selection {
+    background: var(--ds-purple-900);
+}
+
+:global(.dark-theme) .violet ::selection {
+    background: var(--ds-purple-600);
+    color: var(--ds-purple-1000);
+}
+
+.cyan {
+    border-color: var(--ds-teal-400);
+    color: var(--ds-teal-900);
+}
+
+.cyan a:not([data-oxobz-button]) {
+    color: var(--ds-teal-1000);
+}
+
+.cyan ::selection {
+    background: var(--ds-teal-900);
+}
+
+:global(.dark-theme) .cyan ::selection {
+    background: var(--ds-teal-900);
+    color: var(--ds-teal-1000);
+}
+
+/* ---- Fill (variant required — production has no variant-less fill) ---- */
+
+.secondary.fill {
+    border-color: transparent;
+    background: var(--ds-gray-alpha-200);
+}
+
+.success.fill {
+    border-color: var(--ds-blue-100);
+    background: var(--ds-blue-200);
+}
+
+.error.fill {
+    border-color: var(--ds-red-100);
+    background: var(--ds-red-200);
+}
+
+.warning.fill {
+    border-color: var(--ds-amber-100);
+    background: var(--ds-amber-200);
+}
+
+.violet.fill {
+    border-color: var(--ds-purple-100);
+    background: var(--ds-purple-200);
+}
+
+.cyan.fill {
+    border-color: var(--ds-teal-100);
+    background: var(--ds-teal-200);
+}
+
+/* ---- Disabled (overrides variant + fill; declared last) ---- */
+
 .note.disabled {
-    border: 1px solid var(--ds-gray-alpha-200) !important;
-    background: transparent !important;
+    border-color: var(--ds-gray-alpha-200);
+    background: transparent;
+    color: var(--ds-gray-700);
+}
+
+.note.disabled a {
+    color: var(--ds-gray-700);
 }
 
 .note.disabled button {
     pointer-events: none;
-    border: 1px solid var(--ds-gray-alpha-400) !important;
-    background: var(--ds-gray-100) !important;
-    color: var(--ds-gray-700) !important;
+    border: 1px solid var(--ds-gray-alpha-400);
+    background: var(--ds-gray-100);
+    color: var(--ds-gray-700);
 }
 
-.note.disabled svg {
-    color: var(--ds-gray-700) !important;
-}
+/* ---- Slots ---- */
 
-/* ---- Responsive stack (note-module, production breakpoint 600px) ---- */
-@media screen and (max-width: 600px) {
-    .note {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-}
-
-/* ---- Sizes (note-module __small / __large; medium = base) ---- */
-.small {
-    border-radius: 6px;
-    min-height: 34px;
-    padding: 6px 8px;
-    font-size: 13px;
-}
-
-.small.action {
-    padding-right: 3px;
-}
-
-.large {
-    padding: 11px var(--oxobz-gap-half);
-    min-height: var(--oxobz-form-large-height);
-    font-size: var(--oxobz-form-large-font);
-}
-
-/* ---- Types (v3-colors .geist-<type>) ---- */
-.note.secondary {
-    --note-border-color: var(--ds-gray-alpha-400);
-    --note-fg: var(--ds-gray-alpha-900);
-    --note-bg: transparent;
-    --note-link: var(--ds-gray-1000);
-}
-
-.note.secondary.fill {
-    --note-bg: var(--ds-gray-alpha-200);
-    --note-border-color: transparent;
-}
-
-.note.success {
-    --note-border-color: var(--ds-blue-400);
-    --note-fg: var(--ds-blue-900);
-    --note-bg: transparent;
-    --note-selection: var(--ds-blue-700);
-    --note-link: var(--ds-blue-1000);
-}
-
-.note.success.fill {
-    --note-bg: var(--ds-blue-200);
-    --note-border-color: var(--ds-blue-100);
-}
-
-.note.error {
-    --note-border-color: var(--ds-red-400);
-    --note-fg: var(--ds-red-900);
-    --note-bg: transparent;
-    --note-selection: var(--ds-red-800);
-    --note-link: var(--ds-red-1000);
-}
-
-.note.error.fill {
-    --note-bg: var(--ds-red-200);
-    --note-border-color: var(--ds-red-100);
-}
-
-.note.warning {
-    --note-border-color: var(--ds-amber-400);
-    --note-fg: var(--ds-amber-900);
-    --note-bg: transparent;
-    --note-link: var(--ds-amber-1000);
-}
-
-.note.warning.fill {
-    --note-bg: var(--ds-amber-200);
-    --note-border-color: var(--ds-amber-100);
-}
-
-.note.alert {
-    --note-border-color: var(--ds-red-400);
-    --note-fg: var(--ds-red-900);
-    --note-bg: transparent;
-    --note-selection: var(--ds-red-800);
-    --note-link: var(--ds-red-1000);
-}
-
-.note.alert.fill {
-    --note-bg: var(--ds-red-200);
-    --note-border-color: var(--ds-red-100);
-}
-
-.note.violet {
-    --note-border-color: var(--ds-purple-400);
-    --note-fg: var(--ds-purple-900);
-    --note-bg: transparent;
-    --note-link: var(--ds-purple-1000);
-}
-
-.note.violet.fill {
-    --note-bg: var(--ds-purple-200);
-    --note-border-color: var(--ds-purple-100);
-}
-
-.note.cyan {
-    --note-border-color: var(--ds-teal-400);
-    --note-fg: var(--ds-teal-900);
-    --note-bg: transparent;
-    --note-link: var(--ds-teal-1000);
-}
-
-.note.cyan.fill {
-    --note-bg: var(--ds-teal-200);
-    --note-border-color: var(--ds-teal-100);
-}
-
-/* Types without dedicated color rules in production (base gray applies).
-   Classes kept for DOM parity with geist-<type> in the snapshot. */
-.default,
-.tertiary,
-.lite,
-.ghost,
-.rotate-ccw {
-    /* intentionally empty — base .note colors apply */
-}
-
-/* ---- Dark theme --note-selection overrides (1c419a75d7e589ae.css) ---- */
-:global(.dark-theme) .note.default {
-    --note-selection: var(--ds-gray-500);
-}
-
-:global(.dark-theme) .note.warning {
-    --note-selection: var(--ds-amber-500);
-}
-
-:global(.dark-theme) .note.violet {
-    --note-selection: var(--ds-purple-600);
-}
-
-/* ---- Content (note-module __content / __hasLabel) ---- */
-.content {
+.body {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
     align-items: flex-start;
-    margin: 0;
-    display: flex;
 }
 
-/* Snapshot (label mode): container sm:items-center, spans flex items-center */
-.content.hasLabel {
-    align-items: center;
+.content {
+    flex: 1;
+    min-width: 0;
 }
 
-.content.hasLabel > span {
-    display: flex;
-    align-items: center;
-}
-
-@media screen and (max-width: 450px) {
-    .content.hasLabel {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
-
-/* ---- Icon wrapper (snapshot: "flex h-4", small "flex h-3.5") ---- */
 .iconContainer {
     display: flex;
-    height: 16px;
+    flex-shrink: 0;
 }
 
-.small .iconContainer {
-    height: 14px;
+.iconContainer > svg {
+    height: 1lh;
 }
 
-/* ---- Custom label (snapshot: "whitespace-nowrap font-semibold") ---- */
+.actionSlot {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-end;
+    align-self: center;
+    gap: 8px;
+}
+
+@media (max-width: 639.98px) {
+    .actionSlot {
+        width: 100%;
+        flex-basis: 100%;
+        justify-content: stretch;
+    }
+
+    .actionSlot > * {
+        flex: 1;
+    }
+}
+
 .label {
-    white-space: nowrap;
+    margin-right: 4px;
     font-weight: 600;
+    white-space: nowrap;
 }
