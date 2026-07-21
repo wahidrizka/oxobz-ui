@@ -71,6 +71,11 @@ describe('Browser', () => {
             expect(screen.getByText('vercel.com')).toBeDefined();
         });
 
+        it('strip protocol dan www untuk tampilan (seperti Geist)', () => {
+            render(<Browser address="https://www.vercel.com" />);
+            expect(screen.getByText('vercel.com')).toBeDefined();
+        });
+
         it('render address bar container', () => {
             const { container } = render(<Browser address="vercel.com" />);
             const addressBar = container.querySelector('[class*="addressBar"]');

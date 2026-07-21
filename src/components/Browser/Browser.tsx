@@ -14,6 +14,17 @@ export interface BrowserProps extends React.HTMLAttributes<HTMLDivElement> {
     children?: ReactNode;
 }
 
+// ---- Helpers ----
+
+/**
+ * Strip the scheme and a leading `www.` for display, matching Geist's address
+ * bar (input `https://www.vercel.com` renders as `vercel.com`). The full value
+ * is preserved for copying.
+ */
+function normalizeAddress(url: string): string {
+    return url.replace(/^[a-z]+:\/\//i, '').replace(/^www\./i, '');
+}
+
 // ---- Component ----
 
 /**
@@ -56,7 +67,7 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                         <div className={styles.headerCenter}>
                             {address && (
                                 <div className={styles.addressBar}>
-                                    <div className={styles.addressText}>{address}</div>
+                                    <div className={styles.addressText}>{normalizeAddress(address)}</div>
                                     <button
                                         type="button"
                                         aria-label="Copy"
