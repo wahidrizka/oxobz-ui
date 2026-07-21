@@ -17,7 +17,7 @@ describe('CopyButton', () => {
     // ── Rendering ──
 
     it('renders a root button with data-oxobz-copy-button and data-version="v1"', () => {
-        const { container } = render(<CopyButton text="hello" />);
+        const { container } = render(<CopyButton textToCopy="hello" />);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('BUTTON');
@@ -27,12 +27,12 @@ describe('CopyButton', () => {
     });
 
     it('allows a custom data-version', () => {
-        const { container } = render(<CopyButton data-version="v2" text="hello" />);
+        const { container } = render(<CopyButton data-version="v2" textToCopy="hello" />);
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
 
     it('renders the Copy and Check icon layers inside a stack', () => {
-        const { container } = render(<CopyButton text="hello" />);
+        const { container } = render(<CopyButton textToCopy="hello" />);
         const layers = getLayers(container);
         expect(layers).toHaveLength(2);
         layers.forEach((layer) => expect(layer.className).toContain('icon'));
@@ -42,12 +42,12 @@ describe('CopyButton', () => {
     // ── aria-label ──
 
     it('defaults aria-label to "copy text"', () => {
-        const { container } = render(<CopyButton text="hello" />);
+        const { container } = render(<CopyButton textToCopy="hello" />);
         expect(getRoot(container)).toHaveAttribute('aria-label', 'copy text');
     });
 
     it('allows a custom aria-label', () => {
-        const { container } = render(<CopyButton aria-label="Copy code" text="hello" />);
+        const { container } = render(<CopyButton label="Copy code" textToCopy="hello" />);
         expect(getRoot(container)).toHaveAttribute('aria-label', 'Copy code');
     });
 
@@ -61,29 +61,28 @@ describe('CopyButton', () => {
         vi.useRealTimers();
     });
 
-    it('shows the Copy layer opaque and the Check layer as .initial before any interaction', () => {
-        const { container } = render(<CopyButton text="hello" />);
+    it('shows the Copy layer and hides the Check layer before any interaction', () => {
+        const { container } = render(<CopyButton textToCopy="hello" />);
         const [copyLayer, checkLayer] = getLayers(container);
-        expect(copyLayer.className).not.toContain('hidden');
-        expect(copyLayer.className).not.toContain('visible');
-        expect(checkLayer.className).toContain('initial');
+        expect(copyLayer.className).toContain('iconShown');
+        expect(checkLayer.className).toContain('iconHidden');
     });
 
     it('swaps to the Check layer after a click, then reverts after 2s', () => {
-        const { container } = render(<CopyButton text="hello" />);
+        const { container } = render(<CopyButton textToCopy="hello" />);
         const root = getRoot(container) as HTMLElement;
 
         fireEvent.click(root);
         const [copyLayer, checkLayer] = getLayers(container);
-        expect(copyLayer.className).toContain('hidden');
-        expect(checkLayer.className).toContain('visible');
+        expect(copyLayer.className).toContain('iconHidden');
+        expect(checkLayer.className).toContain('iconShown');
 
         act(() => {
             vi.advanceTimersByTime(2000);
         });
         const [copyLayerAfter, checkLayerAfter] = getLayers(container);
-        expect(copyLayerAfter.className).toContain('visible');
-        expect(checkLayerAfter.className).toContain('hidden');
+        expect(copyLayerAfter.className).toContain('iconShown');
+        expect(checkLayerAfter.className).toContain('iconHidden');
     });
 
     // ── Copy behavior ──
@@ -95,7 +94,7 @@ describe('CopyButton', () => {
             configurable: true,
         });
         const onCopy = vi.fn();
-        const { container } = render(<CopyButton onCopy={onCopy} text="npm install oxobz" />);
+        const { container } = render(<CopyButton onCopy={onCopy} textToCopy="npm install oxobz" />);
         fireEvent.click(getRoot(container) as HTMLElement);
         expect(writeText).toHaveBeenCalledWith('npm install oxobz');
         expect(onCopy).toHaveBeenCalledWith('npm install oxobz');
@@ -103,7 +102,7 @@ describe('CopyButton', () => {
 
     it('forwards the click handler passed by the consumer', () => {
         const onClick = vi.fn();
-        const { container } = render(<CopyButton onClick={onClick} text="hello" />);
+        const { container } = render(<CopyButton onClick={onClick} textToCopy="hello" />);
         fireEvent.click(getRoot(container) as HTMLElement);
         expect(onClick).toHaveBeenCalledTimes(1);
     });
@@ -111,35 +110,32 @@ describe('CopyButton', () => {
     // ── Controlled copied ──
 
     it('uses the controlled copied prop instead of the internal timer', () => {
-        const { container, rerender } = render(<CopyButton copied text="hello" />);
-        // Before any interaction, the shown layer needs no animation class
-        // and the hidden layer uses `.initial` (no entrance animation).
+        const { container, rerender } = render(<CopyButton copied textToCopy="hello" />);
         const [copyLayer, checkLayer] = getLayers(container);
-        expect(checkLayer.className).not.toContain('initial');
-        expect(checkLayer.className).not.toContain('hidden');
-        expect(copyLayer.className).toContain('initial');
+        expect(checkLayer.className).toContain('iconShown');
+        expect(copyLayer.className).toContain('iconHidden');
 
-        // Clicking marks interaction but does not flip the controlled state,
-        // and no internal timer reverts it.
+        // Clicking does not flip the controlled state, and no internal
+        // timer reverts it.
         fireEvent.click(getRoot(container) as HTMLElement);
         act(() => {
             vi.advanceTimersByTime(5000);
         });
         const [copyLayerAfter, checkLayerAfter] = getLayers(container);
-        expect(checkLayerAfter.className).toContain('visible');
-        expect(copyLayerAfter.className).toContain('hidden');
+        expect(checkLayerAfter.className).toContain('iconShown');
+        expect(copyLayerAfter.className).toContain('iconHidden');
 
-        rerender(<CopyButton copied={false} text="hello" />);
+        rerender(<CopyButton copied={false} textToCopy="hello" />);
         const [copyLayer2, checkLayer2] = getLayers(container);
-        expect(checkLayer2.className).toContain('hidden');
-        expect(copyLayer2.className).toContain('visible');
+        expect(checkLayer2.className).toContain('iconHidden');
+        expect(copyLayer2.className).toContain('iconShown');
     });
 
     // ── Disabled state ──
 
     it('renders disabled and does not fire the click handler', () => {
         const onCopy = vi.fn();
-        const { container } = render(<CopyButton disabled onCopy={onCopy} text="hello" />);
+        const { container } = render(<CopyButton disabled onCopy={onCopy} textToCopy="hello" />);
         const root = getRoot(container) as HTMLButtonElement;
         expect(root).toBeDisabled();
         fireEvent.click(root);
@@ -149,7 +145,7 @@ describe('CopyButton', () => {
     // ── Custom className ──
 
     it('appends a custom className after the module class', () => {
-        const { container } = render(<CopyButton className="custom-copy" text="hello" />);
+        const { container } = render(<CopyButton className="custom-copy" textToCopy="hello" />);
         const root = getRoot(container);
         expect(root?.className).toContain('copyButtonIcon');
         expect(root?.className).toContain('custom-copy');
@@ -160,7 +156,7 @@ describe('CopyButton', () => {
 
     it('forwards ref to the root button', () => {
         const ref = createRef<HTMLButtonElement>();
-        render(<CopyButton ref={ref} text="hello" />);
+        render(<CopyButton ref={ref} textToCopy="hello" />);
         expect(ref.current).toBeInstanceOf(HTMLButtonElement);
         expect(ref.current).toHaveAttribute('data-oxobz-copy-button');
     });
@@ -168,7 +164,7 @@ describe('CopyButton', () => {
     // ── Prop forwarding ──
 
     it('forwards extra HTML attributes (id, title)', () => {
-        const { container } = render(<CopyButton id="copy-1" text="hello" title="Copy" />);
+        const { container } = render(<CopyButton id="copy-1" textToCopy="hello" title="Copy" />);
         const root = getRoot(container);
         expect(root).toHaveAttribute('id', 'copy-1');
         expect(root).toHaveAttribute('title', 'Copy');

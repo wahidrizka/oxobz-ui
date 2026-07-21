@@ -87,46 +87,22 @@
     height: 16px;
 }
 
-/* ---- copy-button-module__8qN89q ---- */
+/* ---- Icon cross-fade (current geistcn generation, live SSR 2026-07-21:
+   both layers stay mounted with `transition-all duration-200 ease-in-out`
+   and toggle `opacity-0 scale-50` / `opacity-100 scale-100`; the old
+   classic copy-button-module__8qN89q used 150ms keyframes — replaced). ---- */
 .icon {
     position: absolute;
     display: flex;
+    transition: all 0.2s ease-in-out;
 }
 
-/* Resting hidden state applied before any interaction — no entrance
-   animation plays on mount (matches production: only .visible/.hidden
-   trigger the keyframe animations). */
-.initial {
+.iconShown {
+    opacity: 1;
+    scale: 1;
+}
+
+.iconHidden {
     opacity: 0;
     scale: 0.5;
-}
-
-.visible {
-    animation: 0.15s ease-out forwards fadeIn;
-}
-
-.hidden {
-    animation: 0.15s ease-out forwards fadeOut;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-        scale: 0.5;
-    }
-    to {
-        opacity: 1;
-        scale: 1;
-    }
-}
-
-@keyframes fadeOut {
-    0% {
-        opacity: 1;
-        scale: 1;
-    }
-    to {
-        opacity: 0;
-        scale: 0.5;
-    }
 }

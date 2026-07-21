@@ -20,7 +20,10 @@ import styles from './CopyButton.module.css';
 export interface CopyButtonProps
     extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onCopy'> {
     /** String written to the clipboard when the button is clicked. */
-    text: string;
+    textToCopy: string;
+
+    /** Accessible label of the button. Default `'copy text'`. */
+    label?: string;
 
     /**
      * Controlled copied state. When provided, the checkmark feedback is
@@ -41,20 +44,6 @@ export interface CopyButtonProps
 
 /** Auto-revert delay of the internal (uncontrolled) copied state. */
 const COPIED_RESET_MS = 2000;
-
-/**
- * Resolve the animation class for one icon layer.
- * - Before the first interaction, a hidden layer uses `.initial` so it
- *   never plays an entrance animation on mount.
- * - After the first interaction, `.visible` / `.hidden` drive the 150ms
- *   fade+scale keyframes (copy-button-module__8qN89q).
- * - A shown layer that has never been hidden needs no class — it is
- *   naturally opaque.
- */
-function getLayerClassName(isShown: boolean, hasInteracted: boolean): string | undefined {
-    if (isShown) return hasInteracted ? styles.visible : undefined;
-    return hasInteracted ? styles.hidden : styles.initial;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -77,12 +66,12 @@ function getLayerClassName(isShown: boolean, hasInteracted: boolean): string | u
 const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
     (
         {
-            text,
+            textToCopy,
+            label = 'copy text',
             copied,
             onCopy,
             className,
             onClick,
-            'aria-label': ariaLabel = 'copy text',
             'data-version': dataVersion = 'v1',
             ...rest
         },
@@ -90,7 +79,6 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
     ) => {
         const isControlled = copied !== undefined;
         const [internalCopied, setInternalCopied] = useState(false);
-        const [hasInteracted, setHasInteracted] = useState(false);
         const showCopied = isControlled ? copied : internalCopied;
 
         const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,10 +93,9 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
             (event) => {
                 onClick?.(event);
                 if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                    void navigator.clipboard.writeText(text);
+                    void navigator.clipboard.writeText(textToCopy);
                 }
-                onCopy?.(text);
-                setHasInteracted(true);
+                onCopy?.(textToCopy);
                 if (!isControlled) {
                     setInternalCopied(true);
                     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -118,7 +105,7 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
                     );
                 }
             },
-            [onClick, text, onCopy, isControlled],
+            [onClick, textToCopy, onCopy, isControlled],
         );
 
         return (
@@ -126,7 +113,7 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
                 {...rest}
                 ref={ref}
                 type="button"
-                aria-label={ariaLabel}
+                aria-label={label}
                 className={cn(styles.copyButtonIcon, className)}
                 data-oxobz-copy-button=""
                 data-version={dataVersion}
@@ -134,12 +121,18 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
             >
                 <span className={styles.iconStack}>
                     <span
-                        className={cn(styles.icon, getLayerClassName(!showCopied, hasInteracted))}
+                        className={cn(
+                            styles.icon,
+                            showCopied ? styles.iconHidden : styles.iconShown,
+                        )}
                     >
                         <Copy size={16} />
                     </span>
                     <span
-                        className={cn(styles.icon, getLayerClassName(showCopied, hasInteracted))}
+                        className={cn(
+                            styles.icon,
+                            showCopied ? styles.iconShown : styles.iconHidden,
+                        )}
                     >
                         <Check size={16} />
                     </span>
