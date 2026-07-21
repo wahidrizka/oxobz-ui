@@ -3,6 +3,39 @@ import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'path';
 import { cpSync, writeFileSync } from 'fs';
+import MagicString from 'magic-string';
+
+// Rollup strips module-level "use client" directives when bundling (and warns).
+// This plugin records which source modules declared the directive (stripping it
+// pre-transform so Rollup/esbuild don't choke), then re-prepends it to the
+// matching output chunk so RSC consumers (Next.js App Router) treat our
+// interactive components as Client Components. Same job as
+// rollup-preserve-directives, inlined to avoid a new dependency; magic-string
+// is already in the Vite/Rollup tree so sourcemaps stay accurate.
+function preserveUseClient(): Plugin {
+    const DIRECTIVE = /^\s*(['"])use client\1\s*;?/;
+    const clientModules = new Set<string>();
+    return {
+        name: 'oxobz:preserve-use-client',
+        enforce: 'pre',
+        apply: 'build',
+        transform(code, id) {
+            if (!/\.tsx?$/.test(id)) return null;
+            const match = code.match(DIRECTIVE);
+            if (!match) return null;
+            clientModules.add(id);
+            const s = new MagicString(code);
+            s.remove(0, match[0].length);
+            return { code: s.toString(), map: s.generateMap({ hires: true }) };
+        },
+        renderChunk(code, chunk) {
+            if (!chunk.moduleIds.some((mid) => clientModules.has(mid))) return null;
+            const s = new MagicString(code);
+            s.prepend(`'use client';\n`);
+            return { code: s.toString(), map: s.generateMap({ hires: true }) };
+        },
+    };
+}
 
 // The package ships CSS separately from JS ("files": ["dist"]), so tokens +
 // fonts must be copied into dist and stitched together with the extracted
@@ -23,6 +56,7 @@ function copyStyles(): Plugin {
 
 export default defineConfig({
     plugins: [
+        preserveUseClient(),
         react(),
         dts({
             insertTypesEntry: true,

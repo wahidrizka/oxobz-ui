@@ -1,3 +1,5 @@
+'use client';
+
 import { forwardRef, useId, type HTMLAttributes } from 'react';
 import { DeviceDesktop, Moon, Sun } from '@oxobz/icons';
 import { cn } from '../../utils/cn';

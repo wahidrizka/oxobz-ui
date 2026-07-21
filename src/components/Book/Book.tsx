@@ -1,3 +1,5 @@
+'use client';
+
 import React, { forwardRef, useId, CSSProperties } from 'react';
 import { LogoVercel } from '@oxobz/icons';
 import { Stack } from '../Stack';

@@ -1,3 +1,5 @@
+'use client';
+
 import { forwardRef, useCallback, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../../utils/cn';
 import styles from './Browser.module.css';
