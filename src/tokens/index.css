@@ -4,7 +4,9 @@
  * Import this file to get all design tokens:
  *   import '@oxobz/ui/styles'
  *
- * Uses Mona Sans + Mona Sans Mono (v2.0.8) as font.
+ * Uses Geist Sans + Geist Mono (variable, weight 100–900) as font — the
+ * same faces Vercel's Geist ships, self-hosted from the official `geist`
+ * npm package (SIL Open Font License; see fonts/GEIST-FONT-LICENSE.txt).
  */
 
 /* === @import MUST come first before any other rules (CSS spec) === */
@@ -16,29 +18,28 @@
 @import './materials.css';
 @import './motion.css';
 
-/* === Font Face Definitions === */
+/* === Font Face Definitions (Geist, variable — official metadata: weight 100 900) === */
 @font-face {
-    font-family: 'Mona Sans';
-    src: url('./fonts/MonaSansVF-wdth-wght-opsz.woff2') format('woff2');
-    font-weight: 200 900;
-    font-stretch: 75% 125%;
+    font-family: 'Geist';
+    src: url('./fonts/Geist-Variable.woff2') format('woff2');
+    font-weight: 100 900;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Mona Sans Mono';
-    src: url('./fonts/MonaSansMonoVF-wght.woff2') format('woff2');
-    font-weight: 200 900;
+    font-family: 'Geist Mono';
+    src: url('./fonts/GeistMono-Variable.woff2') format('woff2');
+    font-weight: 100 900;
     font-style: normal;
     font-display: swap;
 }
 
 /* === Font Variables === */
 :root {
-    --font-sans: 'Mona Sans';
+    --font-sans: 'Geist';
     --font-sans-fallback: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'Mona Sans Mono';
+    --font-mono: 'Geist Mono';
     --font-mono-fallback: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 }
 
