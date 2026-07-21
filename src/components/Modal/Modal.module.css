@@ -153,6 +153,14 @@
     margin-bottom: 0;
 }
 
+/* Sticky body: the sticky header pins flush at the top and supplies the top
+   padding via its own padding, so the body must not add a top gap. Geist's
+   modalBody sets `padding-top: 0 !important`; ours kept pt-5, leaving a 20px
+   band above the pinned header where scrolled content bled through. */
+.sticky .body {
+    padding-top: 0;
+}
+
 /* Sticky header — Tailwind `[.sticky_&]` variants (verified values only). */
 .sticky .header {
     position: sticky;
