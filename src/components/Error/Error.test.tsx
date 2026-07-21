@@ -56,12 +56,48 @@ describe('Error', () => {
         expect(container.querySelector('b')).not.toBeInTheDocument();
     });
 
-    it('renders a bold label before the message when provided', () => {
-        render(<Error label="Email Error:">This email is in use.</Error>);
+    it('renders a bold label with an auto-appended colon when provided', () => {
+        render(<Error label="Email Error">This email is in use.</Error>);
         const label = screen.getByText('Email Error:');
         expect(label.tagName).toBe('B');
         expect(label.className).toContain('label');
         expect(screen.getByText('This email is in use.')).toBeInTheDocument();
+    });
+
+    it('suppresses the label element entirely when label={false}', () => {
+        const { container } = render(
+            <Error label={false}>This email is in use.</Error>,
+        );
+        expect(container.querySelector('b')).not.toBeInTheDocument();
+    });
+
+    // ── error prop ──
+
+    it('renders message + external action link from the error prop', () => {
+        render(
+            <Error
+                error={{
+                    message: 'The request failed.',
+                    action: 'Contact Us',
+                    link: 'https://vercel.com/contact',
+                }}
+            />,
+        );
+        expect(screen.getByText('The request failed.')).toBeInTheDocument();
+        const link = screen.getByRole('link', { name: /Contact Us/ });
+        expect(link).toHaveAttribute('href', 'https://vercel.com/contact');
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener');
+        expect(link.className).toContain('errorLink');
+        expect(link.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('renders only the message when error has no action/link', () => {
+        const { container } = render(
+            <Error error={{ message: 'The request failed.' }} />,
+        );
+        expect(screen.getByText('The request failed.')).toBeInTheDocument();
+        expect(container.querySelector('a')).not.toBeInTheDocument();
     });
 
     // ── size ──

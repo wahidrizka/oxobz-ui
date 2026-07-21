@@ -76,3 +76,27 @@
 .action-link {
     display: inline-block;
 }
+
+/* ---- error-prop action anchor (live SSR 2026-07-21: cursor-pointer
+   focus-visible:outline-2 outline-[--ds-focus-color] outline-offset-4
+   inline-flex items-center gap-0.5 text-inherit transition-opacity
+   duration-100 underline font-medium hover:opacity-60) ---- */
+.errorLink {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: opacity 0.1s;
+    outline-offset: 4px;
+}
+
+.errorLink:focus-visible {
+    outline: 2px solid var(--ds-focus-color);
+}
+
+.errorLink:not([aria-disabled]):hover {
+    opacity: 0.6;
+}

@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
-import { Stop } from '@oxobz/icons';
+import { ExternalSmall, Stop } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import styles from './Error.module.css';
 
@@ -12,13 +12,22 @@ export type ErrorSize = 'small' | 'medium' | 'large';
 
 export interface ErrorProps extends HTMLAttributes<HTMLDivElement> {
     /**
-     * Bold label rendered before the message, e.g. `label="Email Error:"`.
-     * Omit for a plain message (default).
+     * Bold label rendered before the message. A colon is appended
+     * automatically (`label="Email Error"` renders `Email Error:`) —
+     * production DOM: `<b class="font-medium mr-2">Email Error:</b>`.
+     * Pass `false` (or omit) to render no label at all.
      */
     label?: ReactNode;
 
     /** Size of the message text and icon offset. Default `'medium'`. */
     size?: ErrorSize;
+
+    /**
+     * Structured error: renders `message`, then `action` as an external
+     * link to `link` (underlined, external icon — Geist's
+     * "With an error property" example). When set, `children` is ignored.
+     */
+    error?: { message: ReactNode; action?: ReactNode; link?: string };
 
     /** The error message content. */
     children?: ReactNode;
@@ -78,6 +87,7 @@ const ErrorRoot = forwardRef<HTMLDivElement, ErrorProps>(
         {
             children,
             className,
+            error,
             label,
             size = 'medium',
             'data-version': dataVersion = 'v1',
@@ -104,10 +114,32 @@ const ErrorRoot = forwardRef<HTMLDivElement, ErrorProps>(
                     <Stop color="var(--ds-red-900)" size={16} />
                 </div>
                 <div className={styles.text}>
-                    {label != null && (
-                        <b className={styles.label}>{label}</b>
+                    {label != null && label !== false && (
+                        <b className={styles.label}>{label}:</b>
                     )}
-                    {children}
+                    {error ? (
+                        <>
+                            {error.message}
+                            {error.action != null && error.link != null && (
+                                <>
+                                    {' '}
+                                    <span className={styles['action-link']}>
+                                        <a
+                                            className={styles.errorLink}
+                                            href={error.link}
+                                            rel="noopener"
+                                            target="_blank"
+                                        >
+                                            {error.action}
+                                            <ExternalSmall size={16} />
+                                        </a>
+                                    </span>
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        children
+                    )}
                 </div>
             </div>
         );
