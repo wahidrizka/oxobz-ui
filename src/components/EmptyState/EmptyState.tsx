@@ -6,40 +6,54 @@ import styles from './EmptyState.module.css';
  * EmptyState — centered empty-content placeholder (icon/illustration +
  * title + description + optional action(s)).
  *
- * Rendered DOM (from empty-state.html, "Blank Slate" / "Informational"
- * examples — the JSX API itself was never expanded ("Show code" stayed
- * collapsed in the snapshot), so this is a faithful DOM-order compound
- * built from the visible markup rather than a guess at Geist's real prop
- * names):
- * ```html
- * <div class="root" data-oxobz-empty-state="" data-version="v1">
- *   <div aria-hidden="true" class="icon">{icon svg}</div>
- *   <div class="content">
- *     <div class="title">Title</div>
- *     <div class="description">A message conveying the state of the product.</div>
- *   </div>
- *   <!-- optional actions, e.g. a Button then a "Learn more" link,
- *        rendered as further direct children and spaced by the root's
- *        flex gap, exactly as in the "Informational" example -->
- * </div>
+ * Public API matches Geist's Show-code (empty-state.md, live 2026-07-21):
+ * ```tsx
+ * <EmptyState
+ *   description="A message conveying the state of the product."
+ *   icon={<EmptyStateIcon icon={<IconChartBarPeak size={32} />} />}
+ *   title="Title"
+ * >
+ *   <Button variant="secondary">Primary Action</Button>
+ * </EmptyState>
  * ```
  *
- * Note: the snapshot wraps the icon box in one extra classless `<div>`
- * (`<div><div aria-hidden ...>`). It carries no styling/attributes and is
- * indistinguishable from an MDX/docs-rendering artifact, so it is not
- * reproduced here — EmptyStateIcon renders the single styled box directly.
+ * Rendered DOM (live SSR):
+ * ```html
+ * <div class="root" data-oxobz-empty-state="" data-version="v1">
+ *   <div><div aria-hidden="true" class="icon">{icon svg}</div></div>
+ *   <div class="content">
+ *     <div class="title">Title</div>
+ *     <div class="description">A message …</div>
+ *   </div>
+ *   <!-- children (CTA button / link) as further direct children,
+ *        spaced by the root's flex gap -->
+ * </div>
+ * ```
+ * The plain wrapper `<div>` around the icon is real production structure
+ * (the `icon` prop is rendered inside an unstyled div), reproduced here.
  */
 
 /* ------------------------------------------------------------------ */
 /*  EmptyState (root)                                                  */
 /* ------------------------------------------------------------------ */
 
-export interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
+export interface EmptyStateProps
+    extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+    /** Heading text (`text-heading-16`, weight 500, centered). */
+    title: string;
+
+    /** Supporting copy under the title (`text-copy-14`, muted). */
+    description: string;
+
+    /** Icon slot — typically `<EmptyStateIcon icon={<Icon size={32} />} />`. */
+    icon?: ReactNode;
+
+    /** Optional call-to-action area (Button / link), spaced by the root gap. */
     children?: ReactNode;
 }
 
 export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
-    ({ className, children, ...props }, ref) => (
+    ({ className, title, description, icon, children, ...props }, ref) => (
         <div
             {...props}
             ref={ref}
@@ -47,6 +61,13 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
             data-oxobz-empty-state=""
             data-version="v1"
         >
+            {icon != null && <div>{icon}</div>}
+            <div className={styles.content}>
+                <div className={cn('text-heading-16', styles.title)}>{title}</div>
+                <div className={cn('text-copy-14', styles.description)}>
+                    {description}
+                </div>
+            </div>
             {children}
         </div>
     ),
@@ -58,16 +79,17 @@ EmptyState.displayName = 'EmptyState';
 /* ------------------------------------------------------------------ */
 
 export interface EmptyStateIconProps extends HTMLAttributes<HTMLDivElement> {
-    children?: ReactNode;
+    /** The icon element (Geist passes e.g. `<IconChartBarPeak size={32} />`). */
+    icon?: ReactNode;
 }
 
 /**
  * EmptyStateIcon — the bordered icon/illustration box. `aria-hidden`
- * defaults to `true` (matching the snapshot) since the icon is decorative
+ * defaults to `true` (matching production) since the icon is decorative
  * next to the title/description text; pass `aria-hidden={false}` to opt out.
  */
 export const EmptyStateIcon = forwardRef<HTMLDivElement, EmptyStateIconProps>(
-    ({ className, children, 'aria-hidden': ariaHidden = true, ...props }, ref) => (
+    ({ className, icon, 'aria-hidden': ariaHidden = true, ...props }, ref) => (
         <div
             {...props}
             ref={ref}
@@ -75,54 +97,8 @@ export const EmptyStateIcon = forwardRef<HTMLDivElement, EmptyStateIconProps>(
             aria-hidden={ariaHidden}
             data-oxobz-empty-state-icon=""
         >
-            {children}
+            {icon}
         </div>
     ),
 );
 EmptyStateIcon.displayName = 'EmptyStateIcon';
-
-/* ------------------------------------------------------------------ */
-/*  EmptyStateTitle                                                    */
-/* ------------------------------------------------------------------ */
-
-export interface EmptyStateTitleProps extends HTMLAttributes<HTMLDivElement> {
-    children?: ReactNode;
-}
-
-/** EmptyStateTitle — `text-heading-16` at font-weight 500, centered. */
-export const EmptyStateTitle = forwardRef<HTMLDivElement, EmptyStateTitleProps>(
-    ({ className, children, ...props }, ref) => (
-        <div
-            {...props}
-            ref={ref}
-            className={cn('text-heading-16', styles.title, className)}
-            data-oxobz-empty-state-title=""
-        >
-            {children}
-        </div>
-    ),
-);
-EmptyStateTitle.displayName = 'EmptyStateTitle';
-
-/* ------------------------------------------------------------------ */
-/*  EmptyStateDescription                                              */
-/* ------------------------------------------------------------------ */
-
-export interface EmptyStateDescriptionProps extends HTMLAttributes<HTMLDivElement> {
-    children?: ReactNode;
-}
-
-/** EmptyStateDescription — `text-copy-14`, centered, muted color. */
-export const EmptyStateDescription = forwardRef<HTMLDivElement, EmptyStateDescriptionProps>(
-    ({ className, children, ...props }, ref) => (
-        <div
-            {...props}
-            ref={ref}
-            className={cn('text-copy-14', styles.description, className)}
-            data-oxobz-empty-state-description=""
-        >
-            {children}
-        </div>
-    ),
-);
-EmptyStateDescription.displayName = 'EmptyStateDescription';

@@ -146,8 +146,8 @@ export type { DescriptionProps } from './components/Description';
 export { Error } from './components/Error';
 export type { ErrorProps, ErrorActionProps, ErrorSize } from './components/Error';
 
-export { EmptyState, EmptyStateIcon, EmptyStateTitle, EmptyStateDescription } from './components/EmptyState';
-export type { EmptyStateProps, EmptyStateIconProps, EmptyStateTitleProps, EmptyStateDescriptionProps } from './components/EmptyState';
+export { EmptyState, EmptyStateIcon } from './components/EmptyState';
+export type { EmptyStateProps, EmptyStateIconProps } from './components/EmptyState';
 
 export { Feedback } from './components/Feedback';
 export type { FeedbackProps, FeedbackRating, FeedbackSubmitData, FeedbackTopic, FeedbackType } from './components/Feedback';

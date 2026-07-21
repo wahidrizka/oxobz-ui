@@ -1,13 +1,3 @@
-export {
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateTitle,
-    EmptyStateDescription,
-} from './EmptyState';
+export { EmptyState, EmptyStateIcon } from './EmptyState';
 
-export type {
-    EmptyStateProps,
-    EmptyStateIconProps,
-    EmptyStateTitleProps,
-    EmptyStateDescriptionProps,
-} from './EmptyState';
+export type { EmptyStateProps, EmptyStateIconProps } from './EmptyState';
