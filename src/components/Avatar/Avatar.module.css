@@ -190,7 +190,7 @@
     position: absolute;
 }
 
-.icon[data-background="true"] {
+.icon[data-icon-background="true"] {
     background-color: #fff;
     border: 1px solid #fff;
     border-radius: 100%;
@@ -200,39 +200,39 @@
     overflow: hidden;
 }
 
-:global(.dark-theme) .icon[data-background="true"] {
+:global(.dark-theme) .icon[data-icon-background="true"] {
     background-color: #000;
     border-color: #000;
 }
 
 /* Git-type — github */
-.icon[data-background="true"][data-git-type="github"] {
+.icon[data-icon-background="true"][data-git-type="github"] {
     background-color: #fff;
 }
 
-:global(.dark-theme) .icon[data-background="true"][data-git-type="github"] {
+:global(.dark-theme) .icon[data-icon-background="true"][data-git-type="github"] {
     background-color: #000;
 }
 
-.icon[data-background="true"][data-git-type="github"] svg {
+.icon[data-icon-background="true"][data-git-type="github"] svg {
     transform: scale(1.15);
 }
 
 /* Git-type — bitbucket */
-.icon[data-background="true"][data-git-type="bitbucket"] {
+.icon[data-icon-background="true"][data-git-type="bitbucket"] {
     background-color: #0052cc;
 }
 
-.icon[data-background="true"][data-git-type="bitbucket"] svg {
+.icon[data-icon-background="true"][data-git-type="bitbucket"] svg {
     color: #fff;
     transform: scale(.65);
 }
 
 /* Git-type — gitlab */
-.icon[data-background="true"][data-git-type="gitlab"] {
+.icon[data-icon-background="true"][data-git-type="gitlab"] {
     background-color: #6b4fbb;
 }
 
-.icon[data-background="true"][data-git-type="gitlab"] svg {
+.icon[data-icon-background="true"][data-git-type="gitlab"] svg {
     transform: scale(.75);
 }

@@ -21,7 +21,7 @@
  * AvatarWithIcon:
  *   <div class="iconWrapper" style="--size: 32px;">
  *     <span class="avatar" ...>...</span>
- *     <div class="icon" data-background="true" style="left:-3px;bottom:-5px;">
+ *     <div class="icon" data-icon-background="true" style="left:-3px;bottom:-5px;">
  *       {icon}
  *     </div>
  *   </div>
@@ -359,7 +359,7 @@ export function AvatarWithIcon({
                 <div
                     aria-hidden="true"
                     className={styles.icon}
-                    data-background={String(iconBackground)}
+                    data-icon-background={String(iconBackground)}
                     data-git-type={gitType}
                     style={{ left: -3, bottom: -5 }}
                 >

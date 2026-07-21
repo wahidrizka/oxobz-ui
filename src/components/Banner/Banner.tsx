@@ -95,6 +95,7 @@ const Banner = forwardRef<HTMLDivElement, BannerProps>(
                                     href={button.href}
                                     variant="secondary"
                                     size="small"
+                                    shape="rounded"
                                     suffix={<ChevronRightSmall />}
                                 >
                                     {button.content}

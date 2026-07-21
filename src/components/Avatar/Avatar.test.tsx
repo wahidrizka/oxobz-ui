@@ -301,14 +301,14 @@ describe('AvatarWithIcon', () => {
         expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
     });
 
-    it('sets data-background="false" by default', () => {
+    it('sets data-icon-background="false" by default', () => {
         const { container } = render(<AvatarWithIcon icon={<TestIcon />} />);
-        expect(container.querySelector('[data-background="false"]')).not.toBeNull();
+        expect(container.querySelector('[data-icon-background="false"]')).not.toBeNull();
     });
 
-    it('sets data-background="true" when iconBackground=true', () => {
+    it('sets data-icon-background="true" when iconBackground=true', () => {
         const { container } = render(<AvatarWithIcon icon={<TestIcon />} iconBackground />);
-        expect(container.querySelector('[data-background="true"]')).not.toBeNull();
+        expect(container.querySelector('[data-icon-background="true"]')).not.toBeNull();
     });
 
     it('sets data-git-type="github" on icon div', () => {
@@ -371,7 +371,7 @@ describe('GitHubAvatar', () => {
         const { container } = render(<GitHubAvatar size={32} username="rauchg" />);
         const iconDiv = container.querySelector('[data-git-type="github"]');
         expect(iconDiv).not.toBeNull();
-        expect(iconDiv?.getAttribute('data-background')).toBe('true');
+        expect(iconDiv?.getAttribute('data-icon-background')).toBe('true');
     });
 
     it('icon svg has no Tailwind class — color comes from currentColor', () => {

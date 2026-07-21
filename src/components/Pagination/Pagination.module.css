@@ -97,10 +97,14 @@
     margin-top: 2px;
 }
 
-/* hover: label + chevron rise to full foreground */
-.item:hover .label,
-.item:hover .icon {
-    color: var(--oxobz-foreground);
+/* hover: label + chevron rise to full foreground.
+   Gated on `@media (hover: hover)` (as Geist does) so touch devices don't get a
+   sticky hover state after tapping. */
+@media (hover: hover) {
+    .item:hover .label,
+    .item:hover .icon {
+        color: var(--oxobz-foreground);
+    }
 }
 
 /* keyboard focus ring on the link */
