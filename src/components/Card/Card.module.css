@@ -45,7 +45,11 @@
     display: flex;
     flex-direction: column;
     list-style: none;
-    border-radius: var(--ds-radius-lg);
+    /* rounded-lg = 0.5rem (8px) — verified DIRECTLY against live Geist CSS
+       2026-07-21 (.rounded-lg{border-radius:.5rem}). The shared --ds-radius-lg
+       token is stale at 12px (that's rounded-xl); using a literal here avoids
+       disturbing materials/Feedback which also read that token. */
+    border-radius: 0.5rem;
     background: var(--ds-background-100);
     box-sizing: border-box;
 }
