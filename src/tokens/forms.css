@@ -1,37 +1,45 @@
 /**
  * @oxobz/ui — Form Size Tokens
- * Extracted 100% from Geist production CSS: _nextstatic/chunks/1c419a75d7e589ae.css
  *
- * These --oxobz-form-* variables are used by Button, Input, Select,
- * Combobox, and other form-level components.
+ * --ds-size-* are the canonical form heights, verified DIRECTLY against LIVE
+ * Geist CSS (2026-07-21): --geist-space-small:32px, --geist-space-medium:36px,
+ * --geist-space-large:40px, chained as --ds-size-<size>:var(--geist-space-<size>).
+ * (An older local chunk baked medium=40/large=48 — stale; live is 36/40.)
+ * Every form-height token below resolves to these so the whole form family
+ * (Button, Input, Select, Combobox, Textarea, Calendar, Note, …) is correct.
  */
 
 :root {
+    /* === Canonical form sizes (live Geist --ds-size-*) === */
+    --ds-size-small: 32px;
+    --ds-size-medium: 36px;
+    --ds-size-large: 40px;
+
     /* === Geist Form — Default (medium) === */
     --oxobz-form-font: .875rem;
     --oxobz-form-line-height: 1.25rem;
-    --oxobz-form-height: var(--oxobz-space-medium);
+    --oxobz-form-height: var(--ds-size-medium);
 
     /* === Geist Form — Small === */
     --oxobz-form-small-font: .875rem;
     --oxobz-form-small-line-height: .875rem;
-    --oxobz-form-small-height: var(--oxobz-space-small);
+    --oxobz-form-small-height: var(--ds-size-small);
 
     /* === Geist Form — Large === */
     --oxobz-form-large-font: 1rem;
     --oxobz-form-large-line-height: 1.5rem;
-    --oxobz-form-large-height: var(--oxobz-space-large);
+    --oxobz-form-large-height: var(--ds-size-large);
 
     /* === DS Form Aliases (convenience) === */
-    --ds-form-small-height: 32px;
+    --ds-form-small-height: var(--ds-size-small);
     --ds-form-small-padding-x: 12px;
     --ds-form-small-font-size: 14px;
 
-    --ds-form-medium-height: 40px;
+    --ds-form-medium-height: var(--ds-size-medium);
     --ds-form-medium-padding-x: 12px;
     --ds-form-medium-font-size: 14px;
 
-    --ds-form-large-height: 48px;
+    --ds-form-large-height: var(--ds-size-large);
     --ds-form-large-padding-x: 16px;
     --ds-form-large-font-size: 16px;
 }

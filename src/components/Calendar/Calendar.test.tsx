@@ -560,7 +560,7 @@ describe('Calendar', () => {
         expect(trigger().textContent).toMatch(/12[:.]45 - 23[:.]59/);
     });
 
-    it('sizes the combobox with the calendar (data-size drives 40px vs 32px styling)', () => {
+    it('sizes the combobox with the calendar (data-size drives medium 36px vs small 32px styling)', () => {
         const { container, rerender } = render(<Calendar presets={PRESETS} />);
         expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
             'data-size',

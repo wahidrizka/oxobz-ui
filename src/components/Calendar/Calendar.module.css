@@ -107,24 +107,23 @@
 }
 
 /* ---- Preset combobox (real text input + clock prefix + chevron suffix) ----
-   Height follows the calendar size — verified across ALL 10 combobox
-   instances in calendar-open.html: h-(--ds-size-medium) (40px) everywhere
-   except the Sizes small group's h-(--ds-size-small) (32px). (An earlier
-   pass wrongly generalized 32px from a single small instance.) */
+   Height follows the calendar size: h-(--ds-size-medium) everywhere except the
+   Sizes small group's h-(--ds-size-small). --ds-size-medium = 36px (verified
+   live 2026-07-21; an older local chunk had 40px — stale). */
 .comboboxWrapper {
     position: relative;
     display: flex;
-    height: 40px;
+    height: var(--ds-size-medium);
 }
 
 .calendar[data-size='small'] .comboboxWrapper {
-    height: 32px;
+    height: var(--ds-size-small);
 }
 
 .comboboxInput {
     position: relative;
     width: var(--width, 250px);
-    height: 40px;
+    height: var(--ds-size-medium);
     /* medium: px-9 (36px); small: px-[34px] — room for clock + chevron. */
     padding: 0 36px;
     border: none;
