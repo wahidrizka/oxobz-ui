@@ -56,9 +56,10 @@ const SIZE_MAP: Record<SpinnerSize, number> = {
  *   20px → 12 bars (30°),     1200ms, bar 2×5px
  *   24px → 12 bars (30°),     1200ms, bar 2.5×6px
  *   32px → 15 bars (24°),     1200ms, bar 2.5×8px
+ *   40px → 15 bars (24°),     1200ms, bar 3×10px  (live size-10: h-[3px] w-2.5)
+ *   56px → 18 bars (20°),     1300ms, bar 3.5×14px (live size-14: h-[3.5px] w-3.5)
  * Bars are placed with `rotate(Ndeg) translate(146%)` at every size.
- * 40/56px have no captured example — they extrapolate the 32px row
- * (documented inference, largest evidenced tier).
+ * 40/56px verified DIRECTLY against live Geist DOM (2026-07-22).
  */
 interface BarParams {
     bars: number;
@@ -72,7 +73,9 @@ function getBarParams(px: number): BarParams {
     if (px <= 16) return { bars: 10, duration: 1000, barHeight: '1.5px', barWidth: '4px' };
     if (px <= 20) return { bars: 12, duration: 1200, barHeight: '2px', barWidth: '5px' };
     if (px <= 24) return { bars: 12, duration: 1200, barHeight: '2.5px', barWidth: '6px' };
-    return { bars: 15, duration: 1200, barHeight: '2.5px', barWidth: '8px' };
+    if (px <= 32) return { bars: 15, duration: 1200, barHeight: '2.5px', barWidth: '8px' };
+    if (px <= 40) return { bars: 15, duration: 1200, barHeight: '3px', barWidth: '10px' };
+    return { bars: 18, duration: 1300, barHeight: '3.5px', barWidth: '14px' };
 }
 
 /**

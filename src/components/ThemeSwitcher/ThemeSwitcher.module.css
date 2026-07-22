@@ -55,7 +55,8 @@
     border-radius: 9999px;
     cursor: pointer;
     color: var(--ds-gray-700);
-    transition: box-shadow 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    /* live: the label carries NO transition/duration/ease utility — color and
+       peer-checked/focus shadows apply instantly, matching production. */
 }
 
 .label[data-small] {

@@ -52,7 +52,8 @@
 .content {
     position: relative;
     background-color: var(--ds-background-100);
-    padding: var(--geist-gap, 24px);
+    /* live: Tailwind p-5 = 1.25rem (was --geist-gap 24px). */
+    padding: 20px;
     border-top-left-radius: var(--geist-radius, 6px);
     border-top-right-radius: var(--geist-radius, 6px);
 }
@@ -89,24 +90,32 @@
 }
 
 .subtitle {
-    line-height: 24px;
-    padding-block: 12px;
+    /* live: text-copy-14 line-height 20px (was a 24px override); pt-2 pb-5,
+       first:pt-0. */
+    line-height: 20px;
+    padding-top: 8px;
+    padding-bottom: 20px;
+}
+
+.subtitle:first-child {
+    padding-top: 0;
 }
 
 /* ---- Footer ---- */
 
 .footer {
     position: relative;
-    min-height: 57px;
+    /* live: min-h-14 = 3.5rem; pt-3 pr-3 pb-3 pl-5; text-copy-14 line-height 20px. */
+    min-height: 56px;
     display: flex;
     align-items: center;
     box-sizing: border-box;
-    padding: 12px 24px;
+    padding: 12px 12px 12px 20px;
     border-top: 1px solid var(--ds-gray-400);
     background-color: var(--ds-background-200);
     color: var(--ds-gray-900);
     font-size: 0.875rem;
-    line-height: 1.5rem;
+    line-height: 20px;
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
 }

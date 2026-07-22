@@ -106,7 +106,8 @@
     justify-content: center;
     align-items: center;
     display: inline-flex;
-    transition: color 0.15s;
+    /* live open(chevron) button: transition-colors ease-in cubic-bezier(.4,0,1,1). */
+    transition: color 0.15s cubic-bezier(0.4, 0, 1, 1);
     position: absolute;
     top: 50%;
     right: 0;
@@ -141,9 +142,19 @@
     animation: 0.15s bounce;
 }
 
+/* Icons render at 14px (live: size-(--ds-control-decoration-size) = 14px),
+   overriding the size={16} attribute the icon components emit. */
+.prefix svg,
+.chevron,
+.cross {
+    width: 14px;
+    height: 14px;
+}
+
 /* Clear button (combobox-module __clearButton). */
 .clearButton {
-    border-radius: 0 var(--oxobz-radius) var(--oxobz-radius) 0;
+    /* live: rounded-r-[5px]. */
+    border-radius: 0 5px 5px 0;
     height: var(--oxobz-form-height);
     padding: 0 var(--oxobz-gap-half);
     border-left: 0;
@@ -151,19 +162,25 @@
     /* Sits just left of the open (chevron) button — see header note. */
     right: 40px;
     width: auto;
-    transition: color 0.15s, box-shadow 0.15s, border-color 0.15s;
+    /* live clear button: transition-all ease-out cubic-bezier(0,0,.2,1). */
+    transition: color 0.15s cubic-bezier(0, 0, 0.2, 1),
+        box-shadow 0.15s cubic-bezier(0, 0, 0.2, 1),
+        border-color 0.15s cubic-bezier(0, 0, 0.2, 1);
 }
 
 .clearButton:focus-visible {
     color: var(--ds-gray-1000);
     border-color: var(--ds-gray-alpha-900);
-    box-shadow: inset 0 0 0 2px var(--ds-blue-700);
+    /* live: focus-visible:ring-2 ring-[--ds-focus-color] ring-offset-0 — an
+       OUTER ring (not inset); --ds-focus-color flips blue-700→blue-900 in dark. */
+    box-shadow: 0 0 0 2px var(--ds-focus-color);
 }
 
 /* Search prefix icon (combobox-module __prefix). */
 .prefix {
     pointer-events: none;
-    left: var(--oxobz-gap-half);
+    /* live: left-[13px] (was 12px). */
+    left: 13px;
     z-index: 1;
     justify-content: center;
     align-items: center;

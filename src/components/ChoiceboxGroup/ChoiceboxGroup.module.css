@@ -67,9 +67,10 @@
     border-color: var(--ds-blue-600);
 }
 
-/* focus-within ring — production: outline-2 outline-offset-2 outline-indigo-600 */
+/* focus-within ring — production: outline-2 outline-offset-2 outline-indigo-600
+   (Tailwind v4 sRGB-remapped indigo-600 = #4f39f6, was v3 #4f46e5). */
 .choicebox:focus-within {
-    outline: 2px solid #4f46e5;
+    outline: 2px solid #4f39f6;
     outline-offset: 2px;
 }
 

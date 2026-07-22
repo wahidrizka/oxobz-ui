@@ -91,7 +91,8 @@
     outline: none;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.15s;
+    /* live: transition-opacity duration-150 ease-in-out = cubic-bezier(.4,0,.2,1). */
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     position: absolute;
     top: 50%;

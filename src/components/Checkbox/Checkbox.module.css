@@ -60,10 +60,6 @@
     flex-shrink: 0;
 }
 
-.icon svg line {
-    transition: stroke 0.2s;
-}
-
 .icon svg path {
     visibility: hidden;
 }

@@ -22,7 +22,7 @@
  * line) and a tooltip-triggering hit area whose ::after enlarges the hover
  * zone. DOM lifted verbatim from progress-additional.html.
  *
- * Var mapping: --geist-radius → var(--geist-radius, 5px) (Geist production
+ * Var mapping: --geist-radius → var(--geist-radius, 6px) (Geist production
  * value; undefined in oxobz tokens — same convention as Skeleton). --ds-gray-200
  * / --ds-gray-alpha-600 / --ds-background-100 flip with the theme, so no
  * .dark-theme block is needed.
@@ -31,7 +31,7 @@
 /* ---- Root native <progress> (progress-module __progress) ---- */
 .progress {
     appearance: none;
-    border-radius: var(--geist-radius, 5px);
+    border-radius: var(--geist-radius, 6px);
     background: var(--ds-gray-200);
     border: none;
     height: 10px;
@@ -42,12 +42,12 @@
 /* ---- WebKit / Blink track + fill ---- */
 .progress::-webkit-progress-bar {
     background: var(--ds-gray-200);
-    border-radius: var(--geist-radius, 5px);
+    border-radius: var(--geist-radius, 6px);
 }
 
 .progress::-webkit-progress-value {
     background: var(--fg);
-    border-radius: var(--geist-radius, 5px);
+    border-radius: var(--geist-radius, 6px);
     transition:
         width 0.1s ease-in,
         background-color 0.1s ease-in;
@@ -56,7 +56,7 @@
 /* ---- Firefox fill ---- */
 .progress::-moz-progress-bar {
     background: var(--fg);
-    border-radius: var(--geist-radius, 5px);
+    border-radius: var(--geist-radius, 6px);
     transition:
         width 0.1s ease-in,
         background-color 0.1s ease-in;

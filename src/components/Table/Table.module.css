@@ -63,7 +63,7 @@
 
 /* ---- TableHead (table-head) ---- */
 .head {
-    height: var(--oxobz-space-medium, 40px);
+    height: var(--ds-size-medium);
     border-color: var(--ds-gray-400);
     padding-inline: 0.5rem;
     font-weight: 500;

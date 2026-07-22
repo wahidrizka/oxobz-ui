@@ -88,7 +88,11 @@
     background: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border-small);
     border-radius: 30px;
-    transition: background 0.2s, border-radius 0.2s;
+    /* live: transition-colors duration-200 (cubic-bezier(.4,0,.2,1)) — animates
+       color/background/border only; border-radius snaps (not in the list). */
+    transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Expanded (form open / success shown): radius eases to 12px — the SAME
@@ -138,7 +142,9 @@
 }
 
 .emoji svg path {
-    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* live: [&_svg_path]:transition-all duration-150 ease-in-out */
+    /* live: [&_svg_path]:transition-all inherits duration-200 from the host
+       emoji button (--tw-duration .2s), ease cubic-bezier(.4,0,.2,1). */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .emoji[aria-checked='true'] {

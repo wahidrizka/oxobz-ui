@@ -98,7 +98,8 @@
 .pillAddress {
     color: rgb(255 255 255 / 0.8);
     background-color: rgb(15 15 15 / 0.32);
-    backdrop-filter: blur(4px);
+    /* live: backdrop-blur-sm = --blur-sm 8px (was 4px). */
+    backdrop-filter: blur(8px);
     border-radius: 9999px;
     display: flex;
     align-items: center;

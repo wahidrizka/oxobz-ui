@@ -8,8 +8,16 @@
     --ds-motion-popover-timing: cubic-bezier(0.16, 1, 0.3, 1);
     --ds-motion-popover-duration: 200ms;
 
-    /* Overlay animations */
-    --ds-motion-overlay-timing: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Overlay animations — live: --ds-motion-overlay-timing resolves to
+       --ds-motion-timing-swift (slight overshoot >1), NOT the popover curve. */
+    --ds-motion-overlay-timing: cubic-bezier(0.175, 0.885, 0.32, 1.1);
     --ds-motion-overlay-duration: 300ms;
     --ds-motion-overlay-scale: 0.95;
+
+    /* Modal backdrop tint — live: --ds-gray-100 (light) / --ds-background-200 (dark). */
+    --ds-overlay-backdrop-color: var(--ds-gray-100);
+}
+
+.dark-theme {
+    --ds-overlay-backdrop-color: var(--ds-background-200);
 }
