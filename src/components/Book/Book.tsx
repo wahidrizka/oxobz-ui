@@ -209,7 +209,7 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                                 className={styles.content}
                                 direction="column"
                                 align="stretch"
-                                justify={variant === 'stripe' ? 'space-between' : 'flex-start'}
+                                justify="flex-start"
                                 padding="0px"
                                 gap="0px"
                             >

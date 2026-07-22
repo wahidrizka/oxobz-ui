@@ -20,7 +20,7 @@
   --ds-gray-600-value: 0, 0%, 66%;
   --ds-gray-700-value: 0, 0%, 56%;
   --ds-gray-800-value: 0, 0%, 49%;
-  --ds-gray-900-value: 0, 0%, 40%;
+  --ds-gray-900-value: 0, 0%, 30%; /* #4d4d4d — live Geist (was 40%/#666, stale) */
   --ds-gray-1000-value: 0, 0%, 9%;
 
   /* === Blue Scale === */

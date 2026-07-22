@@ -90,7 +90,7 @@
    even with no `left` prop (see the Skeleton example). */
 .left {
     display: flex;
-    flex: 1 1 auto;
+    flex: 1;
     align-items: center;
     gap: 16px;
     min-width: 0;
@@ -124,14 +124,14 @@
 
 /* `fill` prop: grow to consume the remaining row width. */
 .contentFill {
-    flex: 1 1 auto;
+    flex: 1;
 }
 
 .inner {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    flex: 1 1 auto;
+    flex: 1;
     min-width: 0;
 }
 

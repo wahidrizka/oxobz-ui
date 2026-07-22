@@ -127,8 +127,11 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 4px;
-    border-radius: 9999px;
+    /* live: fixed 24x24 with 4px radius (h-[24px] w-[24px] rounded-[4px]) */
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;

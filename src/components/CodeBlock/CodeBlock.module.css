@@ -132,6 +132,14 @@
 }
 
 /* ── Pre block ─────────────────────────────────────────── */
+/* The <code> element (live: class="grid text-[var(--ds-gray-1000)]"). Was
+   referenced by CodeBlock.tsx but never styled — the grid display lays out the
+   numbered line rows. */
+.code {
+    display: grid;
+    color: var(--ds-gray-1000);
+}
+
 .pre {
     --padding: 20px;
     padding: var(--padding) 0;

@@ -138,7 +138,7 @@
 }
 
 .emoji svg path {
-    transition: all 0.2s;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* live: [&_svg_path]:transition-all duration-150 ease-in-out */
 }
 
 .emoji[aria-checked='true'] {
@@ -206,11 +206,9 @@
 .markdownMark {
     display: inline-block !important;
     margin: 0 var(--oxobz-gap-quarter) 0 0 !important;
-    opacity: 0.4;
-}
-
-:global(.dark-theme) .markdownMark {
-    filter: invert();
+    /* live: solid path fill var(--ds-gray-700), full opacity (was opacity .4 +
+       a dark-theme invert() hack). The gray-700 token flips with the theme. */
+    color: var(--ds-gray-700);
 }
 
 /* ---- Actions bar (feedback-module __actions) ----

@@ -71,6 +71,7 @@
 .large .input {
     height: var(--ds-form-large-height);
     font-size: 16px;
+    line-height: 24px; /* live: text-base → 1.5 (was inheriting 20px) */
     border-radius: 8px;
 }
 

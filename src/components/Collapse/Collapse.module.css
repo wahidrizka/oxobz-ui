@@ -29,11 +29,12 @@
     border-top: none;
 }
 
+/* Live Collapse card branch only ADDS p-6 + shadow + rounded-[5px]; it keeps
+   the base border-t/border-b (verified live 2026-07-21) — do NOT remove them. */
 .collapse.card {
     padding: var(--oxobz-gap);
     box-shadow: var(--shadow-small);
-    border-radius: var(--oxobz-radius);
-    border: none;
+    border-radius: 5px;
 }
 
 .button {
@@ -76,6 +77,7 @@
     color: var(--oxobz-secondary);
     letter-spacing: normal;
     font-size: 1rem;
+    line-height: 1.5; /* live: text-base → 24px @ 16px (was unset) */
     font-weight: 400;
     display: block;
 }
