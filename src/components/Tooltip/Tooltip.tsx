@@ -197,6 +197,12 @@ const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(
                             <div
                                 className={cn(
                                     styles.tooltip,
+                                    // live geistcn (26 Jul): popup default membawa kelas
+                                    // GLOBAL `invert-theme` — semua token --ds-* di dalam
+                                    // popup terbalik (bg gelap di tema terang), persis
+                                    // computed live rgb(10,10,10). Scope token
+                                    // .invert-theme diimplement di tokens/colors.css.
+                                    type === 'default' && 'invert-theme',
                                     styles[position],
                                     type !== 'default' && styles[type],
                                     boxAlign !== 'center' &&
@@ -211,10 +217,23 @@ const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(
                                 role="tooltip"
                             >
                                 {text}
-                                <span
-                                    aria-hidden="true"
-                                    className={styles.triangle}
-                                />
+                                {/* Arrow live = SVG 14×6 berlekuk (bukan segitiga border),
+                                    fill --ds-background-100 (ikut terbalik oleh
+                                    invert-theme). Bukti hanya untuk posisi top; posisi
+                                    lain memutar svg yang sama (inferensi, ditandai). */}
+                                <span aria-hidden="true" className={styles.triangle}>
+                                    <svg
+                                        height="6"
+                                        viewBox="0 0 14 6"
+                                        width="14"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            className={styles.trianglePath}
+                                            d="M13.8284 0H0.17157C0.702003 0 1.21071 0.210714 1.58578 0.585787L5.58578 4.58579C6.36683 5.36684 7.63316 5.36683 8.41421 4.58579L12.4142 0.585786C12.7893 0.210714 13.298 0 13.8284 0Z"
+                                        />
+                                    </svg>
+                                </span>
                             </div>
                         </div>
                     </div>

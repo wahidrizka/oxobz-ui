@@ -408,6 +408,12 @@ function ToastContainer({ item, onDismiss }: ToastContainerProps) {
             )}
             <div className={styles.toast}>
                 <div className={cn(styles.message, hasUndo && styles.fullWidth)}>
+                    {/* live geistcn (26 Jul): pesan diawali prefiks tipe untuk screen
+                        reader — `<span class="sr-only">success: </span>` (juga
+                        "error: "/"warning: "). Tanpa tipe, tak ada prefiks. */}
+                    {item.type ? (
+                        <span className="oxobz-sr-only">{`${item.type}: `}</span>
+                    ) : null}
                     <span>{item.text}</span>
                     {hasInlineAction && (
                         <div className={styles.actionsContainer}>

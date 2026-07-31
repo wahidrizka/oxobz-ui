@@ -86,18 +86,25 @@
     background: var(--themed-bg);
     text-align: left;
     pointer-events: none;
-    border-radius: 6px;
-    width: fit-content;
-    padding: 8px 12px;
+    /* live geistcn (26 Jul): rounded-lg, px-2 py-1.5, max-width 250px */
+    border-radius: 8px;
+    /* max-content, bukan fit-content: popup kita berjangkar di dalam trigger
+       (produksi portal ke body), fit-content akan menyusut ke lebar trigger
+       dan memecah teks per karakter. max-content + max-width 250px = perilaku
+       ukur-di-body milik produksi. */
+    width: max-content;
+    max-width: 250px;
+    padding: 6px 8px;
     font-size: 13px;
     font-weight: 400;
     line-height: 1.3;
     animation: 0.1s ease-in 0.4s forwards fadeIn;
     position: absolute;
-    /* oxobz positioning: production measures at body level so text never
-       shrinks to the trigger width; single line by default, .wrap restores
-       multi-line behaviour. */
-    white-space: nowrap;
+    /* live geistcn: break-words + whitespace-pre-line + text-balance adalah
+       DEFAULT (bukan opt-in .wrap lagi). */
+    overflow-wrap: break-word;
+    white-space: pre-line;
+    text-wrap: balance;
 }
 
 /* Re-shown shortly after another tooltip was hidden */
@@ -137,7 +144,12 @@
     left: 0;
 }
 
-/* ---- Triangle (tooltip-module __triangle) ---- */
+/* ---- Arrow (live geistcn 26 Jul: SVG 14×6 berlekuk, bukan border-triangle) --
+   Wrapper live: `absolute z-[-1] flex h-fit [--arrow-bg:var(--themed-bg)]
+   top-full left-1/2 -translate-x-1/2 -translate-y-[0.6px]`. Path fill live =
+   var(--ds-background-100); di sini var(--tooltip-background) agar varian type
+   tetap ikut — nilai default-nya identik (background-100, ikut terbalik oleh
+   invert-theme pada popup). */
 .triangle {
     --arrow-bg: var(--themed-bg);
 
@@ -145,19 +157,21 @@
     height: fit-content;
     display: flex;
     position: absolute;
-    /* oxobz positioning: production sizes the arrow inline via JS; a 7px
-       border makes the arrow 14px wide, matching the production
-       `right: calc(10% - 14px)` box-align offset below. */
-    border: 7px solid transparent;
+    transform-origin: center;
+}
+
+.trianglePath {
+    fill: var(--tooltip-background);
 }
 
 /* ---- Position: left ---- */
 .tooltip.left .triangle {
-    border-left-color: var(--tooltip-background);
+    /* arrow menunjuk kanan: svg default menunjuk bawah, diputar -90deg
+       (INFERENSI - bukti live hanya posisi top; ditandai). */
     top: 50%;
     bottom: 50%;
-    left: 100%;
-    transform: translateY(-50%);
+    left: calc(100% - 4px);
+    transform: translateY(-50%) rotate(-90deg);
 }
 
 .tooltip.left:after {
@@ -174,11 +188,10 @@
 }
 
 .tooltip.right .triangle {
-    border-right-color: var(--tooltip-background);
     top: 50%;
     bottom: 50%;
-    right: 100%;
-    transform: translateY(-50%);
+    right: calc(100% - 4px);
+    transform: translateY(-50%) rotate(90deg);
 }
 
 /* ---- Position: top ---- */
@@ -190,7 +203,6 @@
    on the box itself they are inert — the box position comes from the JS
    inline styles there and from the oxobz positioning section here. */
 .tooltip.top .triangle {
-    border-top-color: var(--tooltip-background);
     top: 100%;
 }
 
@@ -204,10 +216,9 @@
 
 /* ---- Position: bottom ---- */
 .tooltip.bottom .triangle {
-    border-bottom-color: var(--tooltip-background);
     bottom: 100%;
     left: 50%;
-    transform: translate(-50%);
+    transform: translate(-50%) rotate(180deg);
 }
 
 .tooltip.bottom .triangle:before {
