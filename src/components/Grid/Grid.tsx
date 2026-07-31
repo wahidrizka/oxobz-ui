@@ -33,6 +33,14 @@ export interface GridSystemProps extends HTMLAttributes<HTMLDivElement> {
     guideWidth?: number;
     /** Use container queries instead of media queries */
     unstable_useContainer?: boolean;
+    /**
+     * Content rendered INSIDE the `gridSystemLazyContent` div (only rendered
+     * with `unstable_useContainer`). Mirrors production Geist: on docs pages
+     * (e.g. /geist/colors) the header section is a direct child of the grid
+     * system while every remaining section lives inside the lazy-content
+     * wrapper (`contain: layout`). Omit to keep the previous empty-div DOM.
+     */
+    lazyChildren?: ReactNode;
     /** Maximum width of the grid system */
     maxWidth?: number;
     /** Minimum width of the grid system */
@@ -50,6 +58,18 @@ export interface GridProps extends HTMLAttributes<HTMLElement> {
     height?: GridHeight;
     /** Hide specific guide lines */
     hideGuides?: HideGuides;
+    /**
+     * Crosshair (+) markers at grid line intersections. Each `{ row, column }`
+     * is 1-based; negative values count from the end (e.g. `column: -1` = last
+     * line). Mirrors Geist's `data-grid-cross` elements.
+     */
+    crosses?: GridCross[];
+}
+
+/** A crosshair marker position within a Grid. */
+export interface GridCross {
+    row: number;
+    column: number;
 }
 
 export interface GridCellProps extends HTMLAttributes<HTMLDivElement> {
@@ -360,6 +380,7 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
             dashedGuides = false,
             guideWidth,
             unstable_useContainer = false,
+            lazyChildren,
             maxWidth,
             minWidth,
             style,
@@ -389,7 +410,7 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
                 {...props}
             >
                 {children}
-                {unstable_useContainer && <div className={styles.gridSystemLazyContent} />}
+                {unstable_useContainer && <div className={styles.gridSystemLazyContent}>{lazyChildren}</div>}
                 {debug && <div className={styles.systemDebugOverlay} />}
             </div>
         );
@@ -432,8 +453,29 @@ GridCell.displayName = 'Grid.Cell';
  * Grid — The grid section.
  */
 const GridRoot = forwardRef<HTMLElement, GridProps>(
-    ({ children, className, columns, rows, height = 'fit-content', hideGuides, style, ...props }, ref) => {
+    ({ children, className, columns, rows, height = 'fit-content', hideGuides, crosses, style, ...props }, ref) => {
         const gridVars = buildGridVars(columns, rows, height);
+
+        // Crosshair (+) markers — mirrors Geist's `data-grid-cross` elements.
+        const crossNodes: ReactNode = crosses?.length
+            ? crosses.map((c, i) => (
+                  <div
+                      key={`cross-${i}`}
+                      className={styles.cross}
+                      data-grid-cross=""
+                      style={{ '--cross-row': c.row, '--cross-column': c.column } as CSSProperties}
+                  >
+                      <div
+                          className={styles.crossLine}
+                          style={{ width: 'var(--cross-half-size)', height: 'var(--cross-size)', borderRightWidth: 'var(--guide-width)' }}
+                      />
+                      <div
+                          className={styles.crossLine}
+                          style={{ width: 'var(--cross-size)', height: 'var(--cross-half-size)', borderBottomWidth: 'var(--guide-width)' }}
+                      />
+                  </div>
+              ))
+            : null;
 
         const columnsIsResponsive = typeof columns === 'object' && columns !== null;
         const rowsIsResponsive = typeof rows === 'object' && rows !== null;
@@ -484,6 +526,7 @@ const GridRoot = forwardRef<HTMLElement, GridProps>(
                 {...props}
             >
                 {children}
+                {crossNodes}
                 {guides}
             </section>
         );

@@ -82,6 +82,14 @@ export interface FeedbackProps
     /** Variant. Default renders a trigger Button + popover; 'inline' renders the embedded card. */
     type?: FeedbackType;
 
+    /**
+     * Prompt text in the `inline` variant's header. Defaults to "Was this
+     * helpful?" — the string every captured inline example uses. Geist's own
+     * docs footer renders the same widget with "Give feedback" on desktop and
+     * "Was this helpful?" on mobile, so the copy is a consumer choice.
+     */
+    prompt?: ReactNode;
+
     /** Adds a topic `<Select>` above the message field. */
     showTopics?: boolean;
 
@@ -340,6 +348,7 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
         {
             label,
             type = 'default',
+            prompt = 'Was this helpful?',
             showTopics = false,
             topics = DEFAULT_TOPICS,
             prefix,
@@ -509,7 +518,7 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
                         ref={inlineRef}
                     >
                         <div className={styles.prompt}>
-                            <p className={cn('text-copy-14', styles.promptText)}>Was this helpful?</p>
+                            <p className={cn('text-copy-14', styles.promptText)}>{prompt}</p>
                             <EmojiPicker onSelect={handleSelectRating} rating={rating} />
                         </div>
 

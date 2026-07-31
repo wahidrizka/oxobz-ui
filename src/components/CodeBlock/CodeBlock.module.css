@@ -136,8 +136,23 @@
    referenced by CodeBlock.tsx but never styled — the grid display lays out the
    numbered line rows. */
 .code {
+    /* Verbatim geistcn code element (references/typography.html):
+       `grid text-[var(--ds-gray-1000)] text-left whitespace-pre break-normal
+        !text-[13px] leading-[20px] font-mono hyphens-none`
+       + inline style font-feature-settings:"liga" 0 (di sini via CSS —
+       nilai computed sama karena diwariskan ke line/token). */
     display: grid;
     color: var(--ds-gray-1000);
+    text-align: left;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+    /* stylelint-disable-next-line declaration-no-important -- verbatim `!text-[13px]` produksi */
+    font-size: 13px !important;
+    line-height: 20px;
+    font-family: var(--font-mono);
+    hyphens: none;
+    font-feature-settings: 'liga' 0;
 }
 
 .pre {

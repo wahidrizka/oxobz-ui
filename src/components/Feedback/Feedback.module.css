@@ -72,6 +72,15 @@
 .inlineWrapper {
     display: flex;
     justify-content: center;
+    /* Kartu ditambatkan ke DASAR wrapper. Efeknya nol saat wrapper bebas
+       (tingginya mengikuti kartu), tapi menentukan saat konsumen mengunci
+       tinggi wrapper — mis. footer docs Geist memakai `h-12` (48px): di sana
+       form yang terbuka MELUAP KE ATAS, bukan mendorong layout, sehingga
+       halaman tidak bertambah tinggi dan tidak memunculkan scroll baru.
+       Diverifikasi di produksi: instance tanpa `h-12` ikut tumbuh (wrapper
+       243px, kartu tanpa transform), instance dengan `h-12` tetap 48px dan
+       kartunya diberi `translateY(-200px)` oleh JS Geist. */
+    align-items: flex-end;
 }
 
 /* ---- Card (feedback-module __inlineTriggerWrapper) ----
@@ -82,7 +91,13 @@
 .card {
     display: flex;
     flex-direction: column;
-    width: fit-content;
+    /* Lebar TETAP 274px, bukan fit-content. Diverifikasi di produksi Geist:
+       setiap instance inline membawa inline style `width:274px` — sama persis
+       walau teks prompt beda panjang ("Was this helpful?" vs "Give feedback"),
+       diukur di /geist/feedback (3 instance) dan /geist/introduction. Dengan
+       fit-content lebar kita jadi 255px (mengikuti teks) sehingga tidak pernah
+       cocok. */
+    width: 274px;
     max-width: 100%;
     overflow: hidden;
     background: var(--ds-background-100);
@@ -92,7 +107,10 @@
        color/background/border only; border-radius snaps (not in the list). */
     transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
         background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        /* Geist meng-animasi lebar bersamaan dengan tinggi saat form dibuka
+           (274px → 336px); di produksi nilainya dipasang inline oleh JS. */
+        width 0.2s ease;
 }
 
 /* Expanded (form open / success shown): radius eases to 12px — the SAME
@@ -100,6 +118,9 @@
  * dialog rendering (--ds-radius-lg). */
 .card[data-open] {
     border-radius: var(--ds-radius-lg);
+    /* Terbuka melebar ke 336px — juga konstanta, diukur dari inline style
+       Geist saat form terbuka (`width: 336px; border-radius: 12px`). */
+    width: 336px;
 }
 
 /* ---- Prompt row (feedback-module __trigger) ---- */
