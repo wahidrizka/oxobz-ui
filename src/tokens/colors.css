@@ -10,7 +10,10 @@
  *   Dark:  .dark,.dark-theme,.invert-theme
  */
 
-:root {
+:root,
+:host,
+.dark .invert-theme,
+.dark-theme .invert-theme {
   /* === Gray Scale === */
   --ds-gray-100-value: 0, 0%, 95%;
   --ds-gray-200-value: 0, 0%, 92%;
@@ -289,7 +292,9 @@
 }
 
 /* === Dark Theme === */
-.dark-theme {
+.dark,
+.dark-theme,
+.invert-theme {
   /* === Gray Scale === */
   --ds-gray-100-value: 0, 0%, 10%;
   --ds-gray-200-value: 0, 0%, 12%;
@@ -444,4 +449,94 @@
   --ds-focus-color: var(--ds-blue-900);
   --ds-focus-border: 0 0 0 1px var(--ds-gray-alpha-600), 0px 0px 0px 4px #ffffff3d;
   --ds-focus-ring: 0 0 0 2px var(--ds-background-100), 0 0 0 4px var(--ds-focus-color);
+
+    /* Deklarasi ULANG komposit — verbatim mekanisme produksi (chunk 328y7:
+       blok .dark,.dark-theme,.invert-theme memuat 82 komposit hsla(var(...))).
+       WAJIB: tanpa ini, .invert-theme pada elemen BERSARANG (mis. popup
+       Tooltip) tidak berefek — custom property komposit yang dideklarasikan di
+       :root diwariskan sebagai NILAI JADI, override -value di elemen anak
+       tidak me-resolve ulang. Redeklarasi di scope ini memaksa resolve ulang
+       terhadap -value lokal. */
+    --ds-gray-100: hsla(var(--ds-gray-100-value), 1);
+    --ds-gray-200: hsla(var(--ds-gray-200-value), 1);
+    --ds-gray-300: hsla(var(--ds-gray-300-value), 1);
+    --ds-gray-400: hsla(var(--ds-gray-400-value), 1);
+    --ds-gray-500: hsla(var(--ds-gray-500-value), 1);
+    --ds-gray-600: hsla(var(--ds-gray-600-value), 1);
+    --ds-gray-700: hsla(var(--ds-gray-700-value), 1);
+    --ds-gray-800: hsla(var(--ds-gray-800-value), 1);
+    --ds-gray-900: hsla(var(--ds-gray-900-value), 1);
+    --ds-gray-1000: hsla(var(--ds-gray-1000-value), 1);
+    --ds-blue-100: hsla(var(--ds-blue-100-value), 1);
+    --ds-blue-200: hsla(var(--ds-blue-200-value), 1);
+    --ds-blue-300: hsla(var(--ds-blue-300-value), 1);
+    --ds-blue-400: hsla(var(--ds-blue-400-value), 1);
+    --ds-blue-500: hsla(var(--ds-blue-500-value), 1);
+    --ds-blue-600: hsla(var(--ds-blue-600-value), 1);
+    --ds-blue-700: hsla(var(--ds-blue-700-value), 1);
+    --ds-blue-800: hsla(var(--ds-blue-800-value), 1);
+    --ds-blue-900: hsla(var(--ds-blue-900-value), 1);
+    --ds-blue-1000: hsla(var(--ds-blue-1000-value), 1);
+    --ds-red-100: hsla(var(--ds-red-100-value), 1);
+    --ds-red-200: hsla(var(--ds-red-200-value), 1);
+    --ds-red-300: hsla(var(--ds-red-300-value), 1);
+    --ds-red-400: hsla(var(--ds-red-400-value), 1);
+    --ds-red-500: hsla(var(--ds-red-500-value), 1);
+    --ds-red-600: hsla(var(--ds-red-600-value), 1);
+    --ds-red-700: hsla(var(--ds-red-700-value), 1);
+    --ds-red-800: hsla(var(--ds-red-800-value), 1);
+    --ds-red-900: hsla(var(--ds-red-900-value), 1);
+    --ds-red-1000: hsla(var(--ds-red-1000-value), 1);
+    --ds-amber-100: hsla(var(--ds-amber-100-value), 1);
+    --ds-amber-200: hsla(var(--ds-amber-200-value), 1);
+    --ds-amber-300: hsla(var(--ds-amber-300-value), 1);
+    --ds-amber-400: hsla(var(--ds-amber-400-value), 1);
+    --ds-amber-500: hsla(var(--ds-amber-500-value), 1);
+    --ds-amber-600: hsla(var(--ds-amber-600-value), 1);
+    --ds-amber-700: hsla(var(--ds-amber-700-value), 1);
+    --ds-amber-800: hsla(var(--ds-amber-800-value), 1);
+    --ds-amber-900: hsla(var(--ds-amber-900-value), 1);
+    --ds-amber-1000: hsla(var(--ds-amber-1000-value), 1);
+    --ds-green-100: hsla(var(--ds-green-100-value), 1);
+    --ds-green-200: hsla(var(--ds-green-200-value), 1);
+    --ds-green-300: hsla(var(--ds-green-300-value), 1);
+    --ds-green-400: hsla(var(--ds-green-400-value), 1);
+    --ds-green-500: hsla(var(--ds-green-500-value), 1);
+    --ds-green-600: hsla(var(--ds-green-600-value), 1);
+    --ds-green-700: hsla(var(--ds-green-700-value), 1);
+    --ds-green-800: hsla(var(--ds-green-800-value), 1);
+    --ds-green-900: hsla(var(--ds-green-900-value), 1);
+    --ds-green-1000: hsla(var(--ds-green-1000-value), 1);
+    --ds-teal-100: hsla(var(--ds-teal-100-value), 1);
+    --ds-teal-200: hsla(var(--ds-teal-200-value), 1);
+    --ds-teal-300: hsla(var(--ds-teal-300-value), 1);
+    --ds-teal-400: hsla(var(--ds-teal-400-value), 1);
+    --ds-teal-500: hsla(var(--ds-teal-500-value), 1);
+    --ds-teal-600: hsla(var(--ds-teal-600-value), 1);
+    --ds-teal-700: hsla(var(--ds-teal-700-value), 1);
+    --ds-teal-800: hsla(var(--ds-teal-800-value), 1);
+    --ds-teal-900: hsla(var(--ds-teal-900-value), 1);
+    --ds-teal-1000: hsla(var(--ds-teal-1000-value), 1);
+    --ds-purple-100: hsla(var(--ds-purple-100-value), 1);
+    --ds-purple-200: hsla(var(--ds-purple-200-value), 1);
+    --ds-purple-300: hsla(var(--ds-purple-300-value), 1);
+    --ds-purple-400: hsla(var(--ds-purple-400-value), 1);
+    --ds-purple-500: hsla(var(--ds-purple-500-value), 1);
+    --ds-purple-600: hsla(var(--ds-purple-600-value), 1);
+    --ds-purple-700: hsla(var(--ds-purple-700-value), 1);
+    --ds-purple-800: hsla(var(--ds-purple-800-value), 1);
+    --ds-purple-900: hsla(var(--ds-purple-900-value), 1);
+    --ds-purple-1000: hsla(var(--ds-purple-1000-value), 1);
+    --ds-pink-100: hsla(var(--ds-pink-100-value), 1);
+    --ds-pink-200: hsla(var(--ds-pink-200-value), 1);
+    --ds-pink-300: hsla(var(--ds-pink-300-value), 1);
+    --ds-pink-400: hsla(var(--ds-pink-400-value), 1);
+    --ds-pink-500: hsla(var(--ds-pink-500-value), 1);
+    --ds-pink-600: hsla(var(--ds-pink-600-value), 1);
+    --ds-pink-700: hsla(var(--ds-pink-700-value), 1);
+    --ds-pink-800: hsla(var(--ds-pink-800-value), 1);
+    --ds-pink-900: hsla(var(--ds-pink-900-value), 1);
+    --ds-pink-1000: hsla(var(--ds-pink-1000-value), 1);
+    --ds-background-100: hsla(var(--ds-background-100-value), 1);
+    --ds-background-200: hsla(var(--ds-background-200-value), 1);
 }

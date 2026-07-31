@@ -1,54 +1,59 @@
 /**
  * @oxobz/ui — Material Presets
- * Extracted from Geist CSS: _nextstatic/chunks/2dd69db0a79ce415.css
+ * Source: LIVE production CSS (chunk 36ki2ore5zids.css, fetched 26 Jul 2026).
+ * Declarations verbatim: background-color (not shorthand) + hardcoded radius px
+ * (production does NOT use --ds-radius vars here).
  *
- * 8 material presets combining background, shadow, and border-radius
+ * Note: production ships these inside `@layer utilities` (geistcn generation);
+ * our styles enter the docs cascade via `layer(base)`. Identical computed
+ * results as long as no competing bg/shadow/radius utility sits on the same
+ * element (true for all replicated pages).
  */
 
 .material-base {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border);
-    border-radius: var(--ds-radius);
+    border-radius: 6px;
 }
 
 .material-small {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border-small);
-    border-radius: var(--ds-radius);
+    border-radius: 6px;
 }
 
 .material-medium {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border-medium);
-    border-radius: var(--ds-radius-lg);
+    border-radius: 12px;
 }
 
 .material-large {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border-large);
-    border-radius: var(--ds-radius-lg);
+    border-radius: 12px;
 }
 
 .material-tooltip {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-tooltip);
-    border-radius: var(--ds-radius);
+    border-radius: 6px;
 }
 
 .material-menu {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-menu);
-    border-radius: var(--ds-radius-lg);
+    border-radius: 12px;
 }
 
 .material-modal {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-modal);
-    border-radius: var(--ds-radius-lg);
+    border-radius: 12px;
 }
 
 .material-fullscreen {
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-fullscreen);
-    border-radius: var(--ds-radius-xl);
+    border-radius: 16px;
 }

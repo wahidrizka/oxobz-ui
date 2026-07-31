@@ -30,7 +30,7 @@
     min-width: var(--oxobz-gap);
     font-size: 0.875rem;
     line-height: 1.7em;
-    font-family: var(--font-sans, var(--font-sans-fallback));
+    font-family: var(--font-geist-sans); /* live: kbd pakai utility font-sans! → Geist Sans ASLI */
     border-radius: 4px;
     min-height: 24px;
     margin-left: 4px;
@@ -52,7 +52,7 @@
 
 /* ---- Small (kbd-module __small; snapshot overrides win) ---- */
 .kbd.small {
-    font-family: var(--font-sans, var(--font-sans-fallback));
+    font-family: var(--font-geist-sans); /* live: kbd pakai utility font-sans! → Geist Sans ASLI */
     min-width: 20px;
     height: 20px;
     min-height: 20px;

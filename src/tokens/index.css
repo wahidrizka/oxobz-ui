@@ -18,13 +18,32 @@
 @import './materials.css';
 @import './motion.css';
 
-/* === Font Face Definitions (Geist, variable — official metadata: weight 100 900) === */
+/* === Font Face Definitions (Geist, variable — official metadata: weight 100 900) ===
+ *
+ * KEPUTUSAN PENGGUNA 26 Jul 2026 — "tiru fallback mereka": produksi Geist
+ * memuat font sans dengan family "GeistSans" (BUKAN "Geist"), sementara token
+ * `--font-sans` mereka merujuk "Geist, Inter, …" yang tidak pernah dimuat —
+ * akibatnya semua teks yang MEWARISI font body jatuh ke font sistem, dan hanya
+ * utility typography (`text-heading-*` dst → --font-geist-sans) yang memakai
+ * Geist Sans asli. Diverifikasi live per-elemen (body/label/tombol/toast/menu
+ * = fallback; heading/copy/kbd/font-sans/font-mono = asli). Struktur di bawah
+ * mereplikasi mekanisme itu 1:1. */
 @font-face {
-    font-family: 'Geist';
+    font-family: 'GeistSans';
     src: url('./fonts/Geist-Variable.woff2') format('woff2');
     font-weight: 100 900;
     font-style: normal;
     font-display: swap;
+}
+
+/* Verbatim produksi (chunk 0otjng…): fallback next/font ber-metrik Arial. */
+@font-face {
+    font-family: 'GeistSans Fallback';
+    src: local(Arial);
+    ascent-override: 94.56%;
+    descent-override: 27.76%;
+    line-gap-override: 0%;
+    size-adjust: 106.28%;
 }
 
 @font-face {
@@ -35,12 +54,22 @@
     font-display: swap;
 }
 
-/* === Font Variables === */
+/* === Font Variables — nilai VERBATIM computed produksi Geist === */
 :root {
-    --font-sans: 'Geist';
-    --font-sans-fallback: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'Geist Mono';
-    --font-mono-fallback: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+    /* Rantai warisan body: family "Geist" sengaja TIDAK dimuat (lihat catatan
+       di atas) sehingga teks pewaris jatuh ke font sistem — persis produksi. */
+    --font-sans: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    --font-sans-fallback: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    /* Geist Sans ASLI — dipakai utility typography & font-sans (geistcn). */
+    --font-geist-sans: 'GeistSans', 'GeistSans Fallback';
+    --font-mono: 'Geist Mono', Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace;
+    /* Z-index scale — verbatim chunk produksi (328y7…). */
+    --ds-z-drawer: 200;
+    --ds-z-modal: 300;
+    --ds-z-menu: 2001;
+    --ds-z-toast: 5000;
+    --ds-z-tooltip: 99999;
+    --font-mono-fallback: Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace;
 }
 
 /* === Base Reset === */

@@ -1,12 +1,20 @@
 /**
  * @oxobz/ui — Shadow Tokens
- * Extracted 100% from Geist production CSS: 1c419a75d7e589ae.css
+ * Source: LIVE production CSS (chunks 36ki2ore5zids.css + 328y7_b581oob.css,
+ * fetched 26 Jul 2026) — verified identical across both chunks.
  *
- * Light = :root (from prod light-theme block)
- * Dark  = .dark-theme (from prod dark-theme block)
+ * Live scopes are NOT uniform (3 distinct patterns, verbatim below):
+ *   1. ds-shadow group + header + overlay : light `:root,:host` only —
+ *      no invert re-lightening (invert-theme keeps DARK shadows even
+ *      inside dark theme; asymmetric vs color tokens — intentional).
+ *   2. --ds-shadow-border-inset            : dark list is the COLORS list.
+ *   3. Legacy --shadow- and --dropdown- tokens: light list includes invert +
+ *      geist-disabled scopes.
  */
 
-:root {
+/* ---- DS shadows + header + overlay (light) ---- */
+:root,
+:host {
     /* DS Shadow primitives */
     --ds-shadow-background-border: 0 0 0 1px var(--ds-background-200);
     --ds-shadow-border-base: 0 0 0 1px #00000014;
@@ -25,7 +33,20 @@
     --ds-shadow-modal: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, var(--ds-shadow-background-border);
     --ds-shadow-fullscreen: var(--ds-shadow-border-base), 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f, var(--ds-shadow-background-border);
 
-    /* Legacy shadow aliases (from prod light-theme) */
+    /* Header */
+    --header-border-bottom: 0 1px 0 0 #0000001a;
+    --header-import-flow-background: #fafafacc;
+
+    /* Overlay (no dark override in production) */
+    --ds-overlay-backdrop-opacity: 0.8;
+}
+
+/* ---- Legacy shadow aliases (light) ---- */
+:root,
+:host,
+.dark .invert-theme,
+.dark-theme .invert-theme,
+.geist-disabled .geist-disabled-skip {
     --dropdown-box-shadow: 0 4px 4px 0 #00000005;
     --dropdown-triangle-stroke: #fff;
     --shadow-extra-small: 0px 4px 8px #0000001f;
@@ -38,15 +59,14 @@
 
     /* Geist legacy alias (used by Button active state) */
     --oxobz-shadow-small: var(--shadow-small);
-
-    /* Overlay */
-    --ds-overlay-backdrop-opacity: 0.8;
 }
 
-/* Dark theme shadow overrides */
-.dark-theme {
+/* ---- Dark theme overrides (main dark list) ---- */
+.dark-theme,
+.invert-theme,
+.dark,
+.dark-theme .geist-disabled .geist-disabled-skip {
     --ds-shadow-border-base: 0 0 0 1px #ffffff25;
-    --ds-shadow-border-inset: inset 0 0 0 1px #ffffff1a;
     --ds-shadow-small: 0px 1px 2px #00000029;
     --ds-shadow-medium: 0px 2px 2px #00000052, 0px 8px 8px -8px #00000029;
     --ds-shadow-large: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
@@ -70,7 +90,7 @@
     --shadow-small: 0 0 0 1px var(--accents-2);
     --shadow-medium: 0 0 0 1px var(--accents-2);
     --shadow-large: 0 0 0 1px var(--accents-2);
-    --shadow-hover: 0 0 0 1px var(--ds-gray-1000);
+    --shadow-hover: 0 0 0 1px var(--geist-foreground);
     --shadow-sticky: 0 0 0 1px var(--accents-2);
 
     /* Geist legacy alias (used by Button active state) */
@@ -79,4 +99,11 @@
     /* Header */
     --header-border-bottom: 0 1px 0 0 #ffffff1a;
     --header-import-flow-background: #111c;
+}
+
+/* ---- --ds-shadow-border-inset dark uses the COLORS dark list ---- */
+.dark,
+.dark-theme,
+.invert-theme {
+    --ds-shadow-border-inset: inset 0 0 0 1px #ffffff1a;
 }
