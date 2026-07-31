@@ -44,7 +44,7 @@ export { CodeBlock } from './components/CodeBlock';
 export type { CodeBlockProps, SwitcherOption, SwitcherConfig } from './components/CodeBlock';
 
 export { Grid, GridSystem, GridCell } from './components/Grid';
-export type { GridSystemProps, GridProps, GridCellProps } from './components/Grid';
+export type { GridSystemProps, GridProps, GridCellProps, GridCross } from './components/Grid';
 
 export { Button, ButtonLink, CustomButton } from './components/Button';
 export type { ButtonProps, ButtonLinkProps, CustomButtonProps, CustomButtonColors, ButtonVariant, ButtonSize, ButtonShape } from './components/Button';
@@ -128,6 +128,8 @@ export type { StatusDotProps, StatusDotState } from './components/StatusDot';
 export { Gauge } from './components/Gauge';
 export type { GaugeProps, GaugeSize, GaugeArcPriority, GaugeColors } from './components/Gauge';
 
+export { CommandMenu } from './components/CommandMenu';
+export type { CommandMenuProps, CommandMenuGroup, CommandMenuItem } from './components/CommandMenu';
 export { Combobox, ComboboxInput, ComboboxList, ComboboxOption } from './components/Combobox';
 export type { ComboboxProps, ComboboxInputProps, ComboboxListProps, ComboboxOptionProps, ComboboxSize } from './components/Combobox';
 

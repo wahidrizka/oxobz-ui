@@ -1,0 +1,277 @@
+/**
+ * CommandMenu — CSS Module
+ *
+ * Sumber: capture LIVE dari command menu Geist (dibuka lewat Ctrl+K di
+ * https://vercel.com/geist/introduction, 26 Jul 2026). Tidak ada snapshot
+ * statis untuk komponen ini di `_nextstatic/component-inspect-element/`;
+ * markup command menu memang hanya ada setelah dialog dibuka, jadi seluruh
+ * nilai di bawah diambil dari `getComputedStyle` pada DOM hidup — bukan dari
+ * penafsiran nama kelas Tailwind.
+ *
+ * Computed yang direproduksi (viewport 1440×900, tema terang):
+ *   overlay  bg #fff, opacity .8, z-index 100, inset 0, fixed
+ *   dialog   fixed, top 15%, left 50% + translateX(-50%), w 640px, radius 12px,
+ *            bg --ds-background-100, shadow --ds-shadow-modal, overflow hidden,
+ *            transform-origin center, z-index 100
+ *   input    h 28px, font 18px (≥sm) / 16px, color --ds-gray-1000,
+ *            placeholder --ds-gray-700, tanpa border, padding 0
+ *   wrapper  padding 12px, border-bottom 1px rgba(0,0,0,.08) = --ds-gray-alpha-400
+ *   row      flex, gap 12px, justify-between, padding 0 4px
+ *   esc      h 20px, padding 0 4px, radius 4px, font 12px,
+ *            shadow --ds-shadow-border, bg --ds-background-100
+ *   list     max-height 436px (≥sm), overflow-y auto, padding 8px
+ *   heading  h 36px (--ds-size-medium), padding 0 8px, font 13px, --ds-gray-900
+ *   item     min-h 36px (≥sm; --ds-size-large di bawahnya), padding 0 8px,
+ *            radius 6px, font 14px, gap 12px, color --ds-gray-1000
+ *   ikon     20×20, color --ds-gray-900
+ *   empty    padding 30px 0
+ */
+
+/* ---- Overlay (cmdk-overlay) ---- */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--ds-background-100);
+    opacity: 0.8;
+    z-index: 100;
+}
+
+.overlay[data-state='open'] {
+    animation: cmdkFadeIn var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing);
+}
+
+.overlay[data-state='closed'] {
+    animation: cmdkFadeOut var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing);
+}
+
+/* ---- Dialog (cmdk-dialog) ---- */
+.dialog {
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    /* Pemusatan memakai properti `translate` TERPISAH, bukan `transform`
+       (diverifikasi live: translate="-50%", transform="none"). Penting: keyframes
+       cmdkScaleIn/Out meng-animasi `transform`, jadi kalau centering ditaruh di
+       `transform` ia akan tertimpa dan dialog melompat ke kiri saat animasi. */
+    translate: -50%;
+    width: 640px;
+    max-width: calc(100vw - 32px);
+    border-radius: 12px;
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-modal);
+    overflow: hidden;
+    transform-origin: center;
+    outline: none;
+    z-index: 100;
+    transition: transform 0.1s ease-in-out;
+}
+
+.dialog[data-state='open'] {
+    animation: cmdkScaleIn var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing);
+}
+
+.dialog[data-state='closed'] {
+    animation: cmdkScaleOut var(--ds-motion-overlay-duration) var(--ds-motion-overlay-timing);
+}
+
+/* ---- Input row ---- */
+.inputWrapper {
+    --padding: 12px;
+    position: relative;
+    padding: var(--padding);
+    border-bottom: 1px solid var(--ds-gray-alpha-400);
+    background: var(--ds-background-100);
+}
+
+/* live: `max-sm:sticky max-sm:top-0` — lengket saat layar kecil. */
+@media (max-width: 39.99rem) {
+    .inputWrapper {
+        position: sticky;
+        top: 0;
+    }
+}
+
+.inputRow {
+    display: flex;
+    gap: var(--padding);
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+}
+
+.input {
+    flex: 1;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: var(--ds-gray-1000);
+    font-size: 16px;
+}
+
+@media (min-width: 40rem) {
+    .input {
+        font-size: 18px;
+    }
+}
+
+.input::placeholder {
+    color: var(--ds-gray-700);
+}
+
+/* ---- Tombol Esc ---- */
+.esc {
+    display: none;
+    margin-left: auto;
+    height: 20px;
+    padding: 0 4px;
+    border: none;
+    border-radius: 4px;
+    background: var(--ds-background-100);
+    box-shadow: var(--ds-shadow-border);
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.2s;
+}
+
+/* live: `hidden [@media(hover:hover)_and_(pointer:fine)]:flex` — hanya muncul
+   pada perangkat berpenunjuk presisi (mouse), tidak di layar sentuh. */
+@media (hover: hover) and (pointer: fine) {
+    .esc {
+        display: flex;
+        align-items: center;
+    }
+
+    .esc:hover {
+        background: var(--ds-gray-100);
+    }
+}
+
+.esc:focus-visible {
+    box-shadow: var(--ds-focus-ring);
+}
+
+/* ---- List ---- */
+.list {
+    display: flex;
+    max-height: none;
+    padding: 8px;
+    overflow-y: auto;
+    background: var(--ds-background-100);
+    transition: height 0.1s;
+}
+
+.list [cmdk-list-sizer] {
+    width: 100%;
+}
+
+@media (min-width: 40rem) {
+    .list {
+        display: block;
+        max-height: 436px;
+    }
+}
+
+/* ---- Group ---- */
+.group [cmdk-group-heading] {
+    display: flex;
+    height: var(--ds-size-medium);
+    align-items: center;
+    padding: 0 8px;
+    font-size: 13px;
+    color: var(--ds-gray-900);
+}
+
+/* ---- Item ---- */
+.item {
+    display: flex;
+    min-height: var(--ds-size-large);
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+    border-radius: 6px;
+    scroll-margin: 8px 0;
+    font-size: 14px;
+    color: var(--ds-gray-1000);
+    cursor: pointer;
+}
+
+@media (min-width: 40rem) {
+    .item {
+        min-height: var(--ds-size-medium);
+    }
+}
+
+/* live: sorotan `data-[selected=true]` hanya aktif di perangkat berpenunjuk
+   presisi — di layar sentuh tidak ada item tersorot. */
+@media (hover: hover) and (pointer: fine) {
+    .item[data-selected='true'] {
+        background: var(--ds-gray-alpha-100);
+    }
+}
+
+.item:focus {
+    background: var(--ds-gray-alpha-100);
+}
+
+.itemIcon {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--ds-gray-900);
+}
+
+/* ---- Empty ---- */
+.empty {
+    padding: 30px 0;
+}
+
+/* ---- Keyframes (verbatim chunk 0lceq8…) ---- */
+@keyframes cmdkFadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 0.8;
+    }
+}
+
+@keyframes cmdkFadeOut {
+    0% {
+        opacity: 0.8;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes cmdkScaleIn {
+    0% {
+        transform: scale(var(--ds-motion-overlay-scale));
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes cmdkScaleOut {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(var(--ds-motion-overlay-scale));
+        opacity: 0;
+    }
+}

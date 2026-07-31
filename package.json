@@ -64,6 +64,7 @@
     "@base-ui/react": "^1.6.0",
     "@internationalized/date": "^3.12.2",
     "@oxobz/icons": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-popover": "^1.1.19",
     "@react-aria/calendar": "^3.10.1",
     "@react-stately/calendar": "^3.10.1",
