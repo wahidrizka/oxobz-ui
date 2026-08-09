@@ -262,7 +262,7 @@ interface SuccessViewProps {
 function SuccessView({ successMessage, successDescription }: SuccessViewProps): ReactNode {
     return (
         <div className={styles.successWrapper}>
-            <CheckCircleFill color="var(--ds-blue-700)" size={24} />
+            <CheckCircleFill color="blue-700" size={24} />
             <p className="text-copy-14">{successMessage}</p>
             <p className={cn('text-copy-13', styles.successDescription)}>{successDescription}</p>
         </div>

@@ -111,7 +111,7 @@ const ErrorRoot = forwardRef<HTMLDivElement, ErrorProps>(
                 role="alert"
             >
                 <div aria-hidden="true" className={styles.icon}>
-                    <Stop color="var(--ds-red-900)" size={16} />
+                    <Stop color="red-900" size={16} />
                 </div>
                 <div className={styles.text}>
                     {label != null && label !== false && (

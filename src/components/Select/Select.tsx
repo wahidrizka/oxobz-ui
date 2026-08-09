@@ -165,7 +165,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         style={{ marginTop: 8 }}
                     >
                         <div aria-hidden="true" className={styles.errorIcon}>
-                            <Stop color="var(--ds-red-900)" />
+                            <Stop color="red-900" />
                         </div>
                         <div className={styles.errorText}>{error}</div>
                     </div>

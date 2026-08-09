@@ -65,7 +65,7 @@ describe('Banner', () => {
         const { container } = render(
             <Banner button={{ href: '/read-more', content: 'Read more' }}>Message</Banner>,
         );
-        expect(container.querySelectorAll('[data-testid="oxobz-icon"]')).toHaveLength(2);
+        expect(container.querySelectorAll('[data-slot="oxobz-icon"]')).toHaveLength(2);
     });
 
     // ── Without CTA button (optional prop) ──

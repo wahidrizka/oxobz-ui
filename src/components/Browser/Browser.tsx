@@ -57,9 +57,9 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                                 <div className={styles.dotGreen} />
                             </div>
                             <div className={styles.navIcons}>
-                                <ArrowLeft size={14} color="var(--ds-gray-900)" />
-                                <ArrowRight size={14} color="var(--ds-gray-900)" />
-                                <RefreshClockwise size={14} color="var(--ds-gray-900)" />
+                                <ArrowLeft size={14} color="gray-900" />
+                                <ArrowRight size={14} color="gray-900" />
+                                <RefreshClockwise size={14} color="gray-900" />
                             </div>
                         </div>
 

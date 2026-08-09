@@ -183,7 +183,7 @@ describe('Select', () => {
             '[data-oxobz-select] > span:last-child',
         );
         expect(suffix?.className).toContain('suffix');
-        expect(suffix?.querySelector('[data-testid="oxobz-icon"]')).toBeNull();
+        expect(suffix?.querySelector('[data-slot="oxobz-icon"]')).toBeNull();
     });
 
     // ── Label ──

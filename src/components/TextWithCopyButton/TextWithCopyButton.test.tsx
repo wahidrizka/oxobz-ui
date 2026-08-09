@@ -54,7 +54,7 @@ describe('TextWithCopyButton', () => {
         const layers = getLayers(container);
         expect(layers).toHaveLength(2);
         layers.forEach((layer) => expect(layer.className).toContain('icon'));
-        expect(container.querySelectorAll('svg[data-testid="oxobz-icon"]')).toHaveLength(2);
+        expect(container.querySelectorAll('svg[data-slot="oxobz-icon"]')).toHaveLength(2);
     });
 
     // ── ellipsis variant ──

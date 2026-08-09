@@ -107,7 +107,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                         style={{ marginTop: 'var(--oxobz-gap-quarter)' }}
                     >
                         <div aria-hidden="true" className={styles.errorIcon}>
-                            <Stop color="var(--ds-red-900)" size={16} />
+                            <Stop color="red-900" size={16} />
                         </div>
                         <div className={styles.errorText}>{error}</div>
                     </div>

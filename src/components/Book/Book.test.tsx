@@ -266,7 +266,7 @@ describe('Book', () => {
 
         it('default icon (LogoVercel) dirender bila icon tidak diberikan', () => {
             const { container } = render(<Book variant="stripe" title="Test" />);
-            const svg = container.querySelector('[data-testid="oxobz-icon"]');
+            const svg = container.querySelector('[data-slot="oxobz-icon"]');
             expect(svg).not.toBeNull();
         });
     });
