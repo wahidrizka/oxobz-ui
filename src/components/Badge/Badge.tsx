@@ -25,7 +25,9 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         const Tag = (href ? 'a' : 'span') as 'span';
 
         // contrast="low" derives the subtle class from the variant (e.g. blue -> blue-subtle)
-        const variantClass = contrast === 'low' ? `${variant}-subtle` : variant;
+        // and adds the shared `subtle` class that paints the ::before overlay.
+        const subtle = contrast === 'low';
+        const variantClass = subtle ? `${variant}-subtle` : variant;
 
         return (
             <Tag
@@ -33,6 +35,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
                 className={cn(
                     styles.badge,
                     styles.capitalize,
+                    subtle && styles.subtle,
                     styles[variantClass],
                     styles[size],
                     className,
@@ -42,14 +45,14 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
                 {...(href ? { href } : {})}
                 {...props}
             >
-                <span className={styles.contentContainer}>
-                    {icon && (
-                        <span className={styles.iconContainer} data-slot="icon">
-                            {icon}
-                        </span>
-                    )}
-                    {children}
-                </span>
+                {/* Icon and label are SIBLINGS, matching production — the gap
+                    between them is the badge's own `gap`, not the label's. */}
+                {icon && (
+                    <span className={styles.iconContainer} data-slot="icon">
+                        {icon}
+                    </span>
+                )}
+                <span className={styles.contentContainer}>{children}</span>
             </Tag>
         );
     },

@@ -1,20 +1,35 @@
 /**
  * Badge — CSS Module
- * Production sources:
- * - badge-jul2026.html (geistcn generation, fresh capture 19 Jul 2026) —
- *   metrics re-verified against ALL rendered badges: md px-3 (12px, was
- *   10px in the stale March badge-module), sm icon size-3 (12px) + gap-1
- *   (4px), icons pulled left -2px via margin (production -ml-0.5, replacing
- *   the old asymmetric-padding approach), pill (Link recipe) shares the
- *   plain badge paddings. Color variants + dark-theme overrides were
- *   already identical and are unchanged.
- * - _nextstatic/chunks/20v_289ahbeyd.css — Tailwind scale for the utilities.
+ *
+ * Production source: LIVE vercel.com/geist/badge, measured 9 Aug 2026 —
+ * computed styles of all 79 rendered badges plus the raw utility classes, in
+ * light AND dark. This supersedes the 19 Jul capture the file was previously
+ * built from; production had drifted since (sm px-2 not px-1.5, md gap-1.25
+ * not gap-1, md icon -ml-1 not -ml-0.5, py-0.5 on every size, an explicit
+ * line-height per size, and a completely different way of painting the
+ * "-subtle" variants — see below).
+ *
+ * Base utilities on every badge:
+ *   inline-flex shrink-0 items-center justify-center rounded-full
+ *   whitespace-nowrap py-0.5 font-medium capitalize tabular-nums
+ *   **:data-[slot=icon]:block **:data-[slot=icon]:shrink-0
+ *
+ * Sizes (utility -> value):
+ *   sm  h-5 px-2 gap-1    text-[11px]/[20px] tracking-[0.2px] icon size-3   -ml-0.5
+ *   md  h-6 px-3 gap-1.25 text-[12px]/[24px] tracking-normal   icon size-3.5 -ml-1
+ *   lg  h-8 px-3 gap-1.5  text-sm (14px/20px) tracking-normal  icon size-4   (no -ml)
+ *
+ * Not reproduced: `has-[[data-glyph=circular]]:pr-2.5` and the matching icon
+ * margins. `data-glyph` is a Vercel-private per-icon mapping; verified absent
+ * from the entire live Badge page (0 occurrences), so it changes nothing here.
  */
 
 .badge {
     --badge-font-size: 12px;
+    --badge-line-height: 24px;
     --badge-height: 24px;
     --badge-padding-x: 12px;
+    --badge-icon-spacing: 5px;
     --badge-color: #fff;
     --badge-bg-color: #000;
 
@@ -25,13 +40,19 @@
     background-color: var(--badge-bg-color);
     font-weight: 500;
     font-size: var(--badge-font-size);
+    line-height: var(--badge-line-height);
     height: var(--badge-height);
-    padding: 0 var(--badge-padding-x);
-    letter-spacing: var(--badge-letter-spacing, 0px);
-    border-radius: 9999px;
+    /* py-0.5 — inside the fixed height (box-sizing: border-box) */
+    padding: 2px var(--badge-padding-x);
+    letter-spacing: var(--badge-letter-spacing, normal);
+    /* rounded-full — Tailwind v4 emits calc(infinity * 1px) */
+    border-radius: 3.40282e38px;
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
+    /* gap sits on the badge itself (production `gap-1.25`), between the icon
+       slot and the label; the label span re-inherits it. */
+    gap: var(--badge-icon-spacing);
     display: inline-flex;
 }
 
@@ -44,8 +65,9 @@
 
 .sm {
     --badge-font-size: 11px;
+    --badge-line-height: 20px;
     --badge-height: 20px;
-    --badge-padding-x: 6px;
+    --badge-padding-x: 8px;
     --badge-icon-size: 12px;
     --badge-icon-spacing: 4px;
     --badge-letter-spacing: .2px;
@@ -53,26 +75,33 @@
 
 .md {
     --badge-font-size: 12px;
+    --badge-line-height: 24px;
     --badge-height: 24px;
     --badge-padding-x: 12px;
     --badge-icon-size: 14px;
-    --badge-icon-spacing: 4px;
+    --badge-icon-spacing: 5px;
 }
 
 .lg {
     --badge-font-size: 14px;
+    --badge-line-height: 20px;
     --badge-height: 32px;
     --badge-padding-x: 12px;
     --badge-icon-size: 16px;
     --badge-icon-spacing: 6px;
 }
 
-/* Icons are pulled 2px left (production `-ml-0.5` on the icon slot) on
-   sm/md; lg has no negative margin — replaces the stale generation's
-   asymmetric :has() padding hack. */
-.sm .iconContainer,
-.md .iconContainer {
+/* Icon pulled left: sm `-ml-0.5` (-2px), md `-ml-1` (-4px), lg none. The
+   margin goes on the SVG itself, exactly like production's
+   `**:data-[slot=icon]:-ml-1` — the wrapper is a tight block around it, so
+   either placement lays out identically, but this keeps the measurable
+   computed style the same as production's. */
+.sm .iconContainer svg {
     margin-left: -2px;
+}
+
+.md .iconContainer svg {
+    margin-left: -4px;
 }
 
 /* === Color Variants === */
@@ -82,19 +111,9 @@
     --badge-color: var(--ds-contrast-fg);
 }
 
-.gray-subtle {
-    --badge-bg-color: var(--ds-gray-200);
-    --badge-color: var(--ds-gray-1000);
-}
-
 .blue {
     --badge-bg-color: var(--ds-blue-800);
     --badge-color: var(--ds-contrast-fg);
-}
-
-.blue-subtle {
-    --badge-bg-color: var(--ds-blue-200);
-    --badge-color: var(--ds-blue-900);
 }
 
 .purple {
@@ -102,19 +121,9 @@
     --badge-color: var(--ds-contrast-fg);
 }
 
-.purple-subtle {
-    --badge-bg-color: var(--ds-purple-200);
-    --badge-color: var(--ds-purple-900);
-}
-
 .amber {
     --badge-color: #000;
     --badge-bg-color: var(--ds-amber-700);
-}
-
-.amber-subtle {
-    --badge-bg-color: var(--ds-amber-200);
-    --badge-color: var(--ds-amber-900);
 }
 
 .red {
@@ -122,19 +131,9 @@
     --badge-color: var(--ds-contrast-fg);
 }
 
-.red-subtle {
-    --badge-bg-color: var(--ds-red-200);
-    --badge-color: var(--ds-red-900);
-}
-
 .pink {
     --badge-bg-color: var(--ds-pink-900);
     --badge-color: var(--ds-contrast-fg);
-}
-
-.pink-subtle {
-    --badge-bg-color: var(--ds-pink-300);
-    --badge-color: var(--ds-pink-900);
 }
 
 .green {
@@ -142,19 +141,9 @@
     --badge-color: var(--ds-contrast-fg);
 }
 
-.green-subtle {
-    --badge-bg-color: var(--ds-green-200);
-    --badge-color: var(--ds-green-900);
-}
-
 .teal {
     --badge-bg-color: var(--ds-teal-900);
     --badge-color: var(--ds-contrast-fg);
-}
-
-.teal-subtle {
-    --badge-bg-color: var(--ds-teal-300);
-    --badge-color: var(--ds-teal-900);
 }
 
 .inverted {
@@ -162,16 +151,109 @@
     --badge-color: var(--ds-gray-100);
 }
 
+/* === Subtle (contrast="low") ===
+ *
+ * Production does NOT paint a flat token colour here. It leaves the badge
+ * transparent and lays a ::before over it whose fill is the base token
+ * re-lightened through relative-colour syntax, then blends that layer with
+ * whatever is behind the badge:
+ *
+ *   relative bg-transparent
+ *   before:absolute before:inset-0 before:rounded-full before:content-[""]
+ *   before:pointer-events-none
+ *   before:mix-blend-multiply   dark-theme:before:mix-blend-screen
+ *   before:bg-[oklch(from_var(--ds-blue-200)_0.94_calc(c*1.3)_h)]
+ *   dark-theme:before:bg-[oklch(from_var(--ds-blue-200)_0.27_calc(c*1.3)_h)]
+ *
+ * Only the lightness differs between themes (0.94 / 0.27), so it lives in
+ * --badge-overlay-l. Chroma is boosted 1.3x for every hue EXCEPT gray, which
+ * uses a plain `c` — gray has almost none to boost.
+ *
+ * The label and icon carry position:relative so they stay above the overlay
+ * (production marks both with the `relative` utility for the same reason).
+ */
+
+.subtle {
+    --badge-overlay-l: 0.94;
+    --badge-bg-color: transparent;
+
+    position: relative;
+}
+
+.subtle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 3.40282e38px;
+    background-color: var(--badge-overlay);
+    mix-blend-mode: multiply;
+}
+
+:global(.dark-theme) .subtle {
+    --badge-overlay-l: 0.27;
+}
+
+:global(.dark-theme) .subtle::before {
+    mix-blend-mode: screen;
+}
+
+.gray-subtle {
+    --badge-overlay: oklch(from var(--ds-gray-200) var(--badge-overlay-l) c h);
+    --badge-color: var(--ds-gray-1000);
+}
+
+.blue-subtle {
+    --badge-overlay: oklch(from var(--ds-blue-200) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-blue-900);
+}
+
+.purple-subtle {
+    --badge-overlay: oklch(from var(--ds-purple-200) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-purple-900);
+}
+
+.amber-subtle {
+    --badge-overlay: oklch(from var(--ds-amber-200) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-amber-900);
+}
+
+.red-subtle {
+    --badge-overlay: oklch(from var(--ds-red-200) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-red-900);
+}
+
+.pink-subtle {
+    --badge-overlay: oklch(from var(--ds-pink-300) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-pink-900);
+}
+
+.green-subtle {
+    --badge-overlay: oklch(from var(--ds-green-200) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-green-900);
+}
+
+.teal-subtle {
+    --badge-overlay: oklch(from var(--ds-teal-300) var(--badge-overlay-l) calc(c * 1.3) h);
+    --badge-color: var(--ds-teal-900);
+}
+
 /* === Special Variants === */
 
+/* Production stacks `bg-black` UNDER the gradient (`bg-linear-[135deg,…]`),
+   so background-color stays black and the gradient is a background-IMAGE.
+   The `background` shorthand would reset the colour to transparent — same
+   pixels here because the gradient is opaque, but not the same style. */
 .trial {
     color: #fff;
-    background: linear-gradient(135deg, #0070f3 0%, #f81ce5 100%);
+    background-color: #000;
+    background-image: linear-gradient(135deg, rgb(0, 112, 243), rgb(248, 28, 229));
 }
 
 .turbo {
     color: #fff;
-    background: linear-gradient(135deg, #ff1e56 0%, #0096ff 100%);
+    background-color: #000;
+    background-image: linear-gradient(135deg, rgb(255, 30, 86), rgb(0, 150, 255));
 }
 
 /* === Numerical === */
@@ -185,13 +267,11 @@
 .pill {
     --badge-color: var(--oxobz-foreground);
     --badge-bg-color: var(--oxobz-background);
+    /* production `ring-1 ring-inset ring-(--ds-gray-alpha-400)` */
     box-shadow: inset 0 0 0 1px var(--ds-gray-alpha-400);
-    text-decoration: none;
+    /* production sets the STYLE only, not the line itself */
+    text-decoration-style: none;
 }
-
-/* geistcn generation: the pill (Link recipe) shares the plain badge
-   paddings — the fresh capture's pill <a> carries the base px-3 with no
-   override, so the stale per-size pill paddings are gone. */
 
 /* Pill hover — production-exact: bare .pill:hover (tag-agnostic) + button.pill:hover, no @media */
 .pill:hover,
@@ -203,10 +283,11 @@ button.pill:hover {
 
 /* Icon slot — production `**:data-[slot=icon]:block/shrink-0` + per-size
    size-3/3.5/4; no stroke-width in the geistcn generation (icons are
-   fill-based). */
+   fill-based). `relative` keeps it above the subtle overlay. */
 .iconContainer {
     display: block;
     flex-shrink: 0;
+    position: relative;
 }
 
 .iconContainer svg {
@@ -215,10 +296,13 @@ button.pill:hover {
     display: block;
 }
 
+/* Label — production `min-w-0 relative inline-flex items-center [gap:inherit]` */
 .contentContainer {
+    min-width: 0;
+    position: relative;
     align-items: center;
-    gap: var(--badge-icon-spacing);
-    display: flex;
+    gap: inherit;
+    display: inline-flex;
 }
 
 /* === Dark Theme Overrides (production: .dark-theme .gray) === */
