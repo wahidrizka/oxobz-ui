@@ -36,9 +36,21 @@
     align-items: center;
     gap: 6px;
     color: var(--ds-gray-900);
+    /* Produksi memakai utility `text-sm`, yang menyetel font-size DAN
+       line-height sekaligus (14px/20px). Tanpa line-height eksplisit, butir
+       mewarisi tinggi baris halaman dan jadi 21px, membuat tiap Breadcrumb
+       satu piksel lebih tinggi dari produksi. */
     font-size: 14px;
+    line-height: 20px;
     cursor: pointer;
-    transition: color 0.2s;
+    /* Produksi memakai `transition-colors duration-200`. Utility itu tidak
+       hanya mengalihkan `color`, melainkan seluruh daftar properti warna di
+       bawah ini. Hari ini hasilnya sama karena hover kita hanya mengubah
+       warna teks, tapi daftar penuh dicatat supaya perilaku tetap sama kalau
+       pemakai menimpa latar atau garis tepinya. */
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill,
+        stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.2s;
 }
 
 .textItem a {
@@ -90,7 +102,10 @@
     background: var(--ds-background-200);
     color: var(--ds-gray-900);
     font-family: var(--font-sans);
+    /* `text-xs` produksi: 12px/16px. Sama seperti butir teks, tanpa
+       line-height eksplisit pil ini mewarisi 18px dan jadi 2px kelewat tinggi. */
     font-size: 12px;
+    line-height: 16px;
     white-space: nowrap;
     word-wrap: normal;
     text-overflow: ellipsis;
@@ -131,8 +146,45 @@
     gap: 8px;
 }
 
-@media (max-width: 600px) {
+/*
+ * Produksi memakai varian `max-sm`, dan `sm` di sana BUKAN 640px bawaan
+ * Tailwind melainkan 401px (media query aslinya: not all and min-width 401px).
+ * Diukur langsung di halaman live: pada lebar 390px gulir aktif, pada 420px
+ * tidak. Nilai lama di berkas ini, 600px, membuat gulir menyala terlalu awal.
+ */
+@media (max-width: 400px) {
     .menuWrapper {
         overflow-x: auto;
+    }
+}
+
+/*
+ * Pembungkus tiap pil. Di produksi ini pemicu Tooltip, tapi perannya untuk
+ * tata letak: menjaga tombol tetap inline (lihat komentar di Breadcrumbs.tsx)
+ * dan memotong label yang kepanjangan.
+ *
+ * Di lebar >= 401px produksi memakai inline-block + truncate; di bawah itu
+ * inline-flex items-center. Karena keduanya anak wadah flex, browser
+ * mem-blockify-nya, jadi yang benar-benar terlihat adalah pemotongan teksnya.
+ */
+.menuTrigger {
+    display: inline-block;
+    height: fit-content;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
+    max-width: 100%;
+    min-width: 0;
+}
+
+@media (max-width: 400px) {
+    .menuTrigger {
+        display: inline-flex;
+        align-items: center;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        max-width: none;
     }
 }

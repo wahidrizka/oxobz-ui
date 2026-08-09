@@ -106,24 +106,42 @@ const BreadcrumbItem = forwardRef<HTMLElement, BreadcrumbItemProps>(
         const label = children;
 
         if (ctx.variant === 'menu') {
+            /*
+             * Produksi membungkus tiap pil dua lapis:
+             *   <span …trigger><div><button …/></div></span>
+             * Lapisan itu bukan hiasan. Tanpa keduanya tombol menjadi anak
+             * langsung wadah flex, sehingga browser mem-"blockify"-nya: display
+             * berubah inline-block -> block dan baris jadi 22px, bukan 24px
+             * seperti produksi. Dengan <div> di tengah, tombol tetap inline dan
+             * menghasilkan kotak baris setinggi line-height induknya.
+             *
+             * Di produksi span itu juga pemicu Tooltip. Sudah diperiksa dengan
+             * mengarahkan tetikus ke pil di halaman live: tidak ada tooltip yang
+             * muncul, karena teksnya tidak terpotong. Jadi di sini perannya
+             * murni struktural.
+             */
             return (
-                <button
-                    {...rest}
-                    ref={ref as Ref<HTMLButtonElement>}
-                    aria-current={active || undefined}
-                    className={cn(
-                        styles.menuItem,
-                        active && styles.active,
-                        disabled && styles.disabled,
-                        className,
-                    )}
-                    data-oxobz-breadcrumbs-item=""
-                    disabled={disabled}
-                    onClick={onClick}
-                    type="button"
-                >
-                    {label}
-                </button>
+                <span className={styles.menuTrigger}>
+                    <div>
+                        <button
+                            {...rest}
+                            ref={ref as Ref<HTMLButtonElement>}
+                            aria-current={active || undefined}
+                            className={cn(
+                                styles.menuItem,
+                                active && styles.active,
+                                disabled && styles.disabled,
+                                className,
+                            )}
+                            data-oxobz-breadcrumbs-item=""
+                            disabled={disabled}
+                            onClick={onClick}
+                            type="button"
+                        >
+                            {label}
+                        </button>
+                    </div>
+                </span>
             );
         }
 
