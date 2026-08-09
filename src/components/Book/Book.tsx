@@ -3,8 +3,8 @@
 import React, { forwardRef, useId, CSSProperties } from 'react';
 import { LogoVercel } from '@oxobz/icons';
 import { Stack } from '../Stack';
-import { Text } from '../Text';
 import { cn } from '../../utils/cn';
+import { DefaultMark } from './DefaultMark';
 import styles from './Book.module.css';
 
 /**
@@ -213,20 +213,28 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                                 padding="0px"
                                 gap="0px"
                             >
-                                {/* Title */}
-                                <Text
-                                    className={styles.title}
-                                    color="var(--ds-gray-1000)"
-                                    size="0.875rem"
-                                    lineHeight="1.25rem"
-                                    letterSpacing="initial"
-                                    weight={600}
-                                >
-                                    {title}
-                                </Text>
+                                {/*
+                                  * Title. Production renders a bare
+                                  * <span class="text-heading-14 book-module__…__title">,
+                                  * and that global utility is what carries
+                                  * `font-family: var(--font-geist-sans)`.
+                                  *
+                                  * This used to be a <Text> with size/weight passed as
+                                  * props. The numbers matched, but no font-family was
+                                  * ever applied, so the title silently inherited the
+                                  * page chain, whose first name ("Geist") is not a
+                                  * registered family and fell through to a system font.
+                                  * Measured: 810.77px of text in GeistSans versus
+                                  * 783.08px in the fallback, enough to change where
+                                  * `text-wrap: balance` breaks lines.
+                                  */}
+                                <span className={cn('text-heading-14', styles.title)}>{title}</span>
 
-                                {variant === 'simple' && illustration && (
-                                    <div className={styles.illustration}>{illustration}</div>
+                                {/* Varian simple SELALU punya slot ilustrasi. Tanpa prop
+                                    `illustration`, produksi mengisinya dengan tanda
+                                    tiga-warna bawaan, bukan mengosongkannya. */}
+                                {variant === 'simple' && (
+                                    <div className={styles.illustration}>{illustration ?? <DefaultMark />}</div>
                                 )}
 
                                 {variant === 'stripe' &&
