@@ -13,9 +13,9 @@ export interface BannerButton {
     /** Link destination. */
     href: string;
     /**
-     * CTA label. Only shown in the wide (desktop) layout — on narrow
-     * screens the whole banner collapses into a single pill whose label
-     * is `children` (see banner.html "Default" example).
+     * CTA label. Only shown in the wide (desktop) layout. On narrow screens
+     * the whole banner collapses into a single pill whose label is
+     * `children` (live "Default" example, 9 Aug 2026).
      */
     content: string;
 }
@@ -39,72 +39,72 @@ export interface BannerProps extends HTMLAttributes<HTMLDivElement> {
  * A prominent message that spans the full width of its container to
  * announce important information (geistcn `Banner`).
  *
- * Rendered DOM (verified against banner.html, "Default" example):
+ * Rendered DOM, verified against the LIVE page (9 Aug 2026). Banner emits
+ * exactly TWO sibling elements and no wrapper of its own:
  * ```html
- * <div class="banner" data-oxobz-banner="" data-version="v1">
- *   <div class="scroll">
- *     <div class="content">
- *       <!-- narrow screens: whole message becomes the CTA label -->
- *       <a class="mobileCta">{children}<ChevronRightSmall /></a>
- *       <!-- wide screens: message text + separate CTA -->
- *       <div class="message">
- *         <p>{children}</p>
- *         <a>{button.content}<ChevronRightSmall /></a>
- *       </div>
- *     </div>
- *   </div>
+ * <!-- narrow screens: whole message becomes the CTA label -->
+ * <a class="mobileCta">{children}<ChevronRightSmall /></a>
+ * <!-- wide screens: message text + separate CTA -->
+ * <div class="message">
+ *   <p>{children}</p>
+ *   <a>{button.content}<ChevronRightSmall /></a>
  * </div>
  * ```
+ * The border, background, rounded corners, scroll wrapper and 24px padding
+ * this component used to render were the docs page's demo frame, not part of
+ * Banner. They were removed once the live DOM was read directly.
  *
- * Only the "Default" example (neutral message + optional link CTA) is
- * present in the captured snapshot — no color/type variant (info/warning)
- * or dismiss button exist in banner.html's DOM or Show-code JSX, so none
- * are implemented here (see component report / needsRecapture).
+ * `className` and any extra props land on the message row, which is where
+ * production puts them (its example passes `className="p-4"`).
+ *
+ * Only the "Default" example (neutral message plus optional link CTA) exists
+ * in production: there is no colour or type variant and no dismiss button, so
+ * none are implemented here.
  */
 const Banner = forwardRef<HTMLDivElement, BannerProps>(
     (
         { button, children, className, 'data-version': dataVersion = 'v1', ...rest },
         ref,
     ) => {
-        return (
-            <div
-                {...rest}
-                ref={ref}
-                className={cn(styles.banner, className)}
-                data-oxobz-banner=""
-                data-version={dataVersion}
+        const cta = button ? (
+            <ButtonLink
+                href={button.href}
+                variant="secondary"
+                size="small"
+                shape="rounded"
+                shadow
+                suffix={<ChevronRightSmall />}
             >
-                <div className={styles.scroll}>
-                    <div className={styles.content}>
-                        {button && (
-                            <ButtonLink
-                                href={button.href}
-                                variant="secondary"
-                                size="small"
-                                shape="rounded"
-                                suffix={<ChevronRightSmall />}
-                                className={styles.mobileCta}
-                            >
-                                {children}
-                            </ButtonLink>
-                        )}
-                        <div className={cn(styles.message, !button && styles.solo)}>
-                            <p className={cn('text-copy-16', styles.text)}>{children}</p>
-                            {button && (
-                                <ButtonLink
-                                    href={button.href}
-                                    variant="secondary"
-                                    size="small"
-                                    shape="rounded"
-                                    suffix={<ChevronRightSmall />}
-                                >
-                                    {button.content}
-                                </ButtonLink>
-                            )}
-                        </div>
-                    </div>
+                {button.content}
+            </ButtonLink>
+        ) : null;
+
+        return (
+            <>
+                {button && (
+                    <ButtonLink
+                        href={button.href}
+                        variant="secondary"
+                        size="small"
+                        shape="rounded"
+                        shadow
+                        suffix={<ChevronRightSmall />}
+                        className={styles.mobileCta}
+                    >
+                        {children}
+                    </ButtonLink>
+                )}
+                <div
+                    {...rest}
+                    ref={ref}
+                    className={cn(styles.message, !button && styles.solo, className)}
+                    data-oxobz-banner=""
+                    data-version={dataVersion}
+                >
+                    <p className={cn('text-copy-16', styles.text)}>{children}</p>
+                    {cta}
                 </div>
-            </div>
+            </>
         );
     },
 );

@@ -56,7 +56,9 @@
     color: var(--themed-fg, var(--ds-background-100));
     font-family: inherit;
     font-weight: 500;
-    white-space: nowrap;
+    /* No white-space here on purpose: all 48 production button roots measure
+       `normal`. Only the label wrapper (.content, via `truncate`) is nowrap.
+       Setting it on the root leaked into the prefix/suffix slots. */
 
     cursor: pointer;
     user-select: none;
@@ -258,13 +260,27 @@
 }
 
 /* circle: square + full rounding (production !rounded-full) */
+/* rounded-full in production (Tailwind v4 emits calc(infinity * 1px)) */
 .circle {
-    border-radius: 9999px;
+    border-radius: 3.40282e38px;
 }
 
-/* rounded (pill label button): full radius wins over the size radius */
+/*
+ * rounded (pill label button): full radius wins over the size radius, and the
+ * horizontal padding becomes a flat 12px at EVERY size, unlike the square
+ * shape which scales 6/10/14px. Measured on the live Button page (9 Aug 2026)
+ * across all 48 buttons: every rounded-full button carrying a label reports
+ * 12px/12px, while square small/medium/large report 6/10/14px.
+ *
+ * Caveat worth knowing: production only ever ships `shape="rounded"` together
+ * with the `shadow` prop (its own docs say so), so a rounded pill WITHOUT
+ * shadow has no reference to check against. The padding is placed here rather
+ * than on .shadow because it is a shape concern.
+ */
 .rounded {
-    border-radius: 9999px;
+    border-radius: 3.40282e38px;
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 /* shadow: pill + border ring + small elevation (secondary-toned vars) */
@@ -273,10 +289,14 @@
     --themed-border: var(--ds-gray-400);
     --themed-fg: var(--ds-gray-1000);
     --themed-hover-bg: var(--ds-gray-alpha-200);
-    border-radius: 9999px;
-    box-shadow:
-        0 0 0 1px var(--themed-border, transparent),
-        var(--ds-shadow-border-small);
+    border-radius: 3.40282e38px;
+    /*
+     * Production applies two shadow utilities in sequence, so the second one
+     * REPLACES the first: the plain 1px ring never survives. Measured live it
+     * is exactly the three layers of --ds-shadow-border-small. Concatenating
+     * the ring on top (as this rule used to) added a fourth, darker edge.
+     */
+    box-shadow: var(--ds-shadow-border-small);
 }
 
 .shadow[data-hover]:not(:disabled):not([aria-disabled='true']) {
@@ -304,18 +324,46 @@
     padding-right: 6px;
 }
 
-/* prefix/suffix: <span class="truncate px-1.5 shrink-0 flex items-center justify-center"> */
-.prefix,
+/*
+ * prefix and suffix are TWO different recipes in production, not one. Measured
+ * on the live Button page (9 Aug 2026), every affix wrapper reports:
+ *
+ *   prefix  mr-[3px] min-w-5 shrink-0 flex items-center justify-center
+ *   suffix  ml-1 shrink-0 mr-0.5 flex items-center justify-center
+ *
+ * plus, on both, [&_svg[data-slot=geist-icon]]:size-(--ds-control-decoration-size)
+ * which pins the icon to 14px even though the button sets --geist-icon-size:16px.
+ *
+ * This file previously gave both slots `truncate px-1.5` (6px padding, hidden
+ * overflow, 16px icon), an older generation. That made every affixed button
+ * 8px wider than production: 6+16+6 = 28px per slot instead of 4+14+2 = 20px.
+ * The label wrapper (.content) keeps px-1.5 and a 16px icon: production's own
+ * label wrappers still measure that way, so only the affixes changed.
+ */
+.prefix {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 3px;
+    min-width: 20px;
+}
+
 .suffix {
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding-left: 6px;
-    padding-right: 6px;
+    margin-left: 4px;
+    margin-right: 2px;
+}
+
+/* Matches production's [&_svg[data-slot=geist-icon]] selector: only icons from
+   the icon package are pinned, an arbitrary inline <svg> is left alone. */
+.prefix svg[data-slot='oxobz-icon'],
+.suffix svg[data-slot='oxobz-icon'] {
+    width: var(--ds-control-decoration-size);
+    height: var(--ds-control-decoration-size);
 }
 
 /* svgOnly content wrapper keeps icons centered without label truncation */

@@ -11,13 +11,29 @@ function getRoot(container: HTMLElement) {
 describe('Banner', () => {
     // ── Rendering ──
 
-    it('renders a root div with data-oxobz-banner and data-version="v1"', () => {
+    it('renders the message row as the root, with data-oxobz-banner and data-version="v1"', () => {
         const { container } = render(<Banner>Message</Banner>);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
         expect(root).toHaveAttribute('data-version', 'v1');
-        expect(root?.className).toContain('banner');
+        // Production emits no wrapper of its own: the message row IS the root.
+        expect(root?.className).toContain('message');
+    });
+
+    it('emits exactly two siblings and no frame of its own', () => {
+        // The border/background/rounded-lg/scroll wrapper/24px padding this
+        // component used to render belonged to the docs page's demo frame, not
+        // to Banner. Production emits the mobile pill and the message row as
+        // siblings, nothing around them. Guard against a wrapper creeping back.
+        const { container } = render(
+            <Banner button={{ href: '#', content: 'Read more' }}>Message</Banner>,
+        );
+        const roots = [...container.children];
+        expect(roots).toHaveLength(2);
+        expect(roots[0].tagName).toBe('A');
+        expect(roots[1].tagName).toBe('DIV');
+        expect(roots[1].className).toContain('message');
     });
 
     it('allows a custom data-version', () => {

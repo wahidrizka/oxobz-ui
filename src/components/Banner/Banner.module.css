@@ -1,63 +1,32 @@
 /**
- * Banner — CSS Module
+ * Banner CSS Module
  *
- * Source: _nextstatic/component-inspect-element/banner.html ("Default" example).
- * geistcn Tailwind snapshot — no dedicated "banner-module" exists in the older
- * component chunks (b4b9d0dd5348b0c3.css / 1c419a75d7e589ae.css); this component
- * is styled purely with global Tailwind utility classes, resolved against the
- * newer geistcn chunk _nextstatic/chunks/20v_289ahbeyd.css (Tailwind v4
- * utilities). That chunk overrides the "lg" breakpoint to 961px
- * (--breakpoint-lg: 961px), matching every @media below.
+ * Source: LIVE vercel.com/geist/banner, captured 9 Aug 2026. Banner is styled
+ * purely with Tailwind utilities in production, so the utilities below are
+ * flattened from the two elements it actually renders:
  *
- * Utility -> value lookup (20v_289ahbeyd.css):
- *   .rounded-lg{border-radius:.5rem}       -> 8px  (root `rounded-lg`)
- *   .rounded-full{border-radius:3.40282e38px} -> fully round (mobile CTA `!rounded-full`)
- *   .p-6{padding:1.5rem}                    -> 24px (`.content`)
- *   .p-4{padding:1rem}                      -> 16px (`.message`)
- *   .gap-3{gap:.75rem}                      -> 12px (`.message`)
- *   .border-gray-alpha-400{border-color:var(--ds-gray-alpha-400)}
- *   .bg-background-100{background-color:var(--ds-background-100)}
- *   .text-gray-900{color:var(--ds-gray-900)}
- * Note: 2dd69db0a79ce415.css also defines `.rounded-lg{border-radius:12px}` but
- * that rule lives under a `.tailwind` scope used by an unrelated table/card
- * component (not an ancestor of Banner's root in the snapshot) — the unscoped
- * 20v_289ahbeyd.css value (8px) is the one that applies here.
+ *   mobile CTA  <a  !w-fit !mx-auto lg:!hidden relative z-1>
+ *   desktop row <div max-w-[1080px] w-full hidden lg:flex items-center
+ *                    justify-center gap-3
+ *                    [&_b]:text-[var(--ds-gray-1000)] [&_b]:font-semibold>
  *
- * `.text-copy-16` (message paragraph) is the existing oxobz-ui global
- * typography utility (tokens/typography.css) — not redefined here.
+ * There is NO third element. An earlier version of this file also carried a
+ * root border/background/radius, a horizontal-scroll wrapper and 24px of
+ * padding. Those were never part of Banner: they are the docs page's own demo
+ * frame (`border-gray-alpha-400 bg-background-100 rounded-lg border` >
+ * `flex w-full overflow-x-auto md:overflow-visible` > `w-full p-6`), copied in
+ * from a snapshot that included the surrounding chrome. Consumers were getting
+ * a bordered card they never asked for.
  *
- * `.mobileCta` / the desktop CTA are ButtonLink (variant="secondary" size="small",
- * `shape="rounded"` on mobile only) — reused as-is, not restyled here.
+ * The 16px padding likewise does not belong to the component: the docs example
+ * passes `className="p-4"`, so padding is the caller's choice.
+ *
+ * Breakpoint: production sets --breakpoint-lg: 961px (confirmed in today's
+ * live CSS), which is why every media query below uses 961px and not the
+ * Tailwind default of 1024px.
  */
 
-/* ---- Root (banner-module __banner) ---- */
-.banner {
-    position: relative;
-    border: 1px solid var(--ds-gray-alpha-400);
-    background: var(--ds-background-100);
-    border-radius: 8px;
-}
-
-/* ---- Horizontal-scroll wrapper (banner-module __scroll) ---- */
-.scroll {
-    display: flex;
-    width: 100%;
-    overflow-x: auto;
-}
-
-@media (min-width: 768px) {
-    .scroll {
-        overflow: visible;
-    }
-}
-
-/* ---- Content wrapper (banner-module __content) ---- */
-.content {
-    width: 100%;
-    padding: 24px;
-}
-
-/* ---- Mobile CTA pill: whole message is the link label below "lg" ---- */
+/* Mobile CTA pill: below "lg" the whole message becomes the link label. */
 .mobileCta {
     width: fit-content;
     margin-left: auto;
@@ -72,42 +41,44 @@
     }
 }
 
-/* ---- Desktop message row: text + separate CTA at/above "lg" ---- */
+/* Desktop message row: text plus a separate CTA at "lg" and above. */
+/* Only `flex` sits behind the lg variant in production
+   (`hidden lg:flex items-center justify-center`), so the alignment applies at
+   every width even while the row is hidden. */
 .message {
     display: none;
     width: 100%;
     max-width: 1080px;
     gap: 12px;
-    padding: 16px;
+    align-items: center;
+    justify-content: center;
 }
 
 @media (min-width: 961px) {
     .message {
         display: flex;
-        align-items: center;
-        justify-content: center;
     }
 }
 
 /*
- * No `button` prop: there is no mobile pill to collapse into, so the
- * message row is shown at every width instead of only "lg" and above.
- * Not present in the snapshot (its only example always passes `button`) —
- * a deliberate, minimal fallback for the documented optional prop.
+ * No `button` prop: there is no mobile pill to collapse into, so the message
+ * row is shown at every width instead of only "lg" and above. Production's
+ * only example always passes `button`, so this is a deliberate, minimal
+ * fallback for the documented optional prop.
  */
 .message.solo {
     display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-/* ---- Message text ---- */
+/* Production puts the emphasis styling on the row, not the paragraph:
+   [&_b]:text-[var(--ds-gray-1000)] [&_b]:font-semibold */
+.message b {
+    font-weight: 600;
+    color: var(--ds-gray-1000);
+}
+
+/* Message text: production `<p class="text-copy-16 text-gray-900">` */
 .text {
     color: var(--ds-gray-900);
     margin: 0;
-}
-
-.text b {
-    font-weight: 600;
-    color: var(--ds-gray-1000);
 }
