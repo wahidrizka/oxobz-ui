@@ -110,16 +110,19 @@
   --ds-pink-900-value: 336, 65%, 45%;
   --ds-pink-1000-value: 333, 74%, 15%;
 
-  /* === Gray Alpha === */
+  /* === Gray Alpha ===
+     Re-read from the LIVE page 9 Aug 2026: -200 was #00000015 (should be 14)
+     and -900 was #0000009c — which is the DARK value, apparently copied into
+     the light list by mistake. Light is #000000b3. The other eight matched. */
   --ds-gray-alpha-100: #0000000d;
-  --ds-gray-alpha-200: #00000015;
+  --ds-gray-alpha-200: #00000014;
   --ds-gray-alpha-300: #0000001a;
   --ds-gray-alpha-400: #00000014;
   --ds-gray-alpha-500: #00000036;
   --ds-gray-alpha-600: #00000057;
   --ds-gray-alpha-700: #00000070;
   --ds-gray-alpha-800: #00000082;
-  --ds-gray-alpha-900: #0000009c;
+  --ds-gray-alpha-900: #000000b3;
   --ds-gray-alpha-1000: #000000e8;
 
   /* === Backgrounds === */
@@ -185,6 +188,12 @@
   --oxobz-console-text-color-pink: #eb367f;
   --oxobz-console-text-color-purple: #7928ca;
 
+
+  /* === Absolute black & white ===
+     Theme-independent; production declares them only in this light list.
+     Utilities like `text-black` / `bg-black` / `text-white` resolve to them. */
+  --ds-black: #000;
+  --ds-white: #fff;
 
   /* === Focus & Contrast === */
   --ds-contrast-fg: #fff;
@@ -289,6 +298,25 @@
   --vaul-overlay-background: 255, 255, 255;
   --vaul-overlay-background-start: #0000;
   --vaul-overlay-background-end: #0006;
+}
+
+/**
+ * Production ships a second, CIE-Lab copy of the palette behind
+ * `@supports (color: lab(0% 0 0))`. For every scale token that copy is dead
+ * code — a later rule re-declares the colour as `hsla(var(--ds-<name>-value), 1)`
+ * and wins the cascade (verified by reading the effective values off the live
+ * page: `--ds-amber-500` resolves to `hsla(38, 100%, 71%, 1)`, not lab()).
+ * Only black and white are never re-declared, so only they actually end up in
+ * lab() form. Same colour either way; reproduced for exactness.
+ */
+@supports (color: lab(0% 0 0)) {
+  :root,
+  :host,
+  .dark .invert-theme,
+  .dark-theme .invert-theme {
+    --ds-black: lab(0% 0 0);
+    --ds-white: lab(100% 0 0);
+  }
 }
 
 /* === Dark Theme === */

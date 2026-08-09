@@ -82,3 +82,21 @@
     --ds-popover-row-height: 36px;
     --ds-popover-row-radius: 6px;
 }
+/**
+ * Page layout tokens — read from the live page 9 Aug 2026, scope `:root,:host`
+ * exactly as production. Kept in their own block so the existing `:root`-only
+ * scope above is left untouched.
+ *
+ * Production writes the margin through a chain:
+ *   --geist-space-gap: 24px
+ *   --geist-page-margin: var(--geist-space-gap)
+ *   --ds-page-width-with-margin: calc(var(--ds-page-width) + calc(2 * var(--geist-page-margin)))
+ * reproduced here rather than flattening it to a single number.
+ */
+:root,
+:host {
+    --geist-space-gap: 24px;
+    --geist-page-margin: var(--geist-space-gap);
+    --ds-page-width: 1400px;
+    --ds-page-width-with-margin: calc(var(--ds-page-width) + calc(2 * var(--geist-page-margin)));
+}

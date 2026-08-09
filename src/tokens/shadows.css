@@ -23,7 +23,14 @@
     --ds-shadow-medium: 0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a;
     --ds-shadow-large: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
 
+    /* T-shirt scale — present in production, missing here until 9 Aug 2026 */
+    --ds-shadow-2xs: 0px 1px 1px #0000000a;
+    --ds-shadow-xs: 0px 1px 2px #0000000a;
+    --ds-shadow-xl: 0px 1px 1px #00000005, 0px 4px 8px -4px #0000000a, 0px 16px 24px -8px #0000000f;
+    --ds-shadow-2xl: 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f;
+
     /* DS Composite shadows */
+    --ds-shadow-modal-elevated: 0px 0px 0px 1px #00000014, 0px 32px 72px -12px #0000000f, 0px 8px 32px -12px #00000014, 0px 8px 24px -12px #0000001f;
     --ds-shadow-border: var(--ds-shadow-border-base), var(--ds-shadow-background-border);
     --ds-shadow-border-small: var(--ds-shadow-border-base), var(--ds-shadow-small), var(--ds-shadow-background-border);
     --ds-shadow-border-medium: var(--ds-shadow-border-base), var(--ds-shadow-medium), var(--ds-shadow-background-border);
@@ -71,7 +78,15 @@
     --ds-shadow-medium: 0px 2px 2px #00000052, 0px 8px 8px -8px #00000029;
     --ds-shadow-large: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
 
+    /* T-shirt scale (dark). -xl and -2xl carry the SAME values as light;
+       production re-declares them here anyway, so this mirrors that. */
+    --ds-shadow-2xs: 0px 1px 1px #00000029;
+    --ds-shadow-xs: 0px 1px 2px #00000029;
+    --ds-shadow-xl: 0px 1px 1px #00000005, 0px 4px 8px -4px #0000000a, 0px 16px 24px -8px #0000000f;
+    --ds-shadow-2xl: 0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f;
+
     /* DS Composite shadow overrides (dark) */
+    --ds-shadow-modal-elevated: 0 0 0 1px var(--ds-gray-alpha-400), 0px 32px 72px -12px #0000000f, 0px 8px 32px -12px #00000014, 0px 8px 24px -12px #0000001f;
     --ds-shadow-background-border: 0 0 0 1px var(--ds-background-200);
     --ds-shadow-border: var(--ds-shadow-border-base), var(--ds-shadow-background-border);
     --ds-shadow-border-small: var(--ds-shadow-border-base), var(--ds-shadow-small), var(--ds-shadow-background-border);

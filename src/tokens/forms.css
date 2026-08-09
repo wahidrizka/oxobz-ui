@@ -43,3 +43,11 @@
     --ds-form-large-padding-x: 16px;
     --ds-form-large-font-size: 16px;
 }
+/**
+ * Size of the decoration inside a control (the checkbox tick box, the radio
+ * dot, and friends). Live value 9 Aug 2026, scope `:root,:host` as production.
+ */
+:root,
+:host {
+    --ds-control-decoration-size: 14px;
+}
