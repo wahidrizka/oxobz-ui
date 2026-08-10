@@ -59,7 +59,21 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                             <div className={styles.navIcons}>
                                 <ArrowLeft size={14} color="gray-900" />
                                 <ArrowRight size={14} color="gray-900" />
-                                <RefreshClockwise size={14} color="gray-900" />
+                                {/*
+                                  * `data-glyph="circular"` ada di ikon ini pada DOM produksi
+                                  * (diukur di halaman live 10 Agu 2026). Atribut itu penanda
+                                  * bentuk yang dipakai dua aturan CSS Geist untuk merapikan
+                                  * jarak ikon DI DALAM Badge; di kepala Browser tidak ada
+                                  * aturan yang cocok, jadi tidak ada efek visual. Ditulis di
+                                  * sini supaya DOM sama persis.
+                                  *
+                                  * Tempat yang benar sebenarnya di @oxobz/icons, karena di
+                                  * produksi penanda ini melekat pada ikonnya, bukan pada
+                                  * pemakainya. Pemetaan lengkapnya ada di paket privat Vercel
+                                  * dan baru satu yang bisa kita ukur, jadi keputusannya
+                                  * dicatat di tasks/todo.md.
+                                  */}
+                                <RefreshClockwise size={14} color="gray-900" data-glyph="circular" />
                             </div>
                         </div>
 

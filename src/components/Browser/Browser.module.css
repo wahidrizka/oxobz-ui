@@ -1,8 +1,13 @@
 /* ========================================
- *  Browser — CSS Modules
+ *  Browser CSS Modules
  *
- *  Translated 1:1 from Geist production Tailwind
- *  Source: _nextstatic/component-inspect-element/browser.html
+ *  Diterjemahkan 1:1 dari Tailwind produksi Geist.
+ *
+ *  Nilai `rounded-full`: Tailwind v4 menghitungnya jadi calc(infinity * 1px),
+ *  yang Chrome laporkan sebagai 3.35544e+07px. Nilai 9999px menghasilkan bentuk
+ *  yang sama di layar tapi angka terkomputasinya berbeda, jadi disamakan dengan
+ *  Badge, Avatar dan Button (diukur di halaman live 10 Agu 2026: tiga titik
+ *  jendela dan bilah alamat semuanya rounded-full).
  * ======================================== */
 
 /* Container query wrapper */
@@ -70,21 +75,21 @@
 .dotRed {
     width: 12px;
     height: 12px;
-    border-radius: 9999px;
+    border-radius: 3.40282e38px;
     background-color: #FE5F57;
 }
 
 .dotYellow {
     width: 12px;
     height: 12px;
-    border-radius: 9999px;
+    border-radius: 3.40282e38px;
     background-color: #FEBB2E;
 }
 
 .dotGreen {
     width: 12px;
     height: 12px;
-    border-radius: 9999px;
+    border-radius: 3.40282e38px;
     background-color: #26C941;
 }
 
@@ -100,7 +105,7 @@
     background-color: var(--ds-background-200);
     border: 1px solid var(--ds-gray-400);
     width: 100%;
-    border-radius: 9999px;
+    border-radius: 3.40282e38px;
     padding: 4px 4px 4px 16px;
     display: flex;
     align-items: center;
