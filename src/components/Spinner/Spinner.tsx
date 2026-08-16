@@ -140,6 +140,11 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
                 {...props}
             >
                 {bars}
+                {/* Produksi menutup spinner dengan label tersembunyi:
+                    <span class="sr-only">Loading...</span>. Tanpa ini pembaca
+                    layar hanya mendapat aria-label, dan teks tombol saat
+                    memuat jadi berbeda dari produksi. */}
+                <span className="oxobz-sr-only">Loading...</span>
             </div>
         );
     },

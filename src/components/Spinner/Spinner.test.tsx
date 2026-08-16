@@ -15,7 +15,11 @@ function rootOf(container: HTMLElement): HTMLElement {
 }
 
 function barsOf(container: HTMLElement): HTMLElement[] {
-    return Array.from(rootOf(container).children) as HTMLElement[];
+    // Anak terakhir adalah label tersembunyi "Loading...", bukan batang, jadi
+    // hanya elemen ber-aria-hidden yang dihitung (persis seperti produksi).
+    return Array.from(rootOf(container).children).filter(
+        (el) => el.getAttribute('aria-hidden') === 'true',
+    ) as HTMLElement[];
 }
 
 describe('Spinner', () => {

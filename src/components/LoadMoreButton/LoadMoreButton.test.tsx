@@ -58,7 +58,13 @@ describe('LoadMoreButton', () => {
         expect(root).toBeDisabled();
         expect(root?.className).toContain('loading');
         expect(container.querySelector('[data-oxobz-spinner]')).toBeInTheDocument();
-        expect(screen.getByText('Loading...')).toBeInTheDocument();
+        // Dua elemen memuat teks ini sekarang: label tombol dan label
+        // tersembunyi milik spinner (produksi juga begitu). getByText melempar
+        // kalau cocok lebih dari satu, jadi keduanya dicek terpisah.
+        expect(root).toHaveTextContent('Loading...');
+        expect(container.querySelector('[data-oxobz-spinner] .oxobz-sr-only')).toHaveTextContent(
+            'Loading...',
+        );
     });
 
     // ── noGap ──

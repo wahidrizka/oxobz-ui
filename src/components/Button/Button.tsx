@@ -91,9 +91,15 @@ function useAriaButtonStates(isDisabled: boolean): {
     };
 }
 
-/** Loading spinner injected in place of the prefix. small/medium → 16px, large → 24px. */
+/**
+ * Loading spinner injected in place of the prefix.
+ *
+ * Ukuran diukur di halaman Button live (10 Agu 2026): tombol setinggi 32px
+ * memakai spinner 12px, 36px memakai 16px, dan 40px memakai 20px. Sebelumnya
+ * di sini 16px untuk kecil dan 24px untuk besar, jadi dua dari tiga salah.
+ */
 function getSpinner(size: ButtonSize): ReactNode {
-    const spinnerSize = size === 'large' ? 24 : 16;
+    const spinnerSize = size === 'large' ? 20 : size === 'medium' ? 16 : 12;
     return <Spinner size={spinnerSize} color="var(--accents-5)" />;
 }
 
@@ -386,6 +392,9 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
             '--button-custom-bg-active': active?.background,
             '--button-custom-border-active': active?.border,
             width,
+            // Produksi juga mengunci max-width ke nilai yang sama. Tanpa ini
+            // tombol tetap 100% max-width dan bisa melar di wadah sempit.
+            maxWidth: width,
         } as React.CSSProperties;
 
         return (

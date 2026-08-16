@@ -63,12 +63,14 @@
     cursor: pointer;
     user-select: none;
     transform: translateZ(0);
-    transition:
-        border-color 0.15s ease-in-out,
-        background 0.15s ease-in-out,
-        color 0.15s ease-in-out,
-        transform 0.15s ease-in-out,
-        box-shadow 0.15s ease-in-out;
+    /*
+     * Produksi menulis daftar properti di dalam satu utility Tailwind, tapi
+     * daftarnya mengandung spasi sehingga terpecah jadi dua kelas dan tidak
+     * pernah terbentuk dengan benar. Yang benar-benar berlaku di layar adalah
+     * `all` selama 0.15s, dan itu yang terukur pada ke-45 tombol halaman live.
+     * Jadi di sini ikut `all`, bukan daftar lima properti seperti sebelumnya.
+     */
+    transition: all 0.15s ease-in-out;
 }
 
 .button svg {
@@ -179,6 +181,18 @@
     --lighten-color: rgba(255, 255, 255, 0.8);
 }
 
+/*
+ * Tertiary mempertahankan warna teksnya meski dinonaktifkan. Produksi menulis
+ * kelas warnanya dengan penanda penting sehingga menang atas aturan disabled;
+ * di sini cukup dinaikkan kekhususannya supaya menang tanpa !important.
+ * Diukur di halaman live: tombol Tertiary yang disabled tetap gray-1000,
+ * hanya latarnya yang berubah jadi gray-100.
+ */
+.tertiary:disabled,
+.tertiary[aria-disabled='true'] {
+    color: var(--themed-bg, var(--ds-gray-1000));
+}
+
 .tertiary[data-hover]:not(:disabled):not([aria-disabled='true']) {
     background: var(--themed-hover-bg, hsl(0, 0%, 22%));
     color: var(--themed-bg, var(--ds-gray-1000));
@@ -202,7 +216,10 @@
 
 /* error (fill): preset .geist-new-error-fill.geist-new-themed */
 .error {
-    --themed-fg: var(--ds-contrast-fg);
+    /* Warna teks error tergantung tema, dan bukan --ds-contrast-fg. Dibaca
+       langsung dari tombol error di halaman live: #f5f5f5 saat terang,
+       #fff saat gelap (override ada di bawah). */
+    --themed-fg: #f5f5f5;
     --themed-bg: var(--ds-red-800);
     --themed-hover-bg: var(--ds-red-900);
     --themed-press-bg: #ffaba3;
@@ -211,7 +228,9 @@
 }
 
 :global(.dark-theme) .error {
-    --themed-fg: #f5f5f5;
+    /* Kedua nilai ini dulu tertukar: kita pakai #fff saat terang dan #f5f5f5
+       saat gelap, produksi justru kebalikannya. */
+    --themed-fg: #fff;
     --themed-hover-bg: #ae292f;
     --themed-press-bg: #7c1316;
     --themed-focus-ring: #7c1316;
@@ -241,22 +260,18 @@
 }
 
 /* ---- Shapes ---- */
-/* square (shape="square"): icon-only, width equals the size height */
+/*
+ * square (shape="square"): icon-only, lebarnya SAMA dengan tingginya.
+ *
+ * Dulu tiap ukuran punya aturan lebar sendiri dengan variabel yang berbeda
+ * dari sumber tingginya. Untuk ukuran besar variabelnya tidak terdefinisi,
+ * jadi jatuh ke 48px sementara tingginya 40px, dan tombolnya jadi lonjong.
+ * Sekarang cukup mengikuti --height, yang memang sudah disetel per ukuran,
+ * sehingga tidak bisa melenceng lagi. Diukur di halaman live: 24, 32, 36, 40.
+ */
 .shape {
     padding: 0;
-    width: var(--geist-form-height, var(--ds-size-medium, 40px));
-}
-
-.shape.small {
-    width: var(--geist-form-small-height, 32px);
-}
-
-.shape.large {
-    width: var(--geist-form-large-height, 48px);
-}
-
-.shape.tiny {
-    width: 24px;
+    width: var(--height);
 }
 
 /* circle: square + full rounding (production !rounded-full) */
