@@ -35,7 +35,7 @@ describe('CalendarGrid', () => {
 
     it('renders the month/year title', () => {
         render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
-        expect(screen.getByText('July 2026')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'July 2026' })).toBeInTheDocument();
     });
 
     it('renders a 7-column weekday header (Sunday first by default)', () => {
@@ -78,10 +78,10 @@ describe('CalendarGrid', () => {
     it('navigates to the next and previous month', () => {
         const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         fireEvent.click(container.querySelector('[aria-label="Next"]')!);
-        expect(screen.getByText('August 2026')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'August 2026' })).toBeInTheDocument();
         fireEvent.click(container.querySelector('[aria-label="Previous"]')!);
         fireEvent.click(container.querySelector('[aria-label="Previous"]')!);
-        expect(screen.getByText('June 2026')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'June 2026' })).toBeInTheDocument();
     });
 
     // ── Today highlight ──
@@ -210,43 +210,63 @@ describe('CalendarGrid', () => {
 
     // ── Keyboard navigation ──
 
+    /*
+     * Kisi tanggal kini berjalan di atas react-aria, dan react-aria menaruh
+     * penanganan papan ketik pada SEL yang sedang fokus, bukan pada <table>.
+     * Jadi tombol ditembakkan ke sel, dan setiap kali fokus berpindah, tombol
+     * berikutnya ditembakkan ke elemen yang sedang aktif.
+     */
+    // react-aria menyelesaikan penekanan tombol pada keyup, bukan keydown, jadi
+    // keduanya ditembakkan. Navigasi panah sendiri hanya butuh keydown, dan
+    // keyup tambahan tidak berdampak apa-apa di sana.
+    const tekanTombol = (key: string) => {
+        const el = document.activeElement!;
+        fireEvent.keyDown(el, { key });
+        // keyup HARUS ke elemen yang sama, bukan ke elemen yang baru fokus:
+        // kalau tidak, panah terhitung bergerak dua kali.
+        fireEvent.keyUp(el, { key });
+    };
+
+    const fokuskanSel = (container: HTMLElement, iso: string) => {
+        const sel = container.querySelector(`[data-date="${iso}"]`) as HTMLElement;
+        sel.focus();
+        return sel;
+    };
+
     it('moves focus with arrow keys', () => {
         const { container } = render(
             <CalendarGrid
-                defaultFocusedMonth={JULY_2026}
                 defaultValue={{
                     start: new Date(2026, 6, 10),
                     end: new Date(2026, 6, 10),
                 }}
             />,
         );
-        const table = container.querySelector('table')!;
-        fireEvent.keyDown(table, { key: 'ArrowRight' });
+        fokuskanSel(container, '2026-07-10');
+        tekanTombol('ArrowRight');
         expect(document.activeElement).toHaveAttribute('data-date', '2026-07-11');
-        fireEvent.keyDown(table, { key: 'ArrowDown' });
+        tekanTombol('ArrowDown');
         expect(document.activeElement).toHaveAttribute('data-date', '2026-07-18');
     });
 
     it('jumps a month with PageDown', () => {
         const { container } = render(
             <CalendarGrid
-                defaultFocusedMonth={JULY_2026}
                 defaultValue={{
                     start: new Date(2026, 6, 10),
                     end: new Date(2026, 6, 10),
                 }}
             />,
         );
-        const table = container.querySelector('table')!;
-        fireEvent.keyDown(table, { key: 'PageDown' });
-        expect(screen.getByText('August 2026')).toBeInTheDocument();
+        fokuskanSel(container, '2026-07-10');
+        tekanTombol('PageDown');
+        expect(screen.getByRole('heading', { name: 'August 2026' })).toBeInTheDocument();
     });
 
     it('selects the focused day with Enter', () => {
         const onChange = vi.fn();
         const { container } = render(
             <CalendarGrid
-                defaultFocusedMonth={JULY_2026}
                 defaultValue={{
                     start: new Date(2026, 6, 10),
                     end: new Date(2026, 6, 10),
@@ -254,10 +274,14 @@ describe('CalendarGrid', () => {
                 onChange={onChange}
             />,
         );
-        const table = container.querySelector('table')!;
-        fireEvent.keyDown(table, { key: 'Enter' }); // anchor on the 10th
-        fireEvent.keyDown(table, { key: 'ArrowRight' }); // focus the 11th
-        fireEvent.keyDown(table, { key: 'Enter' }); // commit 10 → 11
+        fokuskanSel(container, '2026-07-10');
+        // Enter butuh keydown DAN keyup: react-aria menyelesaikan penekanan di
+        // keyup. Sel kedua difokuskan langsung, bukan lewat panah, supaya yang
+        // diuji benar-benar "Enter memilih hari yang sedang fokus" dan bukan
+        // seluk-beluk navigasi panah (yang sudah punya testnya sendiri).
+        tekanTombol('Enter'); // jangkar di tanggal 10
+        fokuskanSel(container, '2026-07-11');
+        tekanTombol('Enter'); // kunci rentang 10 sampai 11
         expect(onChange).toHaveBeenCalledTimes(1);
         const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
         expect(arg.start.getDate()).toBe(10);

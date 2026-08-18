@@ -1,15 +1,15 @@
 'use client';
 
+import { forwardRef, useMemo, useRef, type HTMLAttributes } from 'react';
+import { useButton, useCalendarCell, useCalendarGrid, useLocale, useRangeCalendar } from 'react-aria';
+import type { AriaButtonProps } from 'react-aria';
+import { useRangeCalendarState } from 'react-stately';
 import {
-    forwardRef,
-    useCallback,
-    useEffect,
-    useId,
-    useRef,
-    useState,
-    type HTMLAttributes,
-    type KeyboardEvent,
-} from 'react';
+    CalendarDate,
+    createCalendar,
+    getWeeksInMonth,
+    type DateValue as IntlDateValue,
+} from '@internationalized/date';
 import { ChevronLeft, ChevronRight } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import styles from './CalendarGrid.module.css';
@@ -19,20 +19,25 @@ import styles from './CalendarGrid.module.css';
 /* ------------------------------------------------------------------ */
 
 /**
- * A single date value. Geist's Calendar is built on
- * `@internationalized/date` (`DateValue`); the oxobz build has no date
- * dependency, so a native `Date` stands in for it while keeping the Geist
- * prop name (`value` / `minValue` / `maxValue`).
+ * A single date value.
+ *
+ * Production builds Calendar on `@internationalized/date`, and this component
+ * now does the same internally. The PUBLIC prop type stays a native `Date` so
+ * the surrounding Calendar chrome (its text inputs, presets and timezone
+ * select) keeps working unchanged; conversion happens at this boundary only.
+ * Day-granularity maths is exactly what `CalendarDate` is for, so nothing is
+ * lost here. Migrating the outer Calendar to zoned types is tracked separately
+ * in tasks/todo.md.
  */
 export type DateValue = Date;
 
-/** Inclusive `{ start, end }` range — mirrors `RangeValue<DateValue>` from Geist. */
+/** Inclusive `{ start, end }` range, mirroring `RangeValue<DateValue>` from Geist. */
 export interface RangeValue<T> {
     start: T;
     end: T;
 }
 
-/** Grid size — `large` (default) or `small`, matching Geist. Internal to {@link CalendarGrid}; the public `Calendar` chrome has its own `CalendarSize` (`medium` | `small`). */
+/** Grid size (`large` default or `small`), matching Geist. */
 export type CalendarGridSize = 'large' | 'small';
 
 /** 0 = Sunday … 6 = Saturday. */
@@ -56,7 +61,7 @@ export interface CalendarGridProps
     isDisabled?: boolean;
     /** Size token (kept for Geist API parity; the day grid is 32px either way). */
     size?: CalendarGridSize;
-    /** First day of the week. Default 0 (Sunday), matching the Geist snapshot. */
+    /** First day of the week. Default 0 (Sunday), matching production. */
     weekStartsOn?: WeekDayIndex;
     /** Month rendered first when uncontrolled and no value is set. */
     defaultFocusedMonth?: DateValue;
@@ -65,143 +70,142 @@ export interface CalendarGridProps
 }
 
 /* ------------------------------------------------------------------ */
-/*  Date helpers (day-granularity, local time)                        */
+/*  Date <-> CalendarDate bridge                                       */
 /* ------------------------------------------------------------------ */
 
-const WEEKDAY_NAMES = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-] as const;
+const toCal = (d: Date): CalendarDate =>
+    new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
 
-const MONTH_NAMES = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-] as const;
+const toDate = (d: IntlDateValue): Date => new Date(d.year, d.month - 1, d.day);
 
-function startOfDay(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
+const toCalRange = (r: RangeValue<Date> | null | undefined) =>
+    r ? { start: toCal(r.start), end: toCal(r.end) } : null;
 
-function addDays(date: Date, amount: number): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
-}
+/** react-aria takes the week start as a weekday code, not a number. */
+const WEEK_START = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
-function addMonths(date: Date, amount: number): Date {
-    return new Date(date.getFullYear(), date.getMonth() + amount, 1);
-}
+/* ------------------------------------------------------------------ */
+/*  Cell                                                               */
+/* ------------------------------------------------------------------ */
 
-function startOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-}
+type CalendarState = ReturnType<typeof useRangeCalendarState>;
 
-function isSameDay(a: Date, b: Date): boolean {
+function Cell({ state, date }: { state: CalendarState; date: CalendarDate }) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const { cellProps, buttonProps, isSelected, isDisabled, isUnavailable, isOutsideVisibleRange, formattedDate } =
+        useCalendarCell({ date }, state, ref);
+
+    const range = state.highlightedRange;
+    const isStart = !!range && date.compare(range.start) === 0;
+    const isEnd = !!range && date.compare(range.end) === 0;
+    const isEndpoint = isStart || isEnd;
+    const isMiddle = isSelected && !isEndpoint;
+
+    const dow = toDate(date).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isToday = isSameAsToday(date);
+    const blocked = isDisabled || isUnavailable;
+
     return (
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
+        <td
+            {...cellProps}
+            className={cn(
+                styles.cell,
+                isStart && !isEnd && styles.firstInRange,
+                isEnd && !isStart && styles.lastInRange,
+            )}
+        >
+            <span
+                {...buttonProps}
+                ref={ref}
+                data-date={date.toString()}
+                data-testid={`calendar/cell/date-${date.day}`}
+                className={cn(
+                    styles.day,
+                    isWeekend && styles.weekend,
+                    isOutsideVisibleRange && styles.outsideMonth,
+                    isMiddle && styles.inRange,
+                    isToday && !isEndpoint && styles.highlight,
+                    isEndpoint && styles.selected,
+                    blocked && styles.disabled,
+                )}
+            >
+                {formattedDate}
+            </span>
+        </td>
     );
 }
 
-function isSameMonth(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+/**
+ * Tombol navigasi bulan.
+ *
+ * `useRangeCalendar` mengembalikan prop untuk `useButton`, BUKAN atribut DOM:
+ * isinya `onPress` dan `isDisabled`, bukan `onClick` dan `disabled`. Menyebarnya
+ * langsung ke <button> membuat tombolnya diam saja dan tidak pernah nonaktif.
+ * Jadi props itu harus dilewatkan dulu lewat useButton.
+ */
+function NavButton({
+    label,
+    className,
+    children,
+    ...props
+}: AriaButtonProps<'button'> & { label: string; className?: string; children: React.ReactNode }) {
+    const ref = useRef<HTMLButtonElement>(null);
+    const { buttonProps } = useButton(props, ref);
+    return (
+        <button {...buttonProps} ref={ref} type="button" aria-label={label} className={className}>
+            {children}
+        </button>
+    );
 }
 
-/** Numeric day key (YYYYMMDD) for cheap ordering / comparison. */
-function dayKey(date: Date): number {
-    return date.getFullYear() * 10000 + date.getMonth() * 100 + date.getDate();
-}
-
-function orderRange(a: Date, b: Date): RangeValue<Date> {
-    return dayKey(a) <= dayKey(b) ? { start: a, end: b } : { start: b, end: a };
-}
-
-function toISO(date: Date): string {
-    const m = `${date.getMonth() + 1}`.padStart(2, '0');
-    const d = `${date.getDate()}`.padStart(2, '0');
-    return `${date.getFullYear()}-${m}-${d}`;
-}
-
-/** Weeks (rows of 7) covering the given month, aligned to `weekStartsOn`. */
-function buildWeeks(month: Date, weekStartsOn: WeekDayIndex): Date[][] {
-    const first = startOfMonth(month);
-    const leading = (first.getDay() - weekStartsOn + 7) % 7;
-    const gridStart = addDays(first, -leading);
-
-    const weeks: Date[][] = [];
-    let cursor = gridStart;
-    // Emit whole weeks until we have covered the last day of the month.
-    // A month spans at most 6 weeks.
-    for (let w = 0; w < 6; w++) {
-        const week: Date[] = [];
-        for (let d = 0; d < 7; d++) {
-            week.push(cursor);
-            cursor = addDays(cursor, 1);
-        }
-        weeks.push(week);
-        // Stop once we've emitted a full week that ends in the next month.
-        if (week[6].getMonth() !== month.getMonth() && week[6] > first) {
-            break;
-        }
-    }
-    return weeks;
+/** Today in the local zone, compared at day granularity. */
+function isSameAsToday(date: CalendarDate): boolean {
+    const n = new Date();
+    return date.year === n.getFullYear() && date.month === n.getMonth() + 1 && date.day === n.getDate();
 }
 
 /* ------------------------------------------------------------------ */
-/*  Component                                                          */
+/*  Grid                                                               */
 /* ------------------------------------------------------------------ */
 
 /**
- * CalendarGrid — the month-grid date-range picker panel.
+ * The month grid.
  *
- * Internal to `@oxobz/ui`: this is the grid core composed inside the public
- * {@link Calendar} chrome (trigger + popover + presets + time/timezone
- * inputs, see `Calendar.tsx`). Not exported from the package barrel — import
- * only within the `Calendar` folder.
+ * Rebuilt on react-aria (18 Aug 2026). Production's own calendar is built on
+ * the same hooks, proven from the live DOM: the table carries `role="grid"`
+ * and `aria-multiselectable`, every cell is a `role="gridcell"` wrapping a
+ * `role="button"` with a full-date aria-label, and the month heading and the
+ * Previous / Next buttons all carry react-aria generated ids and
+ * `data-react-aria-pressable`.
  *
- * Rendered DOM (mirrors the geistcn snapshot in calendar-popovers.html):
- * ```html
- * <div data-oxobz-calendar data-version="v1">
- *   <div class="header">
- *     <div class="monthTitleWrap"><h2 class="currentMonth">July 2026</h2></div>
- *     <button class="caretButton" aria-label="Previous">…</button>
- *     <button class="caretButton" aria-label="Next">…</button>
- *   </div>
- *   <table role="grid" aria-multiselectable="true">
- *     <caption class="oxobz-sr-only" />
- *     <thead><tr><th abbr="Sunday">S</th>…</tr></thead>
- *     <tbody><tr><td role="gridcell"><span role="button">1</span></td>…</tbody>
- *   </table>
- * </div>
- * ```
+ * What that buys over the hand-rolled version this replaces: real keyboard
+ * navigation (arrows, page up/down, home/end), correct focus management,
+ * screen-reader announcements, and date arithmetic that does not drift across
+ * daylight-saving boundaries.
  *
- * Selection is two-click range (Geist default): first click anchors the start,
- * hovering previews, the second click commits and fires `onChange`.
+ * Rendered shape, unchanged from before so the stylesheet still applies:
+ *   <div class="contentWrapper">
+ *     <div class="header">
+ *       <div class="monthTitleWrap"><h2 class="currentMonth">July 2026</h2></div>
+ *       <button class="caretButton" aria-label="Previous">…</button>
+ *       <button class="caretButton" aria-label="Next">…</button>
+ *     </div>
+ *     <table role="grid" aria-multiselectable="true">
+ *       <caption class="oxobz-sr-only" />
+ *       <thead><tr><th abbr="Sunday">S</th>…</tr></thead>
+ *       <tbody>…</tbody>
  */
 const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
     (
         {
             value,
-            defaultValue = null,
+            defaultValue,
             onChange,
             minValue,
             maxValue,
             isDateUnavailable,
-            isDisabled = false,
+            isDisabled,
             size = 'large',
             weekStartsOn = 0,
             defaultFocusedMonth,
@@ -211,174 +215,59 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
         },
         ref,
     ) => {
-        const isControlled = value !== undefined;
-        const [internalRange, setInternalRange] = useState<RangeValue<Date> | null>(
-            defaultValue,
-        );
-        const range = isControlled ? value : internalRange;
+        const { locale } = useLocale();
+        const firstDayOfWeek = WEEK_START[weekStartsOn];
 
-        // Pending first click of a range + the day currently hovered (preview).
-        const [anchor, setAnchor] = useState<Date | null>(null);
-        const [hoverDate, setHoverDate] = useState<Date | null>(null);
-
-        const initialMonth =
-            defaultFocusedMonth ?? range?.start ?? new Date();
-        const [visibleMonth, setVisibleMonth] = useState<Date>(() =>
-            startOfMonth(initialMonth),
-        );
-        const [focusedDate, setFocusedDate] = useState<Date>(() =>
-            startOfDay(range?.start ?? new Date()),
-        );
-
-        const rootRef = useRef<HTMLDivElement | null>(null);
-        const gridId = useId();
-        const captionId = useId();
-
-        // Move DOM focus onto the focused day after a keyboard navigation.
-        const focusTick = useRef(0);
-        const pendingFocus = useRef(false);
-        useEffect(() => {
-            if (!pendingFocus.current) return;
-            pendingFocus.current = false;
-            const node = rootRef.current?.querySelector<HTMLSpanElement>(
-                `[data-date="${toISO(focusedDate)}"]`,
-            );
-            node?.focus();
+        const state = useRangeCalendarState({
+            locale,
+            createCalendar,
+            firstDayOfWeek,
+            isDisabled,
+            value: value === undefined ? undefined : toCalRange(value),
+            defaultValue: toCalRange(defaultValue),
+            minValue: minValue ? toCal(minValue) : undefined,
+            maxValue: maxValue ? toCal(maxValue) : undefined,
+            isDateUnavailable: isDateUnavailable
+                ? (d: IntlDateValue) => isDateUnavailable(toDate(d))
+                : undefined,
+            defaultFocusedValue: defaultFocusedMonth ? toCal(defaultFocusedMonth) : undefined,
+            onChange: onChange
+                ? (r) => onChange({ start: toDate(r.start), end: toDate(r.end) })
+                : undefined,
         });
 
-        const today = startOfDay(new Date());
-        const min = minValue ? startOfDay(minValue) : null;
-        const max = maxValue ? startOfDay(maxValue) : null;
-
-        const isDayDisabled = useCallback(
-            (date: Date): boolean => {
-                if (isDisabled) return true;
-                if (min && dayKey(date) < dayKey(min)) return true;
-                if (max && dayKey(date) > dayKey(max)) return true;
-                if (isDateUnavailable?.(date)) return true;
-                return false;
-            },
-            [isDisabled, min, max, isDateUnavailable],
+        const localRef = useRef<HTMLDivElement>(null);
+        const { calendarProps, prevButtonProps, nextButtonProps, title } = useRangeCalendar(
+            { isDisabled },
+            state,
+            localRef,
         );
+        const { gridProps, headerProps, weekDays } = useCalendarGrid({ firstDayOfWeek }, state);
 
-        // The range to paint: the committed range, or the live preview while a
-        // start is anchored.
-        const displayRange: RangeValue<Date> | null =
-            anchor !== null ? orderRange(anchor, hoverDate ?? anchor) : range;
+        const weeksInMonth = getWeeksInMonth(state.visibleRange.start, locale, firstDayOfWeek);
+        const weeks = useMemo(() => [...new Array(weeksInMonth).keys()], [weeksInMonth]);
 
-        const commit = useCallback(
-            (next: RangeValue<Date>): void => {
-                if (!isControlled) setInternalRange(next);
-                onChange?.(next);
-            },
-            [isControlled, onChange],
-        );
-
-        const selectDate = useCallback(
-            (date: Date): void => {
-                if (isDayDisabled(date)) return;
-                if (anchor === null) {
-                    setAnchor(date);
-                    setHoverDate(date);
-                } else {
-                    const next = orderRange(anchor, date);
-                    setAnchor(null);
-                    setHoverDate(null);
-                    commit(next);
-                }
-                setFocusedDate(date);
-            },
-            [anchor, commit, isDayDisabled],
-        );
-
-        const moveFocus = useCallback(
-            (next: Date): void => {
-                setFocusedDate(next);
-                if (!isSameMonth(next, visibleMonth)) {
-                    setVisibleMonth(startOfMonth(next));
-                }
-                pendingFocus.current = true;
-                focusTick.current += 1;
-            },
-            [visibleMonth],
-        );
-
-        const handleKeyDown = useCallback(
-            (e: KeyboardEvent<HTMLTableElement>): void => {
-                let next: Date | null = null;
-                switch (e.key) {
-                    case 'ArrowLeft':
-                        next = addDays(focusedDate, -1);
-                        break;
-                    case 'ArrowRight':
-                        next = addDays(focusedDate, 1);
-                        break;
-                    case 'ArrowUp':
-                        next = addDays(focusedDate, -7);
-                        break;
-                    case 'ArrowDown':
-                        next = addDays(focusedDate, 7);
-                        break;
-                    case 'Home':
-                        next = addDays(focusedDate, -focusedDate.getDay());
-                        break;
-                    case 'End':
-                        next = addDays(focusedDate, 6 - focusedDate.getDay());
-                        break;
-                    case 'PageUp':
-                        next = addMonths(focusedDate, -1);
-                        break;
-                    case 'PageDown':
-                        next = addMonths(focusedDate, 1);
-                        break;
-                    case 'Enter':
-                    case ' ':
-                        e.preventDefault();
-                        selectDate(focusedDate);
-                        return;
-                    default:
-                        return;
-                }
-                e.preventDefault();
-                moveFocus(next);
-            },
-            [focusedDate, moveFocus, selectDate],
-        );
-
-        const goToMonth = useCallback((delta: number): void => {
-            setVisibleMonth((m) => addMonths(m, delta));
-        }, []);
-
-        const weeks = buildWeeks(visibleMonth, weekStartsOn);
-
-        // Ordered weekday labels starting at weekStartsOn.
-        const weekdayOrder: WeekDayIndex[] = Array.from(
-            { length: 7 },
-            (_, i) => (((weekStartsOn + i) % 7) as WeekDayIndex),
-        );
-
-        // Roving tabindex target: the focused day if it is visible, else the
-        // first day of the visible month.
-        const tabbableDate = isSameMonth(focusedDate, visibleMonth)
-            ? focusedDate
-            : startOfMonth(visibleMonth);
-
-        const prevDisabled =
-            isDisabled ||
-            (min !== null &&
-                dayKey(addDays(startOfMonth(visibleMonth), -1)) < dayKey(min));
-        const nextDisabled =
-            isDisabled ||
-            (max !== null &&
-                dayKey(startOfMonth(addMonths(visibleMonth, 1))) > dayKey(max));
+        /*
+         * react-aria hanya memberi nama hari versi pendek ("S", "M", …).
+         * Produksi juga menaruh nama panjangnya di atribut `abbr` supaya
+         * pembaca layar menyebut "Sunday", bukan huruf "S", jadi nama panjang
+         * itu dihitung dari tanggal-tanggal minggu pertama.
+         */
+        const longWeekDays = useMemo(() => {
+            const fmt = new Intl.DateTimeFormat(locale, { weekday: 'long' });
+            return state
+                .getDatesInWeek(0)
+                .map((d) => (d ? fmt.format(toDate(d)) : ''));
+        }, [locale, state]);
 
         return (
             <div
+                {...calendarProps}
                 {...rest}
                 ref={(node) => {
-                    rootRef.current = node;
+                    localRef.current = node;
                     if (typeof ref === 'function') ref(node);
-                    else if (ref) ref.current = node;
+                    else if (ref) (ref as { current: HTMLDivElement | null }).current = node;
                 }}
                 className={cn(styles.contentWrapper, className)}
                 data-oxobz-calendar=""
@@ -388,134 +277,39 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
             >
                 <div className={styles.header}>
                     <div className={styles.monthTitleWrap}>
-                        <h2 className={styles.currentMonth} id={gridId}>
-                            {`${MONTH_NAMES[visibleMonth.getMonth()]} ${visibleMonth.getFullYear()}`}
-                        </h2>
+                        <h2 className={styles.currentMonth}>{title}</h2>
                     </div>
-                    <button
-                        type="button"
-                        aria-label="Previous"
-                        className={styles.caretButton}
-                        disabled={prevDisabled}
-                        onClick={() => goToMonth(-1)}
-                    >
+                    <NavButton {...prevButtonProps} label="Previous" className={styles.caretButton}>
                         <ChevronLeft size={16} />
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="Next"
-                        className={styles.caretButton}
-                        disabled={nextDisabled}
-                        onClick={() => goToMonth(1)}
-                    >
+                    </NavButton>
+                    <NavButton {...nextButtonProps} label="Next" className={styles.caretButton}>
                         <ChevronRight size={16} />
-                    </button>
+                    </NavButton>
                 </div>
 
-                <table
-                    role="grid"
-                    aria-labelledby={gridId}
-                    aria-multiselectable="true"
-                    className={styles.table}
-                    onKeyDown={handleKeyDown}
-                >
-                    <caption className="oxobz-sr-only" id={captionId} />
-                    <thead>
+                <table {...gridProps} className={styles.table}>
+                    <caption className="oxobz-sr-only" />
+                    <thead {...headerProps}>
                         <tr>
-                            {weekdayOrder.map((wd) => (
-                                <th
-                                    key={wd}
-                                    abbr={WEEKDAY_NAMES[wd]}
-                                    scope="col"
-                                    className={styles.weekday}
-                                >
-                                    {WEEKDAY_NAMES[wd].charAt(0)}
+                            {weekDays.map((day, i) => (
+                                <th key={i} abbr={longWeekDays[i]} scope="col" className={styles.weekday}>
+                                    {day}
                                 </th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
-                        {weeks.map((week) => (
-                            <tr key={toISO(week[0])}>
-                                {week.map((date) => {
-                                    const disabled = isDayDisabled(date);
-                                    const outside = !isSameMonth(date, visibleMonth);
-                                    const weekend =
-                                        date.getDay() === 0 || date.getDay() === 6;
-                                    const isToday = isSameDay(date, today);
-
-                                    const rangeStart =
-                                        displayRange !== null &&
-                                        isSameDay(date, displayRange.start);
-                                    const rangeEnd =
-                                        displayRange !== null &&
-                                        isSameDay(date, displayRange.end);
-                                    const inBand =
-                                        displayRange !== null &&
-                                        dayKey(date) >= dayKey(displayRange.start) &&
-                                        dayKey(date) <= dayKey(displayRange.end);
-                                    const isEndpoint = rangeStart || rangeEnd;
-                                    const isMiddle = inBand && !isEndpoint;
-
-                                    const isTabbable = isSameDay(date, tabbableDate);
-                                    const isFocused =
-                                        isSameDay(date, focusedDate) &&
-                                        isSameMonth(date, visibleMonth);
-
-                                    const label = `${WEEKDAY_NAMES[date.getDay()]}, ${
-                                        MONTH_NAMES[date.getMonth()]
-                                    } ${date.getDate()}, ${date.getFullYear()}${
-                                        isEndpoint ? ' selected' : ''
-                                    }`;
-
-                                    return (
-                                        <td
-                                            key={toISO(date)}
-                                            role="gridcell"
-                                            aria-selected={inBand || undefined}
-                                            className={cn(
-                                                styles.cell,
-                                                rangeStart &&
-                                                    !rangeEnd &&
-                                                    styles.firstInRange,
-                                                rangeEnd &&
-                                                    !rangeStart &&
-                                                    styles.lastInRange,
-                                            )}
-                                        >
-                                            <span
-                                                role="button"
-                                                tabIndex={isTabbable ? 0 : -1}
-                                                aria-label={label}
-                                                aria-disabled={disabled || undefined}
-                                                data-date={toISO(date)}
-                                                data-testid={`calendar/cell/date-${date.getDate()}`}
-                                                className={cn(
-                                                    styles.day,
-                                                    weekend && styles.weekend,
-                                                    outside && styles.outsideMonth,
-                                                    isMiddle && styles.inRange,
-                                                    isToday &&
-                                                        !isEndpoint &&
-                                                        styles.highlight,
-                                                    isEndpoint && styles.selected,
-                                                    disabled && styles.disabled,
-                                                    isFocused && styles.focused,
-                                                )}
-                                                onClick={() =>
-                                                    !disabled && selectDate(date)
-                                                }
-                                                onPointerEnter={() => {
-                                                    if (anchor !== null && !disabled) {
-                                                        setHoverDate(date);
-                                                    }
-                                                }}
-                                            >
-                                                {date.getDate()}
-                                            </span>
-                                        </td>
-                                    );
-                                })}
+                        {weeks.map((weekIndex) => (
+                            <tr key={weekIndex}>
+                                {state
+                                    .getDatesInWeek(weekIndex)
+                                    .map((date, i) =>
+                                        date ? (
+                                            <Cell key={date.toString()} state={state} date={date as CalendarDate} />
+                                        ) : (
+                                            <td key={i} />
+                                        ),
+                                    )}
                             </tr>
                         ))}
                     </tbody>
