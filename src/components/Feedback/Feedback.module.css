@@ -156,10 +156,22 @@
     padding: 0;
     color: var(--ds-gray-900);
     background: transparent;
+    /*
+     * Gayanya `none` seperti produksi, tapi WARNANYA tetap disetel gray-200.
+     * Tanpa baris warna itu nilainya ikut `currentColor` dan terbaca sebagai
+     * abu tulisan. Tidak terlihat di layar karena lebarnya 0.
+     */
     border: none;
+    border-color: var(--ds-gray-200);
     border-radius: 50%;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    /*
+     * Lengkung waktunya cubic-bezier(.4,0,.2,1) (easing bawaan Tailwind),
+     * bukan `ease` bawaan CSS. Diukur 18 Agu 2026 di halaman live.
+     */
+    transition:
+        background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .emoji svg path {

@@ -51,6 +51,9 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill,
         stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-duration: 0.2s;
+    /* Lengkung waktu bawaan Tailwind, terukur di halaman live 18 Agu 2026.
+       Tanpa baris ini nilainya jatuh ke `ease` bawaan CSS. */
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .textItem a {
@@ -112,6 +115,9 @@
     cursor: pointer;
     transition-property: color, border-color, background;
     transition-duration: 0.2s;
+    /* Lengkung waktu bawaan Tailwind, terukur di halaman live 18 Agu 2026.
+       Tanpa baris ini nilainya jatuh ke `ease` bawaan CSS. */
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (hover: hover) {

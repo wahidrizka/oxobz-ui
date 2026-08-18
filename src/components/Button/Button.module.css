@@ -35,7 +35,12 @@
 .button {
     margin: 0;
     padding: 0;
-    border: 0;
+    /*
+     * Lebarnya tetap 0, tapi gaya dan warnanya ditulis supaya sama persis
+     * dengan produksi, yang mewarisi `solid` + gray-400 dari reset Tailwind-nya.
+     * Tidak terlihat di layar, hanya membuat perbandingan gaya nol beda.
+     */
+    border: 0 solid var(--ds-gray-200);
     outline: none;
     vertical-align: baseline;
     text-decoration: none;
@@ -70,7 +75,13 @@
      * `all` selama 0.15s, dan itu yang terukur pada ke-45 tombol halaman live.
      * Jadi di sini ikut `all`, bukan daftar lima properti seperti sebelumnya.
      */
-    transition: all 0.15s ease-in-out;
+    /*
+     * Lengkung waktunya BUKAN ease-in-out. Diukur ulang 18 Agu 2026 di halaman
+     * live Button: `0.15s cubic-bezier(0.4, 0, 0.2, 1)`, yaitu easing bawaan
+     * Tailwind. Beda ini tak terlihat pada pengukuran gaya diam, hanya terasa
+     * saat tombol beranimasi.
+     */
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button svg {

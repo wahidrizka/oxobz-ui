@@ -936,7 +936,14 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             className,
         );
 
-        const widthVar = small ? '180px' : '250px';
+        /*
+         * Lebar kontrol. Produksi menuliskannya sebagai
+         * `width = compact ? "180px" : "250px"`, jadi yang menentukan adalah
+         * tata letak COMPACT, bukan ukuran small/medium. Terukur di halaman
+         * Sizes: baris small yang tidak compact tetap 250px, dan yang compact
+         * tetap 180px di kedua baris.
+         */
+        const widthVar = compact ? '180px' : '250px';
 
         /*
          * ---- Preset combobox (rendered only when presets are supplied) ----
@@ -964,10 +971,17 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         autoCorrect="off"
                         spellCheck={false}
                         disabled={disabled}
-                        placeholder={COMBOBOX_PLACEHOLDER}
+                        /*
+                         * Compact tidak punya placeholder sama sekali, dan saat
+                         * sebuah preset terpilih produksi menuliskan label
+                         * preset itu sebagai placeholder (tertutup nilainya,
+                         * jadi tidak terlihat). Keduanya terbaca dari halaman
+                         * live.
+                         */
+                        placeholder={compact ? '' : comboText || COMBOBOX_PLACEHOLDER}
                         value={comboText}
                         data-testid="calendar/combobox-input"
-                        className={styles.comboboxInput}
+                        className={cn(styles.comboboxInput, comboText && styles.comboboxInputFilled)}
                         onChange={(e) => setComboText(e.target.value)}
                         onClick={() => setPresetsOpen(true)}
                         onKeyDown={(event) => {
@@ -1072,7 +1086,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 variant="secondary"
                 typeName="button"
                 size={small ? 'small' : 'medium'}
-                prefix={<CalendarIcon size={16} className={styles.triggerIcon} />}
+                prefix={<CalendarIcon size={16} color="gray-700" className={styles.triggerIcon} />}
                 disabled={disabled}
                 aria-haspopup="dialog"
                 aria-expanded={isOpen}

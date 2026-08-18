@@ -69,10 +69,26 @@
     align-items: center;
 }
 
-/* Compact squares only the button's RIGHT edge (leftmost/outer element). */
+/*
+ * Radius tombol pemicu saat menempel ke combobox.
+ *
+ * Sisi yang menempel disikukan, dan sisi luarnya memakai 5px, BUKAN 6px milik
+ * tombol yang berdiri sendiri. Ketiganya diukur dari halaman live:
+ *   compact       -> 5px 0 0 5px   (tombol di kiri, combobox di kanan)
+ *   presets saja  -> 0 5px 5px 0   (combobox di kiri, tombol di kanan)
+ *   stacked       -> 0 0 5px 5px   (combobox di atas, tombol di bawah)
+ * Tombol tanpa preset tetap 6px penuh, dan itu sudah benar.
+ */
 .compact .trigger {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-radius: 5px 0 0 5px;
+}
+
+.hasSelect:not(.compact):not(.stacked) .trigger {
+    border-radius: 0 5px 5px 0;
+}
+
+.stacked .trigger {
+    border-radius: 0 0 5px 5px;
 }
 
 /* Stacked: combobox on top, trigger button below. */
@@ -88,6 +104,13 @@
     text-align: left;
     font-weight: 400;
     width: var(--width, 250px);
+    /*
+     * Pemicu Calendar mempersempit transisi tombol menjadi box-shadow saja.
+     * Terukur di halaman live: tombol biasa `0.15s cubic-bezier(.4,0,.2,1)`
+     * untuk semua properti, pemicu Calendar `box-shadow 0.15s` dengan lengkung
+     * yang sama.
+     */
+    transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     /* text-gray-1000! when a range is committed (see .triggerPlaceholder). */
     color: var(--ds-gray-1000);
 }
@@ -110,9 +133,15 @@
    Height follows the calendar size: h-(--ds-size-medium) everywhere except the
    Sizes small group's h-(--ds-size-small). --ds-size-medium = 36px (verified
    live 2026-07-21; an older local chunk had 40px — stale). */
+/*
+ * Pembungkus ini BLOCK, bukan flex. Terukur di produksi: induk langsung input
+ * ber-display block. Bedanya nyata, karena anak sebuah flex container dipaksa
+ * jadi block oleh CSS, sehingga `display: inline-block` pada input tidak akan
+ * pernah berlaku selama pembungkusnya flex.
+ */
 .comboboxWrapper {
     position: relative;
-    display: flex;
+    display: block;
     height: var(--ds-size-medium);
 }
 
@@ -124,10 +153,21 @@
     position: relative;
     width: var(--width, 250px);
     height: var(--ds-size-medium);
-    /* medium: px-9 (36px); small: px-[34px] — room for clock + chevron. */
-    padding: 0 36px;
-    border: none;
+    /*
+     * Ruang kiri saja. Terukur di SEPULUH combobox halaman live: padding kanan
+     * SELALU 0px, sedangkan padding kiri 36px (medium), 34px (small), dan 8px
+     * saat compact. Ikon chevron di kanan menumpang di atas teks, tidak
+     * memesan tempat.
+     */
+    padding: 0 0 0 36px;
+    /*
+     * Lebar garis tepi 0, tapi gaya dan warnanya tetap ditulis supaya sama
+     * persis dengan produksi (`solid` + gray-400). Tidak terlihat di layar,
+     * hanya membuat perbandingan gaya benar-benar nol beda.
+     */
+    border: 0 solid var(--ds-gray-200);
     border-radius: 5px;
+    display: inline-block;
     outline: none;
     background: var(--ds-background-100);
     background-clip: padding-box;
@@ -138,19 +178,30 @@
     font-family: var(--font-sans, inherit);
     font-size: 14px;
     font-weight: 400;
+    /* Produksi menulis text-left di sini; hanya varian compact yang dibiarkan
+       memakai nilai bawaan `start`. */
     text-align: left;
     cursor: pointer;
     white-space: nowrap;
-    transition: box-shadow 0.15s;
+    transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .calendar[data-size='small'] .comboboxInput {
     height: 32px;
-    padding: 0 34px;
+    padding: 0 0 0 34px;
 }
 
 .comboboxInput::placeholder {
     color: var(--ds-gray-700);
+}
+
+/*
+ * Begitu sebuah preset terpilih, teksnya berubah dari abu-abu placeholder ke
+ * gray-1000. Terukur di seksi "Presets with default value": rgb(23, 23, 23),
+ * sedangkan combobox kosong di seksi lain tetap rgb(143, 143, 143).
+ */
+.comboboxInputFilled {
+    color: var(--ds-gray-1000);
 }
 
 .comboboxInput:hover:not(:disabled) {
@@ -173,6 +224,36 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     padding-left: 8px;
+    /*
+     * Di tata letak compact combobox menyusut jadi kotak chevron saja: lebarnya
+     * sama dengan tinggi baris (36px medium, 32px small) dan teksnya
+     * ditransparankan. Terukur langsung dari halaman live.
+     */
+    width: var(--ds-size-medium);
+    color: transparent;
+}
+
+.compact .comboboxInput {
+    text-align: start;
+}
+
+/*
+ * Bobot selektornya sengaja dinaikkan. Aturan `.calendar[data-size='small']
+ * .comboboxInput` memakai shorthand `padding` dan bobotnya lebih tinggi
+ * daripada `.compact .comboboxInput`, sehingga padding 34px sempat menang dan
+ * menahan lebar kotak di 34px meski lebarnya sudah disetel 32px.
+ */
+.calendar.compact[data-size='small'] .comboboxInput {
+    width: var(--ds-size-small);
+    padding-left: 8px;
+}
+
+/*
+ * Preset tanpa compact dan tanpa stacked: combobox di kiri, tombol di kanan,
+ * jadi hanya sisi kirinya yang membulat. Terukur `5px 0 0 5px` di produksi.
+ */
+.hasSelect:not(.compact):not(.stacked) .comboboxInput {
+    border-radius: 5px 0 0 5px;
 }
 
 /* Stacked: combobox on top, square its bottom edge against the button. */
