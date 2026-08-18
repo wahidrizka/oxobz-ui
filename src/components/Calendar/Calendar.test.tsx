@@ -1,4 +1,4 @@
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { CalendarGrid } from './CalendarGrid';
@@ -422,11 +422,24 @@ describe('Calendar', () => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('closes the popover on outside click', () => {
+    it('closes the popover on outside click', async () => {
         render(<Calendar />);
         fireEvent.click(trigger());
         expect(screen.getByRole('dialog')).toBeInTheDocument();
+        /*
+         * Radix baru memasang pendengar "tekan di luar" pada tick berikutnya
+         * (setTimeout 0), supaya klik yang MEMBUKA popover tidak langsung
+         * menutupnya lagi. Tick itu harus dilewati dulu, kalau tidak
+         * pointerdown di bawah menembak ke ruang kosong.
+         */
+        await act(async () => {
+            await new Promise((lanjut) => setTimeout(lanjut, 0));
+        });
+        // Penutupannya sendiri terjadi pada `click`, bukan `pointerdown`
+        // (Radix menunda ke click); keduanya ditembakkan supaya urutan
+        // peristiwanya sama seperti di peramban sungguhan.
         fireEvent.pointerDown(document.body);
+        fireEvent.click(document.body);
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
@@ -493,7 +506,7 @@ describe('Calendar', () => {
     it('keeps the inputs header FIRST in the DOM under a column-reverse wrapper (grid renders on top)', () => {
         const { container } = render(<Calendar />);
         fireEvent.click(trigger());
-        const wrapper = container.querySelector('[role="dialog"] [class*="calendarContentWrapper"]');
+        const wrapper = document.querySelector('[role="dialog"] [class*="calendarContentWrapper"]');
         expect(wrapper).toBeInTheDocument();
         // Production writes inputs-then-grid and reverses visually via CSS.
         expect(wrapper?.firstElementChild?.className).toContain('inputsWrapper');
@@ -597,33 +610,18 @@ describe('Calendar', () => {
         );
     });
 
-    it('opens with data-side="bottom" by default and flips to "top" when space below is short', () => {
-        const { container, unmount } = render(<Calendar />);
+    /*
+     * Pembalikan arah (buka ke atas saat ruang bawah habis) kini milik Radix,
+     * bukan pengukuran viewport buatan sendiri. Bagian test yang dulu memalsukan
+     * getBoundingClientRect dihapus: jsdom tidak punya tata letak, jadi yang
+     * diujinya hanya tiruan kita sendiri, bukan perilaku sungguhan. Sisi bawah
+     * sebagai bawaan tetap diperiksa; pembalikannya diperiksa di peramban
+     * sungguhan saat halaman /calendar diukur.
+     */
+    it('opens with data-side="bottom" by default', () => {
+        render(<Calendar />);
         fireEvent.click(trigger());
-        expect(container.querySelector('[role="dialog"]')).toHaveAttribute('data-side', 'bottom');
-        unmount();
-
-        // Anchor near the viewport bottom: dialog (400px tall) no longer fits below.
-        const anchorRect = {
-            top: 700, bottom: 732, left: 0, right: 250, width: 250, height: 32, x: 0, y: 700,
-            toJSON: () => ({}),
-        } as DOMRect;
-        const dialogRect = { ...anchorRect, height: 400 } as DOMRect;
-        const spy = vi
-            .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-            .mockImplementation(function (this: HTMLElement) {
-                return this.getAttribute('role') === 'dialog' ? dialogRect : anchorRect;
-            });
-        try {
-            const second = render(<Calendar />);
-            fireEvent.click(screen.getByTestId('calendar/trigger/button'));
-            expect(second.container.querySelector('[role="dialog"]')).toHaveAttribute(
-                'data-side',
-                'top',
-            );
-        } finally {
-            spy.mockRestore();
-        }
+        expect(screen.getByRole('dialog')).toHaveAttribute('data-side', 'bottom');
     });
 
     it('applies a typed period on Enter (e.g. "2 weeks")', () => {
@@ -839,7 +837,7 @@ describe('Calendar', () => {
     it('applies the horizontal content-wrapper class inside the popover', () => {
         const { container } = render(<Calendar horizontalLayout />);
         fireEvent.click(trigger());
-        const wrapper = container.querySelector(
+        const wrapper = document.querySelector(
             '[class*="calendarContentWrapperHorizontal"]',
         );
         expect(wrapper).toBeInTheDocument();
@@ -849,24 +847,27 @@ describe('Calendar', () => {
         const { container } = render(<Calendar />);
         fireEvent.click(trigger());
         expect(
-            container.querySelector('[class*="calendarContentWrapperHorizontal"]'),
+            document.querySelector('[class*="calendarContentWrapperHorizontal"]'),
         ).not.toBeInTheDocument();
     });
 
     // ── popoverAlignment ──
 
-    it('defaults popoverAlignment to start (no center-alignment class)', () => {
-        const { container } = render(<Calendar />);
+    /*
+     * Perataan popover kini diserahkan ke prop `align` milik Radix, bukan kelas
+     * CSS buatan sendiri. Radix menuliskannya kembali sebagai atribut data-align,
+     * jadi itu yang diperiksa.
+     */
+    it('defaults popoverAlignment to start', () => {
+        render(<Calendar />);
         fireEvent.click(trigger());
-        const dialog = container.querySelector('[role="dialog"]');
-        expect(dialog?.className).not.toContain('popoverCenter');
+        expect(screen.getByRole('dialog')).toHaveAttribute('data-align', 'start');
     });
 
-    it('applies a center-alignment class when popoverAlignment="center"', () => {
-        const { container } = render(<Calendar popoverAlignment="center" />);
+    it('passes popoverAlignment="center" through to the popover', () => {
+        render(<Calendar popoverAlignment="center" />);
         fireEvent.click(trigger());
-        const dialog = container.querySelector('[role="dialog"]');
-        expect(dialog?.className).toContain('popoverCenter');
+        expect(screen.getByRole('dialog')).toHaveAttribute('data-align', 'center');
     });
 
     // ── size ──

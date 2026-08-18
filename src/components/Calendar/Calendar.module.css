@@ -339,11 +339,14 @@
 }
 
 /* ---- Popover (role="dialog") ---- */
+/*
+ * Pemosisian kini urusan Radix (pembungkus popper-nya yang menempatkan
+ * elemen ini), jadi position/top/left dilepas dari sini. z-index mengikuti
+ * nilai produksi: 30, bukan 99999999.
+ */
 .popover {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    z-index: 99999999;
+    z-index: 30;
+    max-height: var(--radix-popover-content-available-height, calc(100vh - 32px));
     overflow-x: hidden;
     overflow-y: auto;
     outline: none;
@@ -359,22 +362,11 @@
     width: fit-content;
 }
 
-/* popoverAlignment="center" (data-align="center" in the snapshot). */
-.popoverCenter {
-    left: 50%;
-    transform: translateX(-50%);
-}
-
 /* Radix-style flip: when there is not enough room below the trigger the
    dialog opens ABOVE it (data-side="top") — and the column is NOT reversed
    there (production's flex-col-reverse is gated on data-side='bottom'), so
    the inputs header sits on top and the grid stays nearest the trigger on
    either side. */
-.popover[data-side='top'] {
-    top: auto;
-    bottom: calc(100% + 6px);
-}
-
 .popover[data-side='top'] .calendarContentWrapper {
     flex-direction: column;
 }
@@ -569,4 +561,41 @@
 .pinnedTimezone {
     color: var(--ds-gray-800);
     font-size: 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Drawer (layar sempit)                                              */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Di bawah 601px produksi tidak memakai popover melainkan drawer dari bawah.
+ * Nilai di sini dibaca dari DOM live (18 Agu 2026):
+ *
+ *   latar : fixed inset-0 z-[var(--ds-z-modal)] bg-background-200/50
+ *   panel : w-full bg-background-100 rounded-t-xl outline-none
+ *           max-h-[90dvh] border-t border-gray-alpha-400
+ *
+ * Ambang 600px-nya diukur langsung, bukan diambil dari angka bawaan Tailwind:
+ * halaman live membuka drawer pada 600px dan popover pada 601px.
+ */
+
+.drawerBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ds-z-modal);
+    background: color-mix(in srgb, var(--ds-background-200) 50%, transparent);
+}
+
+.drawer {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: var(--ds-z-modal);
+    width: 100%;
+    max-height: 90dvh;
+    overflow-y: auto;
+    border-top: 1px solid var(--ds-gray-alpha-400);
+    border-radius: 12px 12px 0 0;
+    background: var(--ds-background-100);
+    outline: none;
 }

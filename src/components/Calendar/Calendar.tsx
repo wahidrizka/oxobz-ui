@@ -13,12 +13,41 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from 'react';
+import * as Popover from '@radix-ui/react-popover';
+import { Drawer } from '@base-ui/react';
 import { Calendar as CalendarIcon, ChevronDown, Cross } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import { Button } from '../Button';
 import { Input } from '../Input';
 import { CalendarGrid, type DateValue, type RangeValue, type WeekDayIndex } from './CalendarGrid';
 import styles from './Calendar.module.css';
+
+/**
+ * Di layar sempit produksi tidak memakai popover melainkan drawer yang muncul
+ * dari bawah dan bisa digeser untuk ditutup.
+ *
+ * Ambangnya DIUKUR, bukan diambil dari angka bawaan Tailwind: halaman live
+ * membuka drawer pada lebar 600px dan popover pada 601px, jadi batasnya
+ * `max-width: 600px`.
+ */
+const DRAWER_QUERY = '(max-width: 600px)';
+
+function useIsSmallScreen(): boolean {
+    const [kecil, setKecil] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return;
+        const mq = window.matchMedia(DRAWER_QUERY);
+        const perbarui = () => setKecil(mq.matches);
+        perbarui();
+        mq.addEventListener('change', perbarui);
+        return () => mq.removeEventListener('change', perbarui);
+    }, []);
+
+    // Awalnya selalu false supaya render di server dan render pertama di
+    // browser sama persis; media query baru dibaca setelah komponen terpasang.
+    return kecil;
+}
 
 export type { DateValue, RangeValue, WeekDayIndex };
 
@@ -450,6 +479,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const range = isControlled ? value : internalRange;
 
         const [isOpen, setIsOpen] = useState(false);
+        const isSmallScreen = useIsSmallScreen();
         const [presetsOpen, setPresetsOpen] = useState(false);
 
         // Built-in timezone select value — decorative only (DateValue has no
@@ -469,38 +499,15 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         });
 
         const rootRef = useRef<HTMLDivElement | null>(null);
-        const dialogRef = useRef<HTMLDivElement | null>(null);
         const tzSelectRef = useRef<HTMLSelectElement | null>(null);
         const dialogId = useId();
         const listboxId = useId();
 
-        /**
-         * Radix-style flip: open below the trigger by default; when the
-         * viewport has less room below than the dialog needs AND more room
-         * above, flip to `data-side="top"` (grid stays nearest the trigger
-         * on either side — the column reversal is bottom-side-only, exactly
-         * like production's `group-data-[side='bottom']` gating).
+        /*
+         * Pembalikan arah popover (buka ke atas saat ruang bawah habis)
+         * dulu dihitung sendiri di sini dengan mengukur viewport. Sekarang
+         * Radix yang menanganinya lewat data-side pada Popover.Content.
          */
-        const [side, setSide] = useState<'bottom' | 'top'>('bottom');
-        useEffect(() => {
-            if (!isOpen) {
-                setSide('bottom');
-                return;
-            }
-            const measure = (): void => {
-                const anchor = rootRef.current;
-                const dialog = dialogRef.current;
-                if (!anchor || !dialog) return;
-                const rect = anchor.getBoundingClientRect();
-                const height = dialog.getBoundingClientRect().height;
-                const spaceBelow = window.innerHeight - rect.bottom - 6;
-                const spaceAbove = rect.top - 6;
-                setSide(spaceBelow < height && spaceAbove > spaceBelow ? 'top' : 'bottom');
-            };
-            measure();
-            window.addEventListener('resize', measure);
-            return () => window.removeEventListener('resize', measure);
-        }, [isOpen]);
 
         /**
          * Production sizes the timezone select with a JS-measured inline
@@ -574,28 +581,30 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             [commitTimeInputs],
         );
 
-        // Dismiss the popover(s) on outside pointer-down (Combobox idiom).
+        /*
+         * Menutup daftar preset saat menekan di luar. Popover dan drawer TIDAK
+         * ditangani di sini lagi: Radix dan Base UI sudah mengurus klik-di-luar,
+         * tombol Escape, dan jebakan fokusnya masing-masing.
+         */
         useEffect(() => {
-            if (!isOpen && !presetsOpen) return;
+            if (!presetsOpen) return;
             const onPointerDown = (event: PointerEvent): void => {
                 const target = event.target as Node;
                 if (rootRef.current?.contains(target)) return;
-                setIsOpen(false);
                 setPresetsOpen(false);
             };
             document.addEventListener('pointerdown', onPointerDown, true);
             return () => document.removeEventListener('pointerdown', onPointerDown, true);
-        }, [isOpen, presetsOpen]);
+        }, [presetsOpen]);
 
         const handleTriggerKeyDown = useCallback(
             (event: KeyboardEvent<HTMLElement>): void => {
-                if (event.key === 'Escape' && (isOpen || presetsOpen)) {
+                if (event.key === 'Escape' && presetsOpen) {
                     event.preventDefault();
-                    setIsOpen(false);
                     setPresetsOpen(false);
                 }
             },
-            [isOpen, presetsOpen],
+            [presetsOpen],
         );
 
         const triggerLabel = range ? formatRangeLabel(range) : TRIGGER_PLACEHOLDER;
@@ -932,7 +941,34 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             </div>
         );
 
-        return (
+        /*
+         * Isi panel, dipakai apa adanya baik oleh popover (layar lebar) maupun
+         * drawer (layar sempit). Yang berbeda hanya wadahnya.
+         */
+        const panel = (
+            <div className={styles.content}>
+                <div
+                    className={
+                        horizontalLayout
+                            ? styles.calendarContentWrapperHorizontal
+                            : styles.calendarContentWrapper
+                    }
+                >
+                    {inputsSection}
+                    <CalendarGrid
+                        value={range}
+                        onChange={applyRange}
+                        minValue={minValue}
+                        maxValue={maxValue}
+                        isDateUnavailable={isDateUnavailable}
+                        weekStartsOn={weekStartsOn}
+                        defaultFocusedMonth={range?.start}
+                    />
+                </div>
+            </div>
+        );
+
+        const kontrol = (
             <div
                 {...rest}
                 ref={(node) => {
@@ -974,45 +1010,57 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     </button>
                 ) : null}
 
-                {isOpen ? (
-                    <div
-                        ref={dialogRef}
-                        role="dialog"
+            </div>
+        );
+
+        /*
+         * Layar sempit: drawer Base UI yang muncul dari bawah dan bisa digeser
+         * ke bawah untuk ditutup, persis seperti produksi (penanda di DOM live:
+         * data-base-ui-focusable dan data-swipe-direction="down").
+         */
+        if (isSmallScreen) {
+            return (
+                <Drawer.Root open={isOpen} onOpenChange={setIsOpen}>
+                    {kontrol}
+                    <Drawer.Portal>
+                        <Drawer.Backdrop className={styles.drawerBackdrop} />
+                        <Drawer.Popup
+                            id={dialogId}
+                            aria-label="Choose date range"
+                            className={styles.drawer}
+                        >
+                            {panel}
+                        </Drawer.Popup>
+                    </Drawer.Portal>
+                </Drawer.Root>
+            );
+        }
+
+        /*
+         * Layar lebar: Radix Popover. Pemosisian, klik-di-luar, tombol Escape,
+         * dan pembalikan arah saat ruang bawah habis kini urusan Radix, bukan
+         * CSS dan efek buatan sendiri lagi.
+         *
+         * sideOffset 8px, bukan 6px seperti sebelumnya: diukur di halaman live
+         * sebagai jarak antara sisi bawah pemicu dan sisi atas popover.
+         */
+        return (
+            <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
+                <Popover.Anchor asChild>{kontrol}</Popover.Anchor>
+                <Popover.Portal>
+                    <Popover.Content
                         id={dialogId}
                         aria-label="Choose date range"
-                        data-state="open"
-                        data-side={side}
-                        data-align={popoverAlignment}
-                        className={cn(
-                            styles.popover,
-                            horizontalLayout && styles.popoverHorizontal,
-                            popoverAlignment === 'center' && styles.popoverCenter,
-                        )}
+                        side="bottom"
+                        align={popoverAlignment}
+                        sideOffset={8}
+                        className={cn(styles.popover, horizontalLayout && styles.popoverHorizontal)}
                         onKeyDown={handleTriggerKeyDown}
                     >
-                        <div className={styles.content}>
-                            <div
-                                className={
-                                    horizontalLayout
-                                        ? styles.calendarContentWrapperHorizontal
-                                        : styles.calendarContentWrapper
-                                }
-                            >
-                                {inputsSection}
-                                <CalendarGrid
-                                    value={range}
-                                    onChange={applyRange}
-                                    minValue={minValue}
-                                    maxValue={maxValue}
-                                    isDateUnavailable={isDateUnavailable}
-                                    weekStartsOn={weekStartsOn}
-                                    defaultFocusedMonth={range?.start}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                ) : null}
-            </div>
+                        {panel}
+                    </Popover.Content>
+                </Popover.Portal>
+            </Popover.Root>
         );
     },
 );
