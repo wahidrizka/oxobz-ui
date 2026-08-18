@@ -13,6 +13,7 @@ import {
     type KeyboardEvent,
     type ReactNode,
 } from 'react';
+import { DateTime } from 'luxon';
 import * as Popover from '@radix-ui/react-popover';
 import { Drawer } from '@base-ui/react';
 import { Calendar as CalendarIcon, ChevronDown, Cross } from '@oxobz/icons';
@@ -224,6 +225,68 @@ function formatRangeTime(date: Date): string {
     } catch {
         return `${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
     }
+}
+
+/*
+ * Date-input grammars, taken from production: exactly two Luxon token
+ * formats are accepted, `LLL d, yyyy` ("Aug 18, 2026") and `LLLL d, yyyy`
+ * ("August 18, 2026"). Parsing happens in UTC so the calendar-day maths
+ * cannot drift, which is what production does too.
+ */
+const DATE_INPUT_FORMATS = ['LLL d, yyyy', 'LLLL d, yyyy'] as const;
+
+/** The typed date text as a Luxon date, or `null` when it fits no format. */
+function parseDateInput(text: string): DateTime | null {
+    for (const format of DATE_INPUT_FORMATS) {
+        const parsed = DateTime.fromFormat(text, format, { zone: 'UTC' });
+        if (parsed.isValid) return parsed;
+    }
+    return null;
+}
+
+/**
+ * Wording production shows when an input cannot be used. Kept in one place so
+ * the strings stay verbatim.
+ */
+const ERROR_TEXT = {
+    dateFormat: 'Invalid date format',
+    timeFormat: 'Invalid time format',
+    time: 'Invalid time',
+    outOfRange: 'Outside of allowed range',
+    startAfterEnd: 'Start date cannot be after end date',
+    endBeforeStart: 'End time must be after start time',
+} as const;
+
+/** Seconds and milliseconds dropped, as production does before comparing. */
+function toMinutePrecision(date: Date): Date {
+    const copy = new Date(date);
+    copy.setSeconds(0, 0);
+    return copy;
+}
+
+/**
+ * Typed date text plus typed time text, resolved into a real instant in the
+ * chosen zone. Mirrors production: the date is read as a plain calendar day,
+ * the time is layered on top inside that zone, and the result comes back as a
+ * normal `Date`.
+ */
+function combineDateAndTime(
+    dateText: string,
+    timeText: string,
+    timeZone: string,
+): Date | null {
+    const isoDate = parseDateInput(dateText)?.toISODate();
+    if (!isoDate) return null;
+    const parts = parseTimeParts(timeText);
+    if (!parts) return null;
+    const combined = DateTime.fromISO(isoDate, { zone: timeZone }).set({
+        hour: parts[0],
+        minute: parts[1],
+        second: 0,
+        millisecond: 0,
+    });
+    if (!combined.isValid) return null;
+    return combined.toJSDate();
 }
 
 /*
@@ -604,6 +667,35 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             setEndTime(formatTimeInZone(new Date(endMs), tzValue));
         }, [startMs, endMs, tzValue]);
 
+        /*
+         * Date inputs. Editable, exactly as in production, where they read
+         * `readOnly: false` and accept typed text.
+         */
+        const [startDateText, setStartDateText] = useState(() =>
+            range ? formatDate(range.start) : '',
+        );
+        const [endDateText, setEndDateText] = useState(() =>
+            range ? formatDate(range.end) : '',
+        );
+        useEffect(() => {
+            setStartDateText(startMs == null ? '' : formatDate(new Date(startMs)));
+            setEndDateText(endMs == null ? '' : formatDate(new Date(endMs)));
+        }, [startMs, endMs]);
+
+        /*
+         * Validation messages, keyed the way production keys them. Empty means
+         * nothing is wrong. Production shows nothing while the user types and
+         * only fills this in when Apply or Enter runs.
+         */
+        const [errors, setErrors] = useState<{
+            startDate?: string;
+            startTime?: string;
+            startOutOfRange?: string;
+            endDate?: string;
+            endTime?: string;
+            endOutOfRange?: string;
+        }>({});
+
         // Combobox input text — the picked preset's label, or free-typed period
         // text ("45m", "Jan 1 - Jan 2", ...) awaiting Enter.
         const [comboText, setComboText] = useState<string>(() => {
@@ -663,23 +755,103 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         /**
          * Commits the typed Start/End time-of-day (HH:MM) onto the current
          * range, firing onChange. Wired to the Apply button's click and to
-         * Enter inside either time input (see calendar-open.html: every
-         * popover with the Start/End input header shows an "Apply ↵"
-         * button directly below the End row). No-op without a range or with
-         * unparsable time text — there is nothing to attach a time to, and
-         * no runtime evidence dictates otherwise (decision, not measured).
+         * Enter inside any of the four inputs.
+         *
+         * The checks run in production's own order, taken from its bundle, so
+         * that when two things are wrong at once the same message wins:
+         * date format, then time format, then whether date and time combine
+         * into a real instant, then min/max, then start-after-end, and finally
+         * end-time-not-after-start on a single day. Nothing is committed unless
+         * every check passes.
          */
         const commitTimeInputs = useCallback((): void => {
-            if (!range) return;
+            const found: typeof errors = {};
+            let ok = true;
+
+            const startDate = parseDateInput(startDateText);
+            if (!startDate) {
+                found.startDate = ERROR_TEXT.dateFormat;
+                ok = false;
+            }
+            const endDate = parseDateInput(endDateText);
+            if (!endDate) {
+                found.endDate = ERROR_TEXT.dateFormat;
+                ok = false;
+            }
             const startParts = parseTimeParts(startTime);
+            if (!startParts) {
+                found.startTime = ERROR_TEXT.timeFormat;
+                ok = false;
+            }
             const endParts = parseTimeParts(endTime);
-            if (!startParts || !endParts) return;
-            const nextStart = new Date(range.start);
-            nextStart.setHours(startParts[0], startParts[1], 0, 0);
-            const nextEnd = new Date(range.end);
-            nextEnd.setHours(endParts[0], endParts[1], 0, 0);
-            applyRange({ start: nextStart, end: nextEnd });
-        }, [range, startTime, endTime, applyRange]);
+            if (!endParts) {
+                found.endTime = ERROR_TEXT.timeFormat;
+                ok = false;
+            }
+
+            let nextStart: Date | null = null;
+            let nextEnd: Date | null = null;
+            if (startDate && startParts) {
+                nextStart = combineDateAndTime(startDateText, startTime, tzValue);
+                if (!nextStart || Number.isNaN(nextStart.getTime())) {
+                    found.startTime = ERROR_TEXT.time;
+                    ok = false;
+                }
+            }
+            if (endDate && endParts) {
+                nextEnd = combineDateAndTime(endDateText, endTime, tzValue);
+                if (!nextEnd || Number.isNaN(nextEnd.getTime())) {
+                    found.endTime = ERROR_TEXT.time;
+                    ok = false;
+                }
+            }
+
+            if (nextStart && minValue && nextStart < toMinutePrecision(minValue)) {
+                found.startOutOfRange = ERROR_TEXT.outOfRange;
+                ok = false;
+            }
+            if (nextEnd && maxValue && nextEnd > toMinutePrecision(maxValue)) {
+                found.endOutOfRange = ERROR_TEXT.outOfRange;
+                ok = false;
+            }
+            if (startDate && endDate && startDate > endDate) {
+                found.startDate = ERROR_TEXT.startAfterEnd;
+                ok = false;
+            }
+            if (
+                nextStart &&
+                nextEnd &&
+                nextStart >= nextEnd &&
+                startDate &&
+                endDate &&
+                startDate.equals(endDate)
+            ) {
+                found.endTime = ERROR_TEXT.endBeforeStart;
+                ok = false;
+            }
+
+            setErrors(found);
+
+            if (ok && nextStart && nextEnd) {
+                // Typed text is rewritten in the canonical shape, as production
+                // does once a value survives validation ("aug 18, 2026" becomes
+                // "Aug 18, 2026").
+                const tidyStart = startDate?.toFormat(DATE_INPUT_FORMATS[0]);
+                if (tidyStart && tidyStart !== startDateText) setStartDateText(tidyStart);
+                const tidyEnd = endDate?.toFormat(DATE_INPUT_FORMATS[0]);
+                if (tidyEnd && tidyEnd !== endDateText) setEndDateText(tidyEnd);
+                applyRange({ start: nextStart, end: nextEnd });
+            }
+        }, [
+            startDateText,
+            endDateText,
+            startTime,
+            endTime,
+            tzValue,
+            minValue,
+            maxValue,
+            applyRange,
+        ]);
 
         const handleTimeKeyDown = useCallback(
             (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -690,6 +862,11 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             },
             [commitTimeInputs],
         );
+
+        /** First message worth showing for one side of the form. */
+        const startError =
+            errors.startOutOfRange ?? errors.startDate ?? errors.startTime;
+        const endError = errors.endOutOfRange ?? errors.endDate ?? errors.endTime;
 
         /*
          * Menutup daftar preset saat menekan di luar. Popover dan drawer TIDAK
@@ -925,13 +1102,30 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 <div>
                     <div className={styles.inputGroupHeader}>
                         <label className={styles.inputGroupLabel}>Start</label>
+                        {startError ? (
+                            <div className={styles.inputError}>{startError}</div>
+                        ) : null}
                     </div>
                     <div className={styles.inputRow}>
                         <Input
                             size="small"
-                            readOnly
                             placeholder="Jan 01, 2025"
-                            value={range ? formatDate(range.start) : ''}
+                            value={startDateText}
+                            error={
+                                errors.startDate ?? errors.startOutOfRange
+                                    ? ' '
+                                    : undefined
+                            }
+                            showErrorMessage={false}
+                            onChange={(e) => {
+                                setStartDateText(e.target.value);
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    startDate: undefined,
+                                    startOutOfRange: undefined,
+                                }));
+                            }}
+                            onKeyDown={handleTimeKeyDown}
                             className={styles.dateInput}
                             data-testid="calendar/input/start-date"
                         />
@@ -942,7 +1136,12 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 value={startTime}
                                 className={styles.timeInput}
                                 data-testid="calendar/input/start-time"
-                                onChange={(e) => setStartTime(e.target.value)}
+                                error={errors.startTime ? ' ' : undefined}
+                                showErrorMessage={false}
+                                onChange={(e) => {
+                                    setStartTime(e.target.value);
+                                    setErrors((prev) => ({ ...prev, startTime: undefined }));
+                                }}
                                 onKeyDown={handleTimeKeyDown}
                             />
                         ) : null}
@@ -952,13 +1151,28 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 <div>
                     <div className={styles.inputGroupHeader}>
                         <label className={styles.inputGroupLabel}>End</label>
+                        {endError ? (
+                            <div className={styles.inputError}>{endError}</div>
+                        ) : null}
                     </div>
                     <div className={styles.inputRow}>
                         <Input
                             size="small"
-                            readOnly
                             placeholder="Jan 01, 2025"
-                            value={range ? formatDate(range.end) : ''}
+                            value={endDateText}
+                            error={
+                                errors.endDate ?? errors.endOutOfRange ? ' ' : undefined
+                            }
+                            showErrorMessage={false}
+                            onChange={(e) => {
+                                setEndDateText(e.target.value);
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    endDate: undefined,
+                                    endOutOfRange: undefined,
+                                }));
+                            }}
+                            onKeyDown={handleTimeKeyDown}
                             className={styles.dateInput}
                             data-testid="calendar/input/end-date"
                         />
@@ -969,7 +1183,12 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 value={endTime}
                                 className={styles.timeInput}
                                 data-testid="calendar/input/end-time"
-                                onChange={(e) => setEndTime(e.target.value)}
+                                error={errors.endTime ? ' ' : undefined}
+                                showErrorMessage={false}
+                                onChange={(e) => {
+                                    setEndTime(e.target.value);
+                                    setErrors((prev) => ({ ...prev, endTime: undefined }));
+                                }}
                                 onKeyDown={handleTimeKeyDown}
                             />
                         ) : null}

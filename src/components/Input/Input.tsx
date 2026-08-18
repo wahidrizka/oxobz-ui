@@ -53,6 +53,14 @@ export interface InputProps
      */
     error?: string;
 
+    /**
+     * Render the error message block below the field. Set `false` to keep the
+     * red outline and `aria-invalid` while placing the message somewhere else
+     * yourself, which is what Geist's Calendar does: it shows the wording next
+     * to the field's label instead of underneath the input.
+     */
+    showErrorMessage?: boolean;
+
     /** Label text rendered above the field (wraps the field in a <label>) */
     label?: string;
 
@@ -124,6 +132,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             prefix,
             prefixStyling = true,
             rounded = false,
+            showErrorMessage = true,
             size,
             suffix,
             suffixContainer = true,
@@ -192,7 +201,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                         spellCheck={false}
                         type="text"
                         {...rest}
-                        aria-describedby={hasError ? errorId : ariaDescribedBy}
+                        aria-describedby={
+                            hasError && showErrorMessage ? errorId : ariaDescribedBy
+                        }
                         aria-invalid={hasError ? 'true' : 'false'}
                         className={cn(styles.input, className)}
                         data-oxobz-input=""
@@ -225,7 +236,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                             suffix
                         ))}
                 </div>
-                {hasError && (
+                {hasError && showErrorMessage && (
                     <div
                         aria-atomic="true"
                         className={styles.errorMessage}

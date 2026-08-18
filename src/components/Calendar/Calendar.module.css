@@ -441,6 +441,21 @@
     margin-bottom: 4px;
 }
 
+/*
+ * Validation message, sitting at the right end of the label row (the header is
+ * `justify-content: space-between`, so the label stays left and this goes
+ * right). Production renders it as `<div class="text-xs text-red-700">`.
+ *
+ * Measured live on the Geist docs: color rgb(229, 72, 77) which is
+ * --ds-red-700 exactly, font-size 12px, line-height 16px, weight 400.
+ */
+.inputError {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 400;
+    color: var(--ds-red-700);
+}
+
 /* `block text-[13px] text-gray-900 capitalize mb-0` */
 .inputGroupLabel {
     display: block;

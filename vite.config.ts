@@ -82,12 +82,16 @@ export default defineConfig({
                 /^prism-react-renderer/,
                 // Primitive libraries mirroring Geist production (approved 19 Jul 2026)
                 /^react-aria/,
+                /^react-stately/,
                 /^@react-aria\//,
                 /^@react-stately\//,
                 /^@internationalized\//,
                 /^@radix-ui\//,
                 /^@base-ui\//,
                 'cmdk',
+                // Calendar parses and formats typed dates through Luxon, the
+                // same library the Geist bundle uses for it.
+                'luxon',
             ],
             output: {
                 preserveModules: true,

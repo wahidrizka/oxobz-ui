@@ -47,6 +47,7 @@
     "devDependencies": {
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
+        "@types/luxon": "^3.7.4",
         "@types/prismjs": "^1.26.6",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
@@ -68,6 +69,7 @@
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-popover": "^1.1.23",
         "cmdk": "^1.1.1",
+        "luxon": "^3.7.2",
         "prism-react-renderer": "^2.4.1",
         "prismjs": "^1.30.0",
         "react-aria": "^3.50.0",

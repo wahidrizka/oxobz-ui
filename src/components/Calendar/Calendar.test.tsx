@@ -539,8 +539,11 @@ describe('Calendar', () => {
 
     it('accepts 12-hour time text in the time inputs', () => {
         const onChange = vi.fn();
+        // Start dan end harus berbeda: kalau sehari yang sama dan jam mulainya
+        // menyalip jam selesai, validasi menolaknya, sama seperti produksi.
         const start = new Date(2026, 6, 1, 0, 0);
-        render(<Calendar value={{ start, end: start }} onChange={onChange} />);
+        const end = new Date(2026, 6, 1, 23, 59);
+        render(<Calendar value={{ start, end }} onChange={onChange} />);
         fireEvent.click(trigger());
         const startTime = screen.getByTestId('calendar/input/start-time');
         fireEvent.change(startTime, { target: { value: '1:30PM' } });
@@ -549,6 +552,102 @@ describe('Calendar', () => {
         const arg = onChange.mock.calls[0][0] as { start: Date };
         expect(arg.start.getHours()).toBe(13);
         expect(arg.start.getMinutes()).toBe(30);
+    });
+
+    /*
+     * Kolom tanggal bisa diketik dan divalidasi. Semua diukur di situs Geist:
+     * inputnya readOnly=false, tidak ada peringatan apa pun sampai Enter
+     * ditekan, lalu muncul tulisan "Invalid date format" di baris label dan
+     * input yang salah diberi aria-invalid="true".
+     */
+    const rentang = {
+        start: new Date(2026, 6, 1, 0, 0),
+        end: new Date(2026, 6, 5, 23, 59),
+    };
+
+    it('lets the date inputs be typed into', () => {
+        render(<Calendar value={rentang} />);
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
+        expect(startDate.readOnly).toBe(false);
+        expect(startDate.value).toBe('Jul 1, 2026');
+    });
+
+    it('stays quiet while typing and only complains on Enter', () => {
+        render(<Calendar value={rentang} />);
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date');
+        fireEvent.change(startDate, { target: { value: 'ngawur' } });
+        expect(screen.queryByText('Invalid date format')).not.toBeInTheDocument();
+        fireEvent.keyDown(startDate, { key: 'Enter' });
+        expect(screen.getByText('Invalid date format')).toBeInTheDocument();
+        expect(startDate).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByTestId('calendar/input/end-date')).toHaveAttribute(
+            'aria-invalid',
+            'false',
+        );
+    });
+
+    it('clears the message as soon as the field is edited again', () => {
+        render(<Calendar value={rentang} />);
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date');
+        fireEvent.change(startDate, { target: { value: 'ngawur' } });
+        fireEvent.keyDown(startDate, { key: 'Enter' });
+        expect(screen.getByText('Invalid date format')).toBeInTheDocument();
+        fireEvent.change(startDate, { target: { value: 'Jul 2, 2026' } });
+        expect(screen.queryByText('Invalid date format')).not.toBeInTheDocument();
+    });
+
+    it('commits a typed date and tidies the text', () => {
+        const onChange = vi.fn();
+        render(<Calendar value={rentang} onChange={onChange} />);
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
+        // Bentuk panjang juga diterima, lalu ditulis ulang jadi bentuk pendek.
+        fireEvent.change(startDate, { target: { value: 'July 2, 2026' } });
+        fireEvent.keyDown(startDate, { key: 'Enter' });
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const arg = onChange.mock.calls[0][0] as { start: Date };
+        expect(arg.start.getDate()).toBe(2);
+        expect(startDate.value).toBe('Jul 2, 2026');
+    });
+
+    it('refuses a start date after the end date', () => {
+        const onChange = vi.fn();
+        render(<Calendar value={rentang} onChange={onChange} />);
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date');
+        fireEvent.change(startDate, { target: { value: 'Jul 9, 2026' } });
+        fireEvent.keyDown(startDate, { key: 'Enter' });
+        expect(screen.getByText('Start date cannot be after end date')).toBeInTheDocument();
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('refuses a date outside minValue', () => {
+        const onChange = vi.fn();
+        render(
+            <Calendar
+                value={rentang}
+                minValue={new Date(2026, 5, 15)}
+                onChange={onChange}
+            />,
+        );
+        fireEvent.click(trigger());
+        const startDate = screen.getByTestId('calendar/input/start-date');
+        fireEvent.change(startDate, { target: { value: 'Jun 1, 2026' } });
+        fireEvent.keyDown(startDate, { key: 'Enter' });
+        expect(screen.getByText('Outside of allowed range')).toBeInTheDocument();
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('reports unreadable time text', () => {
+        render(<Calendar value={rentang} />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time');
+        fireEvent.change(startTime, { target: { value: '99:99' } });
+        fireEvent.keyDown(startTime, { key: 'Enter' });
+        expect(screen.getByText('Invalid time format')).toBeInTheDocument();
     });
 
     it('renders date inputs reflecting the selected range', () => {
