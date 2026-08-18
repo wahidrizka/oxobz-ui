@@ -127,20 +127,26 @@
     text-align: center;
 }
 
-/* Copy button — static styles (moved from inline, identical value-per-value) */
+/*
+ * Penimpaan di atas Button varian tertiary, meniru kelas yang ditempelkan
+ * produksi: `!px-0 bg-transparent !text-[var(--ds-gray-1000)] h-[24px] w-[24px]
+ * rounded-[4px]` dengan latar hover gray-alpha-200.
+ */
 .copyButton {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    /* live: fixed 24x24 with 4px radius (h-[24px] w-[24px] rounded-[4px]) */
     width: 24px;
     height: 24px;
     padding: 0;
     border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: transparent;
     color: var(--ds-gray-1000);
+    /*
+     * Tombol ini di produksi TIDAK memakai kelas ukuran sama sekali, sehingga
+     * ukuran hurufnya jatuh ke `text-base` milik kelas dasar: 16px dengan
+     * tinggi baris 24px. Button kita selalu memasang satu kelas ukuran, jadi
+     * nilai itu dikembalikan di sini.
+     */
+    font-size: 16px;
+    line-height: 24px;
 }
 
 /* Copy button wrapper — keep icon relative */

@@ -2,6 +2,7 @@
 
 import { forwardRef, useCallback, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../../utils/cn';
+import { Button } from '../Button';
 import styles from './Browser.module.css';
 import { ArrowLeft, ArrowRight, RefreshClockwise, Copy, Check } from '@oxobz/icons';
 
@@ -82,8 +83,17 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                             {address && (
                                 <div className={styles.addressBar}>
                                     <div className={styles.addressText}>{normalizeAddress(address)}</div>
-                                    <button
-                                        type="button"
+                                    {/*
+                                     * Tombol Copy produksi adalah komponen Button
+                                     * varian tertiary, bukan <button> polos:
+                                     * DOM-nya membawa data-geist-button, penanda
+                                     * react-aria, dan kelas geist-new-tertiary.
+                                     * Ukuran 24x24 dengan radius 4px adalah
+                                     * penimpaan di atasnya, bukan ukuran bawaan.
+                                     */}
+                                    <Button
+                                        variant="tertiary"
+                                        svgOnly
                                         aria-label="Copy"
                                         onClick={handleCopy}
                                         className={styles.copyButton}
@@ -96,7 +106,7 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                                                 <Copy size={12} />
                                             </div>
                                         </div>
-                                    </button>
+                                    </Button>
                                 </div>
                             )}
                         </div>

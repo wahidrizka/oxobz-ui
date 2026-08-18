@@ -117,7 +117,9 @@
     transform: translate(var(--thumb-x, 0px), -50%);
     transition-property: transform;
     transition-duration: 150ms;
-    transition-timing-function: ease-in-out;
+    /* Terukur di halaman live Toggle: cubic-bezier(0.4, 0, 0.2, 1), yaitu nilai
+       kelas Tailwind `ease-in-out`, bukan kata kunci CSS bernama sama. */
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .thumb.checked {

@@ -21,7 +21,7 @@
     border-radius: 3.40282e38px; /* = utility rounded-full produksi (Tailwind v4) */
     flex-shrink: 0;
     line-height: 0;
-    transition: background 0.2s ease-in-out;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-block;
     position: relative;
     overflow: hidden;

@@ -54,7 +54,7 @@
     text-align: left;
 
     color: var(--accents-7);
-    transition: color 0.1s ease-in-out;
+    transition: color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button:hover {
@@ -93,7 +93,7 @@
     width: 16px;
     height: 16px;
     color: var(--accents-5);
-    transition: color 0.1s ease-in-out;
+    transition: color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button:hover .iconWrap {

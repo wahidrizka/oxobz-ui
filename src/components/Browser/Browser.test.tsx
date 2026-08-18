@@ -95,11 +95,19 @@ describe('Browser', () => {
             expect(copyBtn.tagName.toLowerCase()).toBe('button');
         });
 
-        it('copy button distyle via CSS Module class, bukan inline style', () => {
+        /*
+         * Tombol Copy dibangun di atas komponen Button, sama seperti produksi:
+         * di sana DOM-nya membawa data-geist-button dan
+         * style="--geist-icon-size:16px". Jadi keberadaan gaya inline itu justru
+         * yang benar, bukan sesuatu yang harus dihindari.
+         */
+        it('copy button memakai komponen Button plus kelas penimpa', () => {
             render(<Browser address="vercel.com" />);
             const copyBtn = screen.getByLabelText('Copy');
             expect(copyBtn.className).toMatch(/copyButton/);
-            expect(copyBtn.getAttribute('style')).toBeNull();
+            expect(copyBtn.className).toMatch(/button/);
+            expect(copyBtn).toHaveAttribute('data-oxobz-button');
+            expect(copyBtn.getAttribute('style')).toContain('--oxobz-icon-size');
         });
     });
 

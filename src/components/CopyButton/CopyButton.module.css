@@ -57,7 +57,7 @@
 
     transition-property: border-color, background, color, transform, box-shadow;
     transition-duration: 0.15s;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* live: ease-in-out */
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* live: kelas Tailwind ease-in-out = cubic-bezier(0.4, 0, 0.2, 1) */
 }
 
 .copyButtonIcon:focus-visible {
@@ -94,7 +94,7 @@
 .icon {
     position: absolute;
     display: flex;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .iconShown {
