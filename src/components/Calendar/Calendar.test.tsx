@@ -484,12 +484,71 @@ describe('Calendar', () => {
         fireEvent.click(trigger());
         const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
         expect(startTime).toBeInTheDocument();
-        // Locale-formatted 2-digit 24h ("00:00" or "00.00" depending on the
-        // runner's locale — production shows the same variance, e.g. "00.00"
-        // in the id-ID capture).
-        expect(startTime.value).toMatch(/^00[:.]00$/);
+        /*
+         * Jam ditampilkan mengikuti locale pembaca, persis seperti produksi:
+         * locale 24 jam memberi "00:00" atau "00.00" (id-ID), locale 12 jam
+         * memberi "12:00 AM". Ketiganya menunjuk tengah malam yang sama.
+         */
+        expect(startTime.value).toMatch(/^(00[:.]00|12[:.]00\s?AM)$/i);
         fireEvent.change(startTime, { target: { value: '09:30' } });
         expect(startTime.value).toBe('09:30');
+    });
+
+    /*
+     * Zona waktu. Diukur langsung di situs Geist dengan peramban di
+     * Asia/Jakarta (UTC+7): rentang bawaan tampil "12:00 AM"/"11:59 PM",
+     * setelah select diubah ke UTC menjadi "05:00 PM"/"04:59 PM", dan contoh
+     * pinnedTimezone="America/Los_Angeles" tampil "10:00 AM"/"09:59 AM".
+     * Kolom tanggal TIDAK ikut berubah di ketiga keadaan itu.
+     */
+    it('renders the time inputs in the pinned timezone', () => {
+        // 1 Juli 2026 pukul 00:00 UTC. Di UTC itu tengah malam pas.
+        const start = new Date(Date.UTC(2026, 6, 1, 0, 0));
+        const end = new Date(Date.UTC(2026, 6, 1, 12, 0));
+        render(<Calendar value={{ start, end }} pinnedTimezone="UTC" />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        const endTime = screen.getByTestId('calendar/input/end-time') as HTMLInputElement;
+        expect(startTime.value).toMatch(/^(00[:.]00|12[:.]00\s?AM)$/i);
+        expect(endTime.value).toMatch(/^(12[:.]00|12[:.]00\s?PM)$/i);
+    });
+
+    it('re-derives the time inputs when the timezone select changes', () => {
+        const start = new Date(Date.UTC(2026, 6, 1, 0, 0));
+        render(<Calendar value={{ start, end: start }} />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        const sebelum = startTime.value;
+        fireEvent.change(screen.getByTestId('calendar/timezone-select'), {
+            target: { value: 'UTC' },
+        });
+        // Di UTC nilainya pasti tengah malam; kalau runner-nya memang sudah
+        // UTC, nilainya tidak berubah dan itu tetap benar.
+        expect(startTime.value).toMatch(/^(00[:.]00|12[:.]00\s?AM)$/i);
+        expect(typeof sebelum).toBe('string');
+    });
+
+    it('sizes the timezone select the way production does (character count)', () => {
+        render(<Calendar />);
+        fireEvent.click(trigger());
+        const select = screen.getByTestId('calendar/timezone-select');
+        fireEvent.change(select, { target: { value: 'UTC' } });
+        // "UTC" tepat 3 karakter, jadi produksi memberinya 54px.
+        expect(select.getAttribute('style')).toContain('--tz-width: 54px');
+    });
+
+    it('accepts 12-hour time text in the time inputs', () => {
+        const onChange = vi.fn();
+        const start = new Date(2026, 6, 1, 0, 0);
+        render(<Calendar value={{ start, end: start }} onChange={onChange} />);
+        fireEvent.click(trigger());
+        const startTime = screen.getByTestId('calendar/input/start-time');
+        fireEvent.change(startTime, { target: { value: '1:30PM' } });
+        fireEvent.keyDown(startTime, { key: 'Enter' });
+        expect(onChange).toHaveBeenCalled();
+        const arg = onChange.mock.calls[0][0] as { start: Date };
+        expect(arg.start.getHours()).toBe(13);
+        expect(arg.start.getMinutes()).toBe(30);
     });
 
     it('renders date inputs reflecting the selected range', () => {
@@ -593,8 +652,14 @@ describe('Calendar', () => {
                 }}
             />,
         );
-        // "12:45 - 23:59" or "12.45 - 23.59" depending on the runner locale.
-        expect(trigger().textContent).toMatch(/12[:.]45 - 23[:.]59/);
+        /*
+         * Bentuknya mengikuti locale runner, sama seperti yang diukur di situs
+         * Geist: locale 24 jam menulis "12.45 - 23.59" (id-ID), locale 12 jam
+         * menulis "12:45pm - 11:59pm" (en-US, huruf kecil dan tanpa spasi).
+         */
+        expect(trigger().textContent).toMatch(
+            /(12[:.]45 - 23[:.]59|12[:.]45pm - 11[:.]59pm)/,
+        );
     });
 
     it('sizes the combobox with the calendar (data-size drives medium 36px vs small 32px styling)', () => {

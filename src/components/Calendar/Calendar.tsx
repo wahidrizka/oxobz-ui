@@ -180,43 +180,131 @@ function formatDate(date: Date): string {
 }
 
 /**
- * Time-of-day display formatter — production formats through the viewer's
- * own locale (`Intl`, 2-digit 24h): the captured values read `00.00` /
- * `23.59` (dot separator — the capturing machine's id-ID locale) while the
- * static placeholder stays the literal `13:00`. Falls back to `HH:MM` when
- * Intl is unavailable.
+ * A bare time of day for the time inputs when there is no range yet, using
+ * the same shape as {@link formatTimeInZone} (2-digit, clock style from the
+ * locale) so the two never disagree. No zone is applied because there is no
+ * instant to convert, only an hour and a minute.
+ *
+ * Production always has a value here, so this fallback has no counterpart to
+ * compare against.
  */
-const TIME_FORMATTER: Intl.DateTimeFormat | null = (() => {
+function formatTime(hours: number, minutes: number): string {
     try {
-        return new Intl.DateTimeFormat(undefined, {
+        return new Intl.DateTimeFormat(navigator.language, {
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false,
-        });
+            hour12: prefersTwelveHourClock(),
+            numberingSystem: 'latn',
+        }).format(new Date(2000, 0, 1, hours, minutes));
     } catch {
-        return null;
+        return `${`${hours}`.padStart(2, '0')}:${`${minutes}`.padStart(2, '0')}`;
     }
-})();
-
-function formatTime(hours: number, minutes: number): string {
-    if (TIME_FORMATTER) {
-        return TIME_FORMATTER.format(new Date(2000, 0, 1, hours, minutes));
-    }
-    return `${`${hours}`.padStart(2, '0')}:${`${minutes}`.padStart(2, '0')}`;
 }
 
 /**
- * Parse an `HH:MM` / `HH.MM` time-input string into `[hours, minutes]`, or
- * `null` when malformed / out of range. Accepts both separators since the
- * displayed value is locale-formatted (see {@link formatTime}).
+ * Time of day as the *trigger label* writes it, which is not the same shape
+ * as the time inputs.
+ *
+ * Measured on the live Geist docs in two locales:
+ * - en-US  → `2:14am - 11:59pm`  (no leading zero, no space, lowercase)
+ * - id-ID  → `12.45 - 23.59`     (24-hour, dot separator, no marker)
+ *
+ * One rule covers both: format with `hour: 'numeric'` and `minute: '2-digit'`
+ * letting the locale pick the clock, then strip whitespace and lowercase.
+ */
+function formatRangeTime(date: Date): string {
+    try {
+        return new Intl.DateTimeFormat(navigator.language, {
+            hour: 'numeric',
+            minute: '2-digit',
+        })
+            .format(date)
+            .replace(/\s+/g, '')
+            .toLowerCase();
+    } catch {
+        return `${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
+    }
+}
+
+/*
+ * Time-input grammars, copied from production: whitespace is stripped, the
+ * text is lowercased, and an am/pm marker decides which pattern applies.
+ *
+ * One deliberate widening: production matches the `:` separator only, while
+ * the value it renders comes from `Intl` and therefore uses `.` in locales
+ * such as id-ID ("23.59"). Accepting both keeps Apply working there. Every
+ * string production accepts is still accepted, unchanged.
+ */
+const TIME_12H =
+    /^(?<hours>0?[0-9]|1[0-2])[:.](?<minutes>[0-5][0-9])(?<period>am|pm)$/i;
+const TIME_24H = /^(?<hours>0?[0-9]|1[0-9]|2[0-3])[:.](?<minutes>[0-5][0-9])$/;
+
+/**
+ * Parse a time-input string into `[hours, minutes]` in 24-hour form, or
+ * `null` when malformed / out of range. Handles both the 12-hour text the
+ * viewer's locale may produce ("1:00PM", "12:00 AM") and 24-hour text.
  */
 function parseTimeParts(value: string): [number, number] | null {
-    const match = /^(\d{1,2})[:.](\d{1,2})$/.exec(value.trim());
-    if (!match) return null;
-    const hours = Number(match[1]);
-    const minutes = Number(match[2]);
-    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    const text = value.replace(/\s+/g, '').toLowerCase();
+    const twelveHour = /am|pm/.test(text);
+    const match = (twelveHour ? TIME_12H : TIME_24H).exec(text);
+    if (!match?.groups) return null;
+    let hours = Number.parseInt(match.groups.hours, 10);
+    const minutes = Number.parseInt(match.groups.minutes, 10);
+    if (twelveHour) {
+        const isPm = match.groups.period?.toLowerCase() === 'pm';
+        if (hours === 12) hours = isPm ? 12 : 0;
+        else if (isPm) hours += 12;
+    }
     return [hours, minutes];
+}
+
+/**
+ * Does the viewer's locale use a 12-hour clock?
+ *
+ * Reproduces production byte for byte: format 13:00 with `hour12` left
+ * undefined so the locale decides, then look for a PM marker in the result.
+ * Production uses the outcome for both the time-input placeholder and the
+ * `hour12` option of the time formatter below.
+ *
+ * Source: `ua()` in the live Geist bundle (chunk 3waw-tvb0x__9.js).
+ */
+function prefersTwelveHourClock(): boolean {
+    try {
+        const sample = new Intl.DateTimeFormat(navigator.language, {
+            hour: 'numeric',
+            hour12: undefined,
+        }).format(new Date(2020, 0, 1, 13, 0, 0));
+        return sample.includes('PM') || sample.includes('pm');
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The Start/End *time* inputs, rendered in the selected timezone.
+ *
+ * Verified live against the Geist docs with the browser pinned to
+ * Asia/Jakarta (UTC+7): the default range shows `12:00 AM` / `11:59 PM`,
+ * switching the select to UTC turns it into `05:00 PM` / `04:59 PM`, and the
+ * `pinnedTimezone="America/Los_Angeles"` example shows `10:00 AM` /
+ * `09:59 AM`. The *date* inputs stay in the viewer's own zone in all three
+ * cases, which is why {@link formatDate} is left alone.
+ *
+ * Source: `ui()` in the live Geist bundle (chunk 3waw-tvb0x__9.js).
+ */
+function formatTimeInZone(date: Date, timeZone: string): string {
+    try {
+        return new Intl.DateTimeFormat(navigator.language, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: prefersTwelveHourClock(),
+            timeZone,
+            numberingSystem: 'latn',
+        }).format(date);
+    } catch {
+        return '';
+    }
 }
 
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -247,7 +335,7 @@ function formatRangeLabel(range: RangeValue<Date>): string {
         if (fullDay) {
             return `${WEEKDAY_ABBR[start.getDay()]}, ${MONTH_ABBR[start.getMonth()]} ${start.getDate()}`;
         }
-        return `${formatTime(start.getHours(), start.getMinutes())} - ${formatTime(end.getHours(), end.getMinutes())}`;
+        return `${formatRangeTime(start)} - ${formatRangeTime(end)}`;
     }
     const left = `${MONTH_ABBR[start.getMonth()]} ${start.getDate()}`;
     const right =
@@ -482,14 +570,39 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const isSmallScreen = useIsSmallScreen();
         const [presetsOpen, setPresetsOpen] = useState(false);
 
-        // Built-in timezone select value — decorative only (DateValue has no
-        // timezone semantics); no `timezone`/`onTimezoneChange` prop exists.
-        const [tzValue, setTzValue] = useState(LOCAL_TIMEZONE);
+        /*
+         * Timezone the time inputs are rendered in. Seeded from
+         * `pinnedTimezone` when given, otherwise the viewer's own zone, which
+         * is exactly what production does: `useState(pinnedTimezone ??
+         * Intl.DateTimeFormat().resolvedOptions().timeZone)`.
+         */
+        const [tzValue, setTzValue] = useState(pinnedTimezone ?? LOCAL_TIMEZONE);
 
-        // Time inputs are local display state, locale-formatted (see formatTime:
-        // "00.00"/"23.59" on the capturing machine), seeded independent of the range.
-        const [startTime, setStartTime] = useState(() => formatTime(0, 0));
-        const [endTime, setEndTime] = useState(() => formatTime(23, 59));
+        /*
+         * Time inputs. Seeded from the range, rendered in `tzValue`, and
+         * re-derived below whenever the range or the zone changes. Without a
+         * range there is nothing to convert, so the day's bounds are shown.
+         */
+        const [startTime, setStartTime] = useState(() =>
+            range ? formatTimeInZone(range.start, tzValue) : formatTime(0, 0),
+        );
+        const [endTime, setEndTime] = useState(() =>
+            range ? formatTimeInZone(range.end, tzValue) : formatTime(23, 59),
+        );
+
+        /*
+         * Keeping the displayed times in step with the value and the zone.
+         * Depends on the timestamps rather than the range object so a consumer
+         * that rebuilds `{start, end}` on every render cannot loop this, and
+         * so typing in a time input (which changes neither) is left alone.
+         */
+        const startMs = range ? range.start.getTime() : null;
+        const endMs = range ? range.end.getTime() : null;
+        useEffect(() => {
+            if (startMs == null || endMs == null) return;
+            setStartTime(formatTimeInZone(new Date(startMs), tzValue));
+            setEndTime(formatTimeInZone(new Date(endMs), tzValue));
+        }, [startMs, endMs, tzValue]);
 
         // Combobox input text — the picked preset's label, or free-typed period
         // text ("45m", "Jan 1 - Jan 2", ...) awaiting Enter.
@@ -499,7 +612,6 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         });
 
         const rootRef = useRef<HTMLDivElement | null>(null);
-        const tzSelectRef = useRef<HTMLSelectElement | null>(null);
         const dialogId = useId();
         const listboxId = useId();
 
@@ -510,31 +622,29 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          */
 
         /**
-         * Production sizes the timezone select with a JS-measured inline
-         * width (146px cap — the snapshot's own value for
-         * "Local (Asia/Jakarta)", which is what makes long zones render as
-         * "Local (Asia/Ja…"). Measured off a canvas at the select's 14px
-         * font; the CSS max-width provides the cap + ellipsis.
+         * Inline width of the timezone select.
+         *
+         * Production does not measure the text at all, it counts characters:
+         * `label.length === 3 ? '54px' : `${8 + 6 * label.length + 18}px``.
+         * "UTC" is the only 3-character label, so it gets 54px;
+         * "Local (Asia/Jakarta)" is 20 characters and lands on 146px, which is
+         * exactly the inline width read off the live popover. Measuring on a
+         * canvas instead made the width depend on the machine's font.
          */
-        const [tzWidth, setTzWidth] = useState<number | null>(null);
-        useEffect(() => {
-            if (!isOpen || pinnedTimezone) return;
-            const select = tzSelectRef.current;
-            if (!select) return;
+        /*
+         * Placeholder kolom jam ikut jenis jam yang dipakai locale pembaca,
+         * sama seperti produksi: `placeholder: ua() ? "1:00PM" : "13:00"`.
+         */
+        const timePlaceholder = useMemo(
+            () => (prefersTwelveHourClock() ? '1:00PM' : '13:00'),
+            [],
+        );
+
+        const tzWidth = useMemo(() => {
             const label =
                 TIMEZONE_OPTIONS.find((tz) => tz.value === tzValue)?.label ?? tzValue;
-            try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                const font = window.getComputedStyle(select);
-                ctx.font = `${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
-                // text + px-3 (12) left + pr-9 (36) right
-                setTzWidth(Math.ceil(ctx.measureText(label).width) + 48);
-            } catch {
-                setTzWidth(null);
-            }
-        }, [isOpen, pinnedTimezone, tzValue]);
+            return label.length === 3 ? 54 : 8 + 6 * label.length + 18;
+        }, [tzValue]);
 
         const small = size === 'small';
 
@@ -828,7 +938,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         {showTimeInput ? (
                             <Input
                                 size="small"
-                                placeholder="13:00"
+                                placeholder={timePlaceholder}
                                 value={startTime}
                                 className={styles.timeInput}
                                 data-testid="calendar/input/start-time"
@@ -855,7 +965,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         {showTimeInput ? (
                             <Input
                                 size="small"
-                                placeholder="13:00"
+                                placeholder={timePlaceholder}
                                 value={endTime}
                                 className={styles.timeInput}
                                 data-testid="calendar/input/end-time"
@@ -914,14 +1024,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     ) : (
                         <div className={styles.timezoneSelectWrapper}>
                             <select
-                                ref={tzSelectRef}
                                 aria-label="Timezone"
                                 className={styles.timezoneSelect}
-                                style={
-                                    tzWidth != null
-                                        ? ({ '--tz-width': `${tzWidth}px` } as React.CSSProperties)
-                                        : undefined
-                                }
+                                style={{ '--tz-width': `${tzWidth}px` } as React.CSSProperties}
                                 value={tzValue}
                                 onChange={handleTimezoneChange}
                                 data-testid="calendar/timezone-select"
