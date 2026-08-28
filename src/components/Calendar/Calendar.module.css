@@ -50,11 +50,20 @@
  * chip hover (explicit hsl pair in production).
  */
 
-/* ---- Outer wrapper (calendar-module __calendar) ---- */
+/* ---- Pembungkus terluar ----
+ * Di produksi elemen ini polos: `display: block`, tanpa kelas apa pun, hanya
+ * membawa data-geist-calendar, data-version, dan style `--width` + `width:auto`.
+ * Gaya `relative inline-flex` justru milik div di dalam Skeleton (lihat
+ * .calendarRoot), bukan milik pembungkus ini. */
 .calendar {
+    display: block;
+}
+
+/* Div `group/calendar relative inline-flex` milik produksi: pembungkus langsung
+ * tombol pemicu, di dalam Skeleton. */
+.calendarRoot {
     position: relative;
     display: inline-flex;
-    width: fit-content;
 }
 
 /* Preset combobox + trigger share a flex row (items-center on every
@@ -91,10 +100,24 @@
     border-radius: 0 0 5px 5px;
 }
 
-/* Stacked: combobox on top, trigger button below. */
+/*
+ * Stacked: combobox di atas, tombol pemicu di bawah.
+ *
+ * Tingginya DIKUNCI ke satu tinggi kontrol, persis seperti produksi yang
+ * menempelkan kelas `h-(--ds-size-medium)` pada pembungkus kolomnya. Akibatnya
+ * tombol pemicu memang sengaja menjorok keluar kotak, dan ruang yang dipesan di
+ * halaman hanya setinggi satu kontrol. Tanpa penguncian ini setiap kalender
+ * stacked memakan 36px lebih tinggi (32px untuk ukuran small), dan halaman
+ * Calendar jadi 140px lebih panjang daripada aslinya.
+ */
 .stacked {
     flex-direction: column;
     display: inline-flex;
+    height: var(--ds-size-medium);
+}
+
+.calendar.stacked[data-size='small'] {
+    height: var(--ds-size-small);
 }
 
 /* ---- Trigger button (reuses <Button variant="secondary">) ---- */
@@ -122,6 +145,25 @@
 
 .triggerIcon {
     color: var(--ds-gray-700);
+    /*
+     * Produksi menempelkan `-mt-px` HANYA pada ikon pemicu Calendar. Dari 67
+     * svg di halamannya, cuma 16 ikon pemicu ini yang punya margin atas -1px,
+     * dan tidak satu pun ikon di halaman Button memilikinya.
+     */
+    margin-top: -1px;
+}
+
+/*
+ * Teks pemicu mengisi sisa ruang, bukan menyusut selebar tulisannya.
+ *
+ * Produksi menempelkan `[&>span]:nth-[2]:w-full` pada tombol pemicu, yaitu
+ * span kedua diberi lebar penuh. Tanpa ini `justify-content: space-between`
+ * mendorong tulisannya ke tepi kanan, padahal di produksi ia rata kiri tepat
+ * setelah ikon. Kelas itu TIDAK ada pada tombol biasa, jadi aturannya memang
+ * milik Calendar, bukan milik Button.
+ */
+.trigger > span:nth-child(2) {
+    width: 100%;
 }
 
 .calendar[data-disabled='true'] .trigger {
@@ -267,12 +309,12 @@
    inline-flex: collapse the span to the svg box — without it the inline svg
    sits on the text baseline inside the span's 21px line box and drifts off
    its offset (production relies on Tailwind preflight's svg{display:block}). */
+/* Kelas ini menempel LANGSUNG pada svg, bukan pada pembungkus. */
 .comboboxInputPrefix {
     position: absolute;
     top: 11px;
     left: 13px;
     z-index: 10;
-    display: inline-flex;
     pointer-events: none;
     color: var(--ds-gray-700);
 }
@@ -280,6 +322,10 @@
 .calendar[data-size='small'] .comboboxInputPrefix {
     top: 9px;
     left: 9px;
+}
+
+.calendar[data-size='small'] .comboboxInputSuffix {
+    right: 9px;
 }
 
 /* Chevron suffix — same inline-flex reason as the prefix: keeps the svg
@@ -290,16 +336,63 @@
     top: 50%;
     right: 12px;
     z-index: 10;
-    display: inline-flex;
-    align-items: center;
     pointer-events: none;
     color: var(--ds-gray-700);
-    transform: translateY(-50%);
-    transition: transform 0.2s;
+    /*
+     * Properti `translate` dan `rotate` yang berdiri sendiri, BUKAN `transform`.
+     * Itu yang dipakai Tailwind v4 di produksi, dan hasilnya `transform` tetap
+     * bernilai `none` di sana. Dipakai supaya nilai terhitungnya sama persis.
+     */
+    translate: 0 -50%;
+    /*
+     * Utilitas `transition` polos milik Tailwind v4, disalin utuh: 23 properti,
+     * bukan sekadar warna. Daftar ini dibaca dari nilai terhitung di halaman
+     * live, bukan dikira-kira.
+     */
+    transition:
+        color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        outline-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        text-decoration-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        fill 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        stroke 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        --tw-gradient-from 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        --tw-gradient-via 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        --tw-gradient-to 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        translate 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        scale 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        rotate 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        -webkit-backdrop-filter 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        backdrop-filter 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        display 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        content-visibility 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        overlay 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        pointer-events 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * Garis 1px di tepi kanan combobox: menempel pada kotak input dengan sisi -1px
+ * di atas, kanan, dan bawah, jadi tingginya selalu 2px lebih dari input.
+ */
+.comboboxDivider {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    bottom: -1px;
+    z-index: 1;
+    width: 1px;
+    background: var(--ds-gray-900);
+    opacity: 0;
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .comboboxWrapper[data-open='true'] .comboboxInputSuffix {
-    transform: translateY(-50%) rotate(180deg);
+    rotate: 180deg;
 }
 
 /* ---- Preset dropdown: two-column dialog (listbox + typing hints) ---- */

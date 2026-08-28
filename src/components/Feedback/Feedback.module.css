@@ -134,7 +134,6 @@
 
 .promptText {
     color: var(--ds-gray-900);
-    white-space: nowrap;
 }
 
 /* ---- Emoji picker (feedback-module __emojisWrapper / __emoji) ----
@@ -244,7 +243,10 @@
 
 .markdownMark {
     display: inline-block !important;
-    margin: 0 var(--oxobz-gap-quarter) 0 0 !important;
+    /*
+     * Tanpa margin. Jarak ke tulisan datang dari `gap: 4px` milik induknya,
+     * sama seperti produksi; margin 8px di sini membuat jaraknya jadi dobel.
+     */
     /* live: solid path fill var(--ds-gray-700), full opacity (was opacity .4 +
        a dark-theme invert() hack). The gray-700 token flips with the theme. */
     color: var(--ds-gray-700);

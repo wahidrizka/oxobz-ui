@@ -72,6 +72,22 @@
     --font-mono-fallback: Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace;
 }
 
+/*
+ * Fitur font, diwarisi seluruh halaman.
+ *
+ * Produksi memasang ini di elemen <html>, dan 1005 dari 1027 elemennya
+ * mewarisinya. Tanpa baris ini lebar tulisan meleset tipis di mana-mana:
+ * "AI SDK" 14px misalnya terukur 44,03px pada kita dan 46,48px di produksi,
+ * padahal huruf, ukuran, dan berkas fontnya sama persis. Yang berbeda hanya
+ * setelan ini.
+ *
+ * Artinya: `calt` (contextual alternates) DIMATIKAN, `rlig` (required
+ * ligatures) dan `ss11` (stylistic set 11 milik Geist) dinyalakan.
+ */
+html {
+    font-feature-settings: 'calt' 0, 'rlig', 'ss11';
+}
+
 /* === Base Reset === */
 *,
 *::before,

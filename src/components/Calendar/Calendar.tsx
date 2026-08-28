@@ -15,6 +15,7 @@ import {
 } from 'react';
 import { DateTime } from 'luxon';
 import * as Popover from '@radix-ui/react-popover';
+import { Skeleton } from '../Skeleton';
 import { Drawer } from '@base-ui/react';
 import { Calendar as CalendarIcon, ChevronDown, Cross } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
@@ -114,6 +115,14 @@ export interface CalendarProps
     presetIndex?: number;
 
     /** Compact layout: preset combobox and trigger share one row (button rounded-left). */
+    /**
+     * Show the loading placeholder instead of the trigger. Default `false`.
+     *
+     * Production always renders the trigger inside a Skeleton and passes this
+     * prop straight through as its `show`, so the wrapper element exists in
+     * every state, loading or not.
+     */
+    skeleton?: boolean;
     compact?: boolean;
     /** Stacked layout: preset combobox on top, trigger below. */
     stacked?: boolean;
@@ -442,9 +451,9 @@ const TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
  * here. TODO: move into @oxobz/icons (new SVG + `npm run generate`) on the
  * next icons release, then swap this for the generated component.
  */
-function ClockGlyph(): React.JSX.Element {
+function ClockGlyph({ className }: { className?: string }): React.JSX.Element {
     return (
-        <svg viewBox="0 0 16 16" height={16} width={16} aria-hidden="true">
+        <svg viewBox="0 0 16 16" height={14} width={14} aria-hidden="true" className={className}>
             <path
                 fill="currentColor"
                 d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0m0 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13m.75 6.12 1.7 1.28.6.45-.9 1.2-.6-.45-1.9-1.43a1 1 0 0 1-.4-.8V3.5h1.5z"
@@ -601,6 +610,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             weekStartsOn = 0,
             presets,
             presetIndex,
+            skeleton = false,
             compact = false,
             stacked = false,
             horizontalLayout = false,
@@ -993,14 +1003,20 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             handleTriggerKeyDown(event);
                         }}
                     />
-                    {!compact ? (
-                        <span className={styles.comboboxInputPrefix}>
-                            <ClockGlyph />
-                        </span>
-                    ) : null}
-                    <span className={styles.comboboxInputSuffix}>
-                        <ChevronDown size={16} />
-                    </span>
+                    {/*
+                     * Ikon ditempel LANGSUNG, tanpa pembungkus span. Di produksi
+                     * svg-nya sendiri yang diberi position absolute dan ukuran
+                     * 14px (--ds-control-decoration-size). Pembungkus span
+                     * membuat kotaknya jadi 16px dan svg di dalamnya static.
+                     */}
+                    {!compact ? <ClockGlyph className={styles.comboboxInputPrefix} /> : null}
+                    <ChevronDown size={14} color="gray-700" className={styles.comboboxInputSuffix} />
+                    {/*
+                     * Garis 1px di tepi kanan combobox. Selalu ada, tembus
+                     * pandang (opacity 0) sampai dibutuhkan; ukurannya menempel
+                     * pada kotak input dengan sisi -1px di tiga arah.
+                     */}
+                    <div aria-hidden="true" className={styles.comboboxDivider} />
                     {presetsOpen ? (
                         <div
                             role="dialog"
@@ -1306,6 +1322,23 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             </div>
         );
 
+        /*
+         * Tombol pemicu selalu dibungkus DUA lapis, sama seperti produksi:
+         * Skeleton (span data-testid="legacy/skeleton", lebarnya var(--width))
+         * lalu sebuah div `relative inline-flex` yang di produksi bernama
+         * `group/calendar`.
+         *
+         * Lapisan ini bukan hiasan. Pada tata letak stacked, pembungkus luarnya
+         * dikunci setinggi satu kontrol, dan tanpa dua lapis ini tombol menjadi
+         * anak flex langsung lalu MENGERUT dari 36px jadi 21px. Dua div itulah
+         * yang menahan tingginya.
+         */
+        const pemicuTerbungkus = (
+            <Skeleton show={skeleton} style={{ width: 'var(--width)' }}>
+                <div className={styles.calendarRoot}>{triggerButton}</div>
+            </Skeleton>
+        );
+
         const kontrol = (
             <div
                 {...rest}
@@ -1319,17 +1352,17 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 data-version={dataVersion}
                 data-size={size}
                 data-disabled={disabled || undefined}
-                style={{ '--width': widthVar, ...rest.style } as React.CSSProperties}
+                style={{ '--width': widthVar, width: 'auto', ...rest.style } as React.CSSProperties}
             >
                 {compact ? (
                     <>
-                        {triggerButton}
+                        {pemicuTerbungkus}
                         {presetCombobox}
                     </>
                 ) : (
                     <>
                         {presetCombobox}
-                        {triggerButton}
+                        {pemicuTerbungkus}
                     </>
                 )}
 

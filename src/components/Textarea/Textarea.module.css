@@ -127,7 +127,10 @@
     padding: 10px var(--oxobz-gap-half);
     resize: none;
     appearance: none;
+    /* Lebar 0, tapi warnanya tetap gray-200 seperti produksi; tanpa baris ini
+       nilainya ikut currentColor dan terbaca hitam. */
     border: none;
+    border-color: var(--ds-gray-200);
     outline: none;
     background: var(--ds-background-100);
     color: var(--oxobz-foreground);

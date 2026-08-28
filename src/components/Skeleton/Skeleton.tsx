@@ -144,6 +144,9 @@ const Skeleton = forwardRef<HTMLSpanElement, SkeletonProps>(
                     className,
                 )}
                 data-oxobz-skeleton=""
+                /* Produksi menuliskan data-testid="legacy/skeleton" pada setiap
+                   Skeleton; nilainya disalin apa adanya supaya DOM-nya sama. */
+                data-testid="legacy/skeleton"
                 data-version={dataVersion}
                 ref={ref}
                 style={mergedStyle}
