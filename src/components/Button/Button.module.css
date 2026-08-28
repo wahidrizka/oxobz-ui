@@ -423,3 +423,22 @@
     background: var(--button-custom-bg-hover) !important;
     --themed-border: var(--button-custom-border-hover) !important;
 }
+
+
+/*
+ * Varian `unstyled`: tanpa latar, tanpa cincin, tanpa tinggi tetap. Ukurannya
+ * ditentukan isinya, jadi tombol ikon menjadi setinggi ikon plus padding.
+ * Produksi memakainya lewat `type="unstyled"` untuk panah bulan di Calendar.
+ */
+.button.unstyled {
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    /*
+     * Terukur pada tombol panah bulan di produksi: berat huruf 400 (bukan 500),
+     * perataan `normal` (bukan center), dan posisi `static` (bukan relative).
+     */
+    position: static;
+    justify-content: normal;
+    font-weight: 400;
+}

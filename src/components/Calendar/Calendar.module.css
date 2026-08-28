@@ -176,6 +176,15 @@
    Sizes small group's h-(--ds-size-small). --ds-size-medium = 36px (verified
    live 2026-07-21; an older local chunk had 40px — stale). */
 /*
+ * Elemen `cmdk-root` milik cmdk. Di produksi ia `relative flex` selebar
+ * kontrol, dan di dalamnya ada label tersembunyi plus pembungkus di bawah ini.
+ */
+.comboboxRoot {
+    position: relative;
+    display: flex;
+}
+
+/*
  * Pembungkus ini BLOCK, bukan flex. Terukur di produksi: induk langsung input
  * ber-display block. Bedanya nyata, karena anak sebuah flex container dipaksa
  * jadi block oleh CSS, sehingga `display: inline-block` pada input tidak akan
@@ -556,6 +565,8 @@
 }
 
 .content {
+    /* Produksi: `rounded-[6px]` pada pembungkus konten popover. */
+    border-radius: 6px;
     --padding: 12px;
     padding: var(--padding);
 }
@@ -603,8 +614,15 @@
 }
 
 /* ...except the timezone row, whose own mt-1 (4px) wins in production. */
+/*
+ * Jaraknya 8px, bukan 4px.
+ *
+ * Di produksi baris ini memang ditulis `mt-1` (4px), TAPI induknya memakai
+ * `space-y-2` yang selektornya lebih kuat, sehingga yang berlaku 8px. Terukur:
+ * tombol Apply berakhir di 500,5 dan select zona waktu mulai di 508,5.
+ */
 .inputsWrapper > .timezoneRow {
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
 /* Label wrapper (`mb-1 flex items-center justify-between`). */
@@ -651,14 +669,32 @@
     min-width: 0;
 }
 
-.timeInput {
-    width: 144px;
-    flex: none;
+/*
+ * Pembungkus kolom tanggal selebar penuh (produksi:
+ * `innerWrapperClassName="w-full"`). Inilah yang membuat dasar lebarnya 256px,
+ * sedangkan kolom jam berdasar 144px, sehingga saat keduanya menyusut berbagi
+ * 248px hasilnya 158,7px dan 89,3px seperti produksi.
+ */
+.dateInputWrapper {
+    width: 100%;
 }
 
-.inputRow input {
-    color: var(--ds-gray-1000);
+/*
+ * Kolom jam berdasar 144px. Terukur di popover produksi: pembungkus
+ * tanggal 158,7px dan pembungkus jam 89,3px, dua-duanya `flex: 0 1 auto`
+ * sehingga lebarnya lahir dari isi lalu menyusut berbagi 256px. Patokan 144px
+ * membuat kolom jam meluber keluar pembungkusnya.
+ */
+.timeInput {
+    width: 144px;
+    min-width: 0;
 }
+
+/*
+ * Warna teks kolom tanggal dan jam TIDAK disetel di sini. Produksi
+ * membiarkannya memakai warna bawaan peramban (hitam di terang, putih di
+ * gelap); aturan gray-1000 di sini menimpanya dan membuatnya meleset.
+ */
 
 .timeInput input {
     text-transform: uppercase;
@@ -677,6 +713,8 @@
     position: absolute;
     top: 10px;
     margin-left: 8px;
+    /* `text-xs` milik Tailwind: 12px dengan tinggi baris 16px. */
+    line-height: 16px;
     font-size: 12px;
 }
 
@@ -705,6 +743,9 @@
 .timezoneSelect {
     appearance: none;
     border: none;
+    /* Lebar 0, warnanya gray-200 seperti produksi. Ditulis SESUDAH `border:
+       none`, karena shorthand itu mengembalikan warnanya ke bawaan peramban. */
+    border-color: var(--ds-gray-200);
     height: 32px;
     padding: 0 36px 0 12px;
     border-radius: var(--geist-radius, 6px);

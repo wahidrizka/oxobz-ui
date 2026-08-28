@@ -11,6 +11,7 @@ import {
     type DateValue as IntlDateValue,
 } from '@internationalized/date';
 import { ChevronLeft, ChevronRight } from '@oxobz/icons';
+import { Button } from '../Button';
 import { cn } from '../../utils/cn';
 import styles from './CalendarGrid.module.css';
 
@@ -65,6 +66,14 @@ export interface CalendarGridProps
     weekStartsOn?: WeekDayIndex;
     /** Month rendered first when uncontrolled and no value is set. */
     defaultFocusedMonth?: DateValue;
+    /**
+     * Move focus onto a day cell as soon as the grid mounts.
+     *
+     * Production does this inside the popover: opening it puts the focus ring
+     * on today's cell straight away, which is also what makes the arrow keys
+     * work without clicking first.
+     */
+    autoFocus?: boolean;
     /** data-version attribute matching Geist production output. */
     'data-version'?: string;
 }
@@ -152,10 +161,26 @@ function NavButton({
 }: AriaButtonProps<'button'> & { label: string; className?: string; children: React.ReactNode }) {
     const ref = useRef<HTMLButtonElement>(null);
     const { buttonProps } = useButton(props, ref);
+    /*
+     * Ini komponen Button, bukan <button> polos. Produksi memakainya dengan
+     * `type="unstyled" shape="circle" svgOnly`, dan ukurannya lahir dari
+     * isinya: ikon + 12px (padding span isi) + 4px (padding tombol). Panah
+     * kiri berikon 14px jadi 30x30, panah kanan berikon 16px jadi 32x32.
+     * Tombol polos setinggi 24px membuat seluruh isi popover naik 8px.
+     */
     return (
-        <button {...buttonProps} ref={ref} type="button" aria-label={label} className={className}>
+        <Button
+            {...buttonProps}
+            ref={ref}
+            typeName="button"
+            variant="unstyled"
+            shape="circle"
+            svgOnly
+            aria-label={label}
+            className={className}
+        >
             {children}
-        </button>
+        </Button>
     );
 }
 
@@ -209,6 +234,7 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
             size = 'large',
             weekStartsOn = 0,
             defaultFocusedMonth,
+            autoFocus,
             className,
             'data-version': dataVersion = 'v1',
             ...rest
@@ -221,6 +247,7 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
         const state = useRangeCalendarState({
             locale,
             createCalendar,
+            autoFocus,
             firstDayOfWeek,
             isDisabled,
             value: value === undefined ? undefined : toCalRange(value),
@@ -269,6 +296,13 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                     if (typeof ref === 'function') ref(node);
                     else if (ref) (ref as { current: HTMLDivElement | null }).current = node;
                 }}
+                /*
+                 * react-aria menyetel role="application" lewat calendarProps.
+                 * Produksi TIDAK memakainya: seluruh popover-nya hanya punya
+                 * peran grid, gridcell, dan button. Jadi peran itu dilepas
+                 * supaya pohon aksesibilitasnya sama.
+                 */
+                role={undefined}
                 className={cn(styles.contentWrapper, className)}
                 data-oxobz-calendar=""
                 data-version={dataVersion}
@@ -279,13 +313,25 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                     <div className={styles.monthTitleWrap}>
                         <h2 className={styles.currentMonth}>{title}</h2>
                     </div>
-                    <NavButton {...prevButtonProps} label="Previous" className={styles.caretButton}>
-                        <ChevronLeft size={16} />
+                    {/*
+                     * Ukuran ikon kedua panah SENGAJA berbeda, persis produksi:
+                     * kiri 14px (kelas `size-(--ds-control-decoration-size)`),
+                     * kanan 16px tanpa kelas itu, plus digeser 1px ke kanan.
+                     */}
+                    <NavButton
+                        {...prevButtonProps}
+                        label="Previous"
+                        className={cn(styles.caretButton, styles.caretButtonPrev)}
+                    >
+                        <ChevronLeft size={14} />
                     </NavButton>
                     <NavButton {...nextButtonProps} label="Next" className={styles.caretButton}>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={16} style={{ transform: 'translateX(1px)' }} />
                     </NavButton>
                 </div>
+
+                {/* Pemisah 8px; produksi memakai <span class="h-2 block"> di sini. */}
+                <span aria-hidden="true" className={styles.headerSpacer} />
 
                 <table {...gridProps} className={styles.table}>
                     <caption className="oxobz-sr-only" />

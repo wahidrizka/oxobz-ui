@@ -871,12 +871,25 @@ describe('Calendar', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('does nothing on Apply when no range is selected yet', () => {
+    /*
+     * Diperbaiki 29 Agu 2026. Ekspektasi lama ("Apply tidak berbuat apa-apa")
+     * lahir dari perilaku kita sendiri yang mengosongkan kolom tanggal. Di
+     * produksi kolom itu terisi hari ini, dan menekan Apply memang menerapkan
+     * rentang sehari penuh lalu menutup popover: label pemicunya berubah dari
+     * "Select Date Range" menjadi "Sat, Aug 29".
+     */
+    it('applies today as a full-day range on Apply when nothing is selected yet', () => {
         const onChange = vi.fn();
         render(<Calendar onChange={onChange} />);
         fireEvent.click(trigger());
         fireEvent.click(screen.getByTestId('calendar/apply'));
-        expect(onChange).not.toHaveBeenCalled();
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
+        const hariIni = new Date();
+        expect(arg.start.getDate()).toBe(hariIni.getDate());
+        expect(arg.end.getDate()).toBe(hariIni.getDate());
+        expect(arg.start.getHours()).toBe(0);
+        expect(arg.end.getHours()).toBe(23);
     });
 
     // ── Timezone (built-in UTC/Local select, or pinnedTimezone) ──

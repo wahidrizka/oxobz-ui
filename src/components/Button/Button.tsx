@@ -15,7 +15,12 @@ import styles from './Button.module.css';
 
 // ---- Types (exact from the Geist docs JSX API — unchanged by the geistcn rebuild) ----
 
-export type ButtonVariant = 'default' | 'secondary' | 'tertiary' | 'error' | 'warning';
+/**
+ * Varian visual. `unstyled` ada di produksi juga (Geist menerima
+ * `type="unstyled"`): tombol tanpa latar, tanpa cincin, dan tanpa tinggi
+ * bawaan, dipakai untuk tombol ikon seperti panah bulan pada Calendar.
+ */
+export type ButtonVariant = 'default' | 'secondary' | 'tertiary' | 'error' | 'warning' | 'unstyled';
 export type ButtonSize = 'tiny' | 'small' | 'medium' | 'large';
 export type ButtonShape = 'square' | 'circle' | 'rounded';
 
@@ -51,6 +56,7 @@ function buildButtonClassName({
         variant === 'tertiary' ? styles.tertiary : undefined,
         variant === 'error' ? styles.error : undefined,
         variant === 'warning' ? styles.warning : undefined,
+        variant === 'unstyled' ? styles.unstyled : undefined,
         // .shape (icon-only, width=height) only for square/circle, NOT rounded.
         shape && shape !== 'rounded' ? styles.shape : undefined,
         shape === 'circle' ? styles.circle : undefined,

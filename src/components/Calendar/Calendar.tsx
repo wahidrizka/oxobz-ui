@@ -16,6 +16,7 @@ import {
 import { DateTime } from 'luxon';
 import * as Popover from '@radix-ui/react-popover';
 import { Skeleton } from '../Skeleton';
+import { Command } from 'cmdk';
 import { Drawer } from '@base-ui/react';
 import { Calendar as CalendarIcon, ChevronDown, Cross } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
@@ -681,15 +682,25 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * Date inputs. Editable, exactly as in production, where they read
          * `readOnly: false` and accept typed text.
          */
+        /*
+         * Saat belum ada rentang terpilih, kedua kolom tanggal TIDAK kosong:
+         * produksi mengisinya dengan tanggal hari ini. Terukur pada popover
+         * live yang belum dipilih apa pun, isinya
+         * ["Aug 29, 2026", "12:00 AM", "Aug 29, 2026", "11:59 PM"], sedangkan
+         * punya kita dulu ["", "12:00 AM", "", "11:59 PM"]. Kolom jamnya memang
+         * sudah terisi sejak awal, hanya tanggalnya yang tertinggal.
+         */
+        const teksHariIni = () => formatDate(new Date());
         const [startDateText, setStartDateText] = useState(() =>
-            range ? formatDate(range.start) : '',
+            range ? formatDate(range.start) : teksHariIni(),
         );
         const [endDateText, setEndDateText] = useState(() =>
-            range ? formatDate(range.end) : '',
+            range ? formatDate(range.end) : teksHariIni(),
         );
         useEffect(() => {
-            setStartDateText(startMs == null ? '' : formatDate(new Date(startMs)));
-            setEndDateText(endMs == null ? '' : formatDate(new Date(endMs)));
+            setStartDateText(startMs == null ? teksHariIni() : formatDate(new Date(startMs)));
+            setEndDateText(endMs == null ? teksHariIni() : formatDate(new Date(endMs)));
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [startMs, endMs]);
 
         /*
@@ -969,9 +980,22 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          */
         const presetCombobox: ReactNode =
             presetEntries.length > 0 ? (
+                /*
+                 * Dropdown preset dibangun di atas cmdk, sama seperti produksi.
+                 * Buktinya di DOM live: setiap combobox membawa `cmdk-root` dan
+                 * `cmdk-input` walau tertutup, dan saat terbuka muncul
+                 * `cmdk-list` berisi `cmdk-item`. Prop `label` itulah yang
+                 * memunculkan <label cmdk-label> tersembunyi berbunyi
+                 * "Combobox Menu"; penyaringan dimatikan karena daftar preset
+                 * kita kelola sendiri.
+                 */
+                <Command
+                    label="Combobox Menu"
+                    shouldFilter={false}
+                    className={styles.comboboxRoot}
+                >
                 <div className={styles.comboboxWrapper} data-open={presetsOpen || undefined}>
-                    <input
-                        type="text"
+                    <Command.Input
                         role="combobox"
                         aria-haspopup="dialog"
                         aria-expanded={presetsOpen}
@@ -992,7 +1016,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         value={comboText}
                         data-testid="calendar/combobox-input"
                         className={cn(styles.comboboxInput, comboText && styles.comboboxInputFilled)}
-                        onChange={(e) => setComboText(e.target.value)}
+                        onValueChange={setComboText}
                         onClick={() => setPresetsOpen(true)}
                         onKeyDown={(event) => {
                             if (event.key === 'Enter') {
@@ -1023,29 +1047,24 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             aria-label="Select a period"
                             className={styles.comboboxPopover}
                         >
-                            <div
-                                role="listbox"
+                            <Command.List
                                 aria-label="Suggestions"
                                 id={listboxId}
                                 className={styles.suggestions}
                             >
                                 {presetEntries.map(([id, preset]) => (
-                                    <div
+                                    <Command.Item
                                         key={id}
-                                        role="option"
-                                        aria-selected={
-                                            range != null &&
-                                            preset.start.getTime() === range.start.getTime() &&
-                                            preset.end.getTime() === range.end.getTime()
-                                        }
+                                        value={preset.text}
                                         className={styles.comboboxItem}
                                         data-testid={`calendar/preset/${id}`}
+                                        onSelect={() => pickPreset(preset)}
                                         onClick={() => pickPreset(preset)}
                                     >
                                         {preset.text}
-                                    </div>
+                                    </Command.Item>
                                 ))}
-                            </div>
+                            </Command.List>
                             <div className={styles.hintPanel}>
                                 <p className={styles.hintTitle}>Type relative times</p>
                                 <div className={styles.hintChips}>
@@ -1083,6 +1102,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         </div>
                     ) : null}
                 </div>
+                </Command>
             ) : null;
 
         /*
@@ -1131,7 +1151,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             <div className={styles.inputsWrapper}>
                 <div>
                     <div className={styles.inputGroupHeader}>
-                        <label className={styles.inputGroupLabel}>Start</label>
+                        <label data-version="v1">
+                            <div className={styles.inputGroupLabel}>Start</div>
+                        </label>
                         {startError ? (
                             <div className={styles.inputError}>{startError}</div>
                         ) : null}
@@ -1157,6 +1179,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             }}
                             onKeyDown={handleTimeKeyDown}
                             className={styles.dateInput}
+                            innerWrapperClassName={styles.dateInputWrapper}
                             data-testid="calendar/input/start-date"
                         />
                         {showTimeInput ? (
@@ -1180,7 +1203,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
 
                 <div>
                     <div className={styles.inputGroupHeader}>
-                        <label className={styles.inputGroupLabel}>End</label>
+                        <label data-version="v1">
+                            <div className={styles.inputGroupLabel}>End</div>
+                        </label>
                         {endError ? (
                             <div className={styles.inputError}>{endError}</div>
                         ) : null}
@@ -1204,6 +1229,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             }}
                             onKeyDown={handleTimeKeyDown}
                             className={styles.dateInput}
+                            innerWrapperClassName={styles.dateInputWrapper}
                             data-testid="calendar/input/end-date"
                         />
                         {showTimeInput ? (
@@ -1287,7 +1313,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 ))}
                             </select>
                             <span className={styles.timezoneSelectChevron}>
-                                <ChevronDown size={16} />
+                                {/* 14px, sama seperti ikon hias kontrol lain
+                                    (--ds-control-decoration-size). */}
+                                <ChevronDown size={14} />
                             </span>
                         </div>
                     )}
@@ -1300,6 +1328,14 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * drawer (layar sempit). Yang berbeda hanya wadahnya.
          */
         const panel = (
+            <>
+                {/*
+                 * Tombol kosong khusus pembaca layar, anak PERTAMA popover.
+                 * Produksi menuliskannya persis begini: <button type="button"
+                 * class="sr-only"></button>. Ia menjadi sasaran fokus pertama
+                 * begitu popover terbuka.
+                 */}
+                <button type="button" className="oxobz-sr-only" />
             <div className={styles.content}>
                 <div
                     className={
@@ -1317,9 +1353,11 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         isDateUnavailable={isDateUnavailable}
                         weekStartsOn={weekStartsOn}
                         defaultFocusedMonth={range?.start}
+                        autoFocus
                     />
                 </div>
             </div>
+            </>
         );
 
         /*

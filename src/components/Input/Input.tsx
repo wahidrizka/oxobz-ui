@@ -52,6 +52,12 @@ export interface InputProps
      * red and the message is announced via role="alert".
      */
     error?: string;
+    /**
+     * Extra class for the wrapper that draws the ring, not for the <input>.
+     * Production uses it the same way, e.g. `innerWrapperClassName="w-full"`
+     * on the Calendar's date field.
+     */
+    innerWrapperClassName?: string;
 
     /**
      * Render the error message block below the field. Set `false` to keep the
@@ -127,6 +133,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className,
             disabled,
             error,
+            innerWrapperClassName,
             id: idProp,
             label,
             prefix,
@@ -183,6 +190,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                         hasSuffix && styles.suffix,
                         hasPrefix && !prefixStyling && styles.noPrefixStyle,
                         hasSuffix && !suffixStyling && styles.noSuffixStyle,
+                        innerWrapperClassName,
                     )}
                     data-oxobz-input-wrapper=""
                     data-version={dataVersion}

@@ -26,34 +26,49 @@
  */
 
 /* ---- Panel wrapper (calendar-module __contentWrapper) ---- */
+/*
+ * Pembungkus kisi. Diukur di popover produksi: elemen ini POLOS, tanpa kelas,
+ * tanpa padding, tanpa sudut membulat, dan tanpa gradien; lebarnya penuh
+ * mengikuti induknya (256px di dalam popover 280px).
+ *
+ * Sebelumnya di sini ada padding 8px plus gradien tepi, yang ternyata milik
+ * pembungkus KONTEN POPOVER, bukan milik kisi. Akibatnya kisi menyempit jadi
+ * 240px dan tiap kolom tanggal jadi 32px, padahal aslinya 36,6px.
+ */
 .contentWrapper {
-    --padding: 8px;
     position: relative;
-    padding: var(--padding);
-    border-radius: 6px;
-    background-image:
-        linear-gradient(
-            to right,
-            var(--ds-background-100),
-            transparent var(--padding),
-            transparent 30%,
-            transparent calc(100% - var(--padding)),
-            var(--ds-background-100)
-        ),
-        linear-gradient(to top, var(--ds-background-100), transparent var(--padding));
-    width: fit-content;
 }
 
 /* ---- Header row: month title + prev/next carets ---- */
+/*
+ * Header bulan. Produksi memberinya margin atas dan bawah -3px, lalu
+ * memisahkannya dari tabel dengan elemen kosong setinggi 8px (lihat
+ * .headerSpacer), bukan dengan margin-bottom.
+ */
 .header {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    margin-bottom: 8px;
+    justify-content: space-between;
+    margin: -3px 0;
 }
 
+/* Pemisah 8px antara header dan tabel (produksi: <span class="h-2 block">). */
+.headerSpacer {
+    display: block;
+    height: 8px;
+}
+
+/*
+ * Pembungkus judul bulan. Produksi memberinya padding kiri 16px yang ditarik
+ * balik oleh margin kiri -16px, sehingga tulisannya tetap rata kiri tapi
+ * punya ruang aman saat teksnya panjang.
+ */
 .monthTitleWrap {
     flex: 1 1 0%;
     overflow: hidden;
+    padding-left: 16px;
+    margin-left: -16px;
 }
 
 /* ---- Month/year label (calendar-module __currentMonth) ---- */
@@ -68,36 +83,63 @@
 }
 
 /* ---- Prev / Next caret buttons (calendar-module __caretButton) ---- */
-.caretButton {
-    display: inline-flex;
+/*
+ * Panah bulan. Ukurannya TIDAK dipatok: ia lahir dari isinya (ikon + padding
+ * span isi + padding tombol), persis seperti produksi, sehingga panah kiri
+ * 30x30 dan kanan 32x32 mengikuti ukuran ikonnya.
+ */
+/*
+ * Geometri tombol panah diberikan lewat variabel milik Button, bukan lewat
+ * padding langsung, supaya tidak berebut kekhususan dengan aturan dasar
+ * Button. `--height: auto` membuat tingginya lahir dari isi, dan
+ * `--x-padding: 2px` menyamai `p-0.5` milik produksi.
+ *
+ * Selektor atributnya sengaja dipakai untuk menaikkan bobot di atas `.button`.
+ */
+.caretButton[data-oxobz-button] {
+    --height: auto;
+    --x-padding: 2px;
+    display: flex;
     align-items: center;
-    justify-content: center;
     aspect-ratio: 1;
-    width: 24px;
-    height: 24px;
+    flex-shrink: 0;
+    /*
+     * Keempat sisinya ditulis eksplisit. Kelas `.shape` milik Button menyetel
+     * `padding: 0` untuk tombol ikon, dan itu mengalahkan padding lewat
+     * variabel. Produksi memakai `p-0.5`, yaitu 2px di semua sisi.
+     */
     padding: 2px;
-    border: none;
-    border-radius: 50%;
+    /* rounded-full milik Tailwind v4 = calc(infinity * 1px). */
+    border-radius: 3.40282e38px;
     background: transparent;
     color: var(--ds-gray-700);
     cursor: pointer;
-    transition: color 0.15s, background 0.15s;
+    /* Tombol ini tidak memakai kelas ukuran di produksi, jadi hurufnya jatuh
+       ke `text-base`: 16px dengan tinggi baris 24px. */
+    font-size: 16px;
+    line-height: 24px;
 }
 
-.caretButton:hover:not(:disabled) {
+/* Panah kiri didorong ke kanan oleh margin-left auto (produksi memakainya
+   sebagai gaya inline). */
+.caretButtonPrev {
+    margin-left: auto;
+}
+
+.caretButton[data-oxobz-button]:hover:not(:disabled) {
     color: var(--ds-gray-1000);
 }
 
-.caretButton:active:not(:disabled) {
+.caretButton[data-oxobz-button]:active:not(:disabled) {
     background: var(--ds-gray-300);
 }
 
-.caretButton:focus-visible {
+.caretButton[data-oxobz-button]:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--ds-gray-700);
 }
 
-.caretButton:disabled {
+.caretButton[data-oxobz-button]:disabled {
     color: var(--ds-gray-700);
     cursor: not-allowed;
 }
@@ -217,17 +259,28 @@
     text-align: center;
 }
 
-.weekend {
-    color: var(--ds-gray-900);
+.disabled {
+    color: var(--ds-gray-700);
+    cursor: not-allowed;
 }
 
+/*
+ * Hari milik bulan sebelah: gray-700. Aturannya ditaruh SESUDAH .disabled
+ * karena react-aria ikut menandai hari-hari itu sebagai disabled.
+ */
 .outsideMonth {
     color: var(--ds-gray-700);
 }
 
-.disabled {
-    color: var(--ds-gray-700);
-    cursor: not-allowed;
+/*
+ * Akhir pekan SELALU gray-900, di dalam maupun di luar bulan, dan itu sebabnya
+ * aturan ini harus berada paling akhir. Terbaca dari deretan warna produksi:
+ * Minggu 26 Juli (luar bulan) rgb(77,77,77), Senin sampai Jumat 27-31 Juli
+ * (luar bulan) rgb(143,143,143), Sabtu 1 dan Minggu 2 Agustus rgb(77,77,77),
+ * lalu Senin sampai Jumat 3-7 Agustus rgb(23,23,23).
+ */
+.weekend {
+    color: var(--ds-gray-900);
 }
 
 .inRange {
@@ -261,4 +314,19 @@
     box-shadow:
         0 0 0 1px var(--ds-background-100),
         0 0 0 2.5px var(--ds-gray-1000);
+}
+
+
+/*
+ * Cincin fokus sel tanggal: dua lapis, putih 2px lalu warna fokus 4px.
+ *
+ * Memakai `:focus`, BUKAN `:focus-visible`. Saat popover terbuka, fokusnya
+ * dipindahkan oleh program (bukan oleh papan ketik), dan peramban tidak
+ * menyalakan `:focus-visible` untuk itu. Produksi menampilkan cincinnya sejak
+ * popover dibuka, jadi `:focus` yang benar.
+ */
+.day:focus {
+    box-shadow:
+        0 0 0 2px var(--ds-background-100),
+        0 0 0 4px var(--ds-focus-color, rgb(0, 114, 245));
 }

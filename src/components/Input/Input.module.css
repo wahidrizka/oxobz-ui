@@ -147,10 +147,26 @@
     min-width: 0;
     height: var(--ds-form-medium-height);
     padding: 0 12px;
+    /* Lebar 0, warnanya gray-200 seperti produksi (tanpa ini ikut currentColor). */
     border: none;
-    border-radius: 6px;
+    border-color: var(--ds-gray-200);
+    /*
+     * Sudutnya 0, bukan 6px. Sudut membulat itu milik PEMBUNGKUS. Terukur di
+     * halaman Input produksi: 22 dari 22 elemen <input> ber-radius 0.
+     */
+    border-radius: 0;
     background: var(--ds-background-100);
-    color: var(--oxobz-foreground);
+    /*
+     * Warna teks memakai warna sistem `fieldtext`, bukan warna token.
+     *
+     * Produksi mematikan preflight Tailwind, sehingga input-nya memakai warna
+     * bawaan peramban: terukur hitam murni di tema terang dan putih murni di
+     * tema gelap (mengikuti color-scheme). Situs kita MENGAKTIFKAN preflight,
+     * dan preflight menyetel `color: inherit` pada input sehingga warnanya
+     * jatuh ke gray-1000. Menuliskan `fieldtext` mengembalikan nilai yang sama
+     * dengan produksi tanpa harus mematikan preflight.
+     */
+    color: fieldtext;
     -webkit-tap-highlight-color: transparent;
     outline: none !important;
 }
