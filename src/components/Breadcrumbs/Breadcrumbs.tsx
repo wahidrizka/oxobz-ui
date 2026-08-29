@@ -121,7 +121,18 @@ const BreadcrumbItem = forwardRef<HTMLElement, BreadcrumbItemProps>(
              * murni struktural.
              */
             return (
-                <span className={styles.menuTrigger}>
+                /*
+                 * Atributnya disalin dari produksi: span ini pemicu Tooltip,
+                 * membawa data-testid="legacy/tooltip-trigger", data-version,
+                 * dan tabindex="0". Yang terakhir bukan sekadar penanda, ia
+                 * membuat butir ini bisa dijangkau papan ketik.
+                 */
+                <span
+                    className={styles.menuTrigger}
+                    data-testid="legacy/tooltip-trigger"
+                    data-version="v1"
+                    tabIndex={0}
+                >
                     <div>
                         <button
                             {...rest}

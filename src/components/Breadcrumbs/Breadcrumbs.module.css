@@ -175,6 +175,9 @@
  */
 .menuTrigger {
     display: inline-block;
+    /* Kelas dasar produksi `inline-flex items-center`; hanya display-nya yang
+       ditimpa jadi inline-block di lebar sm ke atas, perataannya tetap ada. */
+    align-items: center;
     height: fit-content;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -45,14 +45,24 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
                 {...(href ? { href } : {})}
                 {...props}
             >
-                {/* Icon and label are SIBLINGS, matching production — the gap
+                {/* Icon and label are SIBLINGS, matching production: the gap
                     between them is the badge's own `gap`, not the label's. */}
-                {icon && (
-                    <span className={styles.iconContainer} data-slot="icon">
-                        {icon}
-                    </span>
-                )}
-                <span className={styles.contentContainer}>{children}</span>
+                {/*
+                 * Ikon dirender LANGSUNG sebagai anak badge, tanpa span
+                 * pembungkus. Terukur di halaman live: svg ikon badge adalah
+                 * anak langsung elemen badge dan ber-position relative,
+                 * sementara punya kita dulu terbungkus span sehingga svg-nya
+                 * static.
+                 */}
+                {icon}
+                {/*
+                 * Varian pill (yang dirender sebagai <a>) menaruh teksnya
+                 * LANGSUNG, tanpa pembungkus. Terukur di seksi Pill halaman
+                 * live: keenam badge di sana berupa <a> yang teksnya jadi anak
+                 * langsung, sedangkan badge biasa tetap memakai pembungkus
+                 * `min-w-0 relative inline-flex items-center`.
+                 */}
+                {href ? children : <span className={styles.contentContainer}>{children}</span>}
             </Tag>
         );
     },

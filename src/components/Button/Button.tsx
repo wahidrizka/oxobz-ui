@@ -106,7 +106,13 @@ function useAriaButtonStates(isDisabled: boolean): {
  */
 function getSpinner(size: ButtonSize): ReactNode {
     const spinnerSize = size === 'large' ? 20 : size === 'medium' ? 16 : 12;
-    return <Spinner size={spinnerSize} color="var(--accents-5)" />;
+    /*
+     * Tanpa prop `color`: spinner mewarisi warna teks tombol, sama seperti
+     * produksi yang mewarnainya lewat `bg-current`. Terukur di halaman live,
+     * spinner pada tombol loading berwarna gray-700 (warna teks tombol
+     * nonaktif), bukan accents-5.
+     */
+    return <Spinner size={spinnerSize} />;
 }
 
 /** Renders the prefix / content / suffix slots shared by every button-like element. */

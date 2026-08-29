@@ -129,7 +129,9 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
                 aria-label="Loading"
                 className={cn(styles.spinner, className)}
                 data-oxobz-spinner=""
-                data-testid="oxobz/spinner"
+                /* Nilai testid disalin apa adanya dari produksi, sama seperti
+                   `legacy/skeleton` dan `calendar/trigger/button`. */
+                data-testid="geistcn/spinner"
                 data-version="v1"
                 style={{
                     height: px,

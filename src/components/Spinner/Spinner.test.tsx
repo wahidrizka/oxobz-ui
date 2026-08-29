@@ -28,7 +28,7 @@ describe('Spinner', () => {
         const root = rootOf(container);
         expect(root).toHaveAttribute('role', 'status');
         expect(root).toHaveAttribute('aria-label', 'Loading');
-        expect(root).toHaveAttribute('data-testid', 'oxobz/spinner');
+        expect(root).toHaveAttribute('data-testid', 'geistcn/spinner');
         // children are the bars themselves, not a wrapper
         expect(root.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
     });

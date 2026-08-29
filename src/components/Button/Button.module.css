@@ -111,6 +111,13 @@
     color: var(--ds-gray-700);
     background: var(--ds-gray-100);
     --themed-border: var(--ds-gray-400);
+    /*
+     * Cincin 1px saat nonaktif. Produksi menuliskannya sebagai
+     * `disabled:shadow-[0_0_0_1px_var(--themed-border,_transparent)]`, jadi
+     * warnanya ikut varian: gray-400 untuk kebanyakan varian, dan transparan
+     * untuk tertiary. Terukur di halaman live pada delapan tombol nonaktif.
+     */
+    box-shadow: 0 0 0 1px var(--themed-border, transparent);
 }
 
 .button[data-hover]:disabled,
@@ -196,12 +203,18 @@
  * Tertiary mempertahankan warna teksnya meski dinonaktifkan. Produksi menulis
  * kelas warnanya dengan penanda penting sehingga menang atas aturan disabled;
  * di sini cukup dinaikkan kekhususannya supaya menang tanpa !important.
- * Diukur di halaman live: tombol Tertiary yang disabled tetap gray-1000,
- * hanya latarnya yang berubah jadi gray-100.
+ * Diukur di halaman live: tombol Tertiary yang disabled tetap gray-1000, dan
+ * latarnya tetap transparan.
  */
 .tertiary:disabled,
 .tertiary[aria-disabled='true'] {
     color: var(--themed-bg, var(--ds-gray-1000));
+    /*
+     * Latarnya tetap TRANSPARAN saat nonaktif, bukan gray-100. Diukur ulang
+     * 29 Agu 2026 di halaman live: tombol Tertiary yang nonaktif berlatar
+     * rgba(0, 0, 0, 0). Catatan lama di sini menyebut gray-100 dan itu keliru.
+     */
+    background: transparent;
 }
 
 .tertiary[data-hover]:not(:disabled):not([aria-disabled='true']) {

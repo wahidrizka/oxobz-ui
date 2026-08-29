@@ -96,11 +96,13 @@
    `**:data-[slot=icon]:-ml-1` — the wrapper is a tight block around it, so
    either placement lays out identically, but this keeps the measurable
    computed style the same as production's. */
-.sm .iconContainer svg {
+.sm > svg,
+.sm > img {
     margin-left: -2px;
 }
 
-.md .iconContainer svg {
+.md > svg,
+.md > img {
     margin-left: -4px;
 }
 
@@ -122,7 +124,10 @@
 }
 
 .amber {
-    --badge-color: #000;
+    /* Produksi memakai kelas `text-black`, yaitu token --ds-black yang
+       bernilai lab(0% 0 0). Menulis #000 memberi warna yang sama di layar
+       tapi nilai terhitungnya berbeda notasi. */
+    --badge-color: var(--ds-black);
     --badge-bg-color: var(--ds-amber-700);
 }
 
@@ -245,13 +250,15 @@
    The `background` shorthand would reset the colour to transparent — same
    pixels here because the gradient is opaque, but not the same style. */
 .trial {
-    color: #fff;
+    /* Produksi memakai `text-white` (token --ds-white, lab(100% 0 0)). */
+    color: var(--ds-white);
     background-color: #000;
     background-image: linear-gradient(135deg, rgb(0, 112, 243), rgb(248, 28, 229));
 }
 
 .turbo {
-    color: #fff;
+    /* Produksi memakai `text-white` (token --ds-white, lab(100% 0 0)). */
+    color: var(--ds-white);
     background-color: #000;
     background-image: linear-gradient(135deg, rgb(255, 30, 86), rgb(0, 150, 255));
 }
@@ -284,16 +291,26 @@ button.pill:hover {
 /* Icon slot — production `**:data-[slot=icon]:block/shrink-0` + per-size
    size-3/3.5/4; no stroke-width in the geistcn generation (icons are
    fill-based). `relative` keeps it above the subtle overlay. */
-.iconContainer {
-    display: block;
+/*
+ * Ikon badge: anak LANGSUNG, tanpa pembungkus, dengan position relative
+ * seperti produksi (svg-nya diberi kelas `relative` di sana).
+ *
+ * Berlaku untuk <svg> MAUPUN <img>: logo merek seperti Slack dikirim produksi
+ * sebagai dua gambar terang/gelap, bukan svg inline, dan ukurannya tetap
+ * ditentukan --badge-icon-size (12px sm, 14px md, 16px lg) meski atribut
+ * width/height gambarnya 16.
+ */
+.badge > svg,
+.badge > img {
     flex-shrink: 0;
-    position: relative;
-}
-
-.iconContainer svg {
+    display: block;
     height: var(--badge-icon-size);
     width: var(--badge-icon-size);
-    display: block;
+}
+
+/* `position: relative` hanya untuk svg; gambar merek di produksi tetap static. */
+.badge > svg {
+    position: relative;
 }
 
 /* Label — production `min-w-0 relative inline-flex items-center [gap:inherit]` */

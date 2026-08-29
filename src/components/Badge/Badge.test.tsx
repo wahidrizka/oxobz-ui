@@ -146,13 +146,17 @@ describe('Badge', () => {
         expect(el?.tagName).toBe('A');
     });
 
-    it('renders icon inside iconContainer when icon prop is provided', () => {
-        const icon = <span data-testid="badge-icon">★</span>;
-        render(<Badge icon={icon}>with icon</Badge>);
-        expect(screen.getByTestId('badge-icon')).toBeInTheDocument();
-        // iconContainer is the wrapper around the icon
-        const iconContainer = screen.getByTestId('badge-icon').parentElement;
-        expect(iconContainer?.className).toContain('iconContainer');
+    /*
+     * Produksi menaruh svg ikon sebagai anak LANGSUNG badge, tanpa span
+     * pembungkus. Test lama menuntut pembungkus itu, dan itu keliru.
+     */
+    it('renders the icon as a direct child of the badge, with no wrapper', () => {
+        const { container } = render(<Badge icon={<svg data-testid="ikon" />}>Label</Badge>);
+        const badge = container.querySelector('[data-oxobz-badge]');
+        expect(badge).not.toBeNull();
+        const svg = badge!.querySelector(':scope > svg');
+        expect(svg).not.toBeNull();
+        expect(container.querySelector('[class*="iconContainer"]')).toBeNull();
     });
 
     it('does NOT render iconContainer when no icon prop', () => {
