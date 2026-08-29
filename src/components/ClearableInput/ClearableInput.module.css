@@ -37,31 +37,37 @@
  * rule ".clearable-input{--duration:.56104s;--timing:linear(...)}" — a
  * spring-like curve, copied verbatim below.
  *
- * First kbd (the Esc/⌘ swap) overrides vs Kbd.small: !flex !overflow-hidden
+ * First kbd (the Esc/⌘ swap) overrides vs Kbd.small: overflow-hidden
  * relative !text-[var(--ds-gray-900)] transition-transform duration/ease
  * (above vars); at rest width stays Kbd.small's 20px; group-data-[animate=
  * true]:w-7 (28px) + translate-x-[26px] when animate.
  * Inside it, two absolutely-positioned spans:
  *  - Esc span: translate-x-8 (32px, hidden past the 20px-wide kbd) absolute
- *    left-1; animate target `-translate-x-[calc(var(--padding)*-1)]` — the
- *    reference never defines `--padding` anywhere (grep across every chunk
- *    found only the generic, unused `[--padding:12px]` utility-generator
- *    rule, never applied to any element in this snapshot). An undefined
- *    custom property inside calc() is invalid at computed-value time, so the
- *    `translate` shorthand it feeds falls back to its initial value (`none`)
- *    — reproduced literally below as `transform: none`, not guessed.
+ *    left-1; animate target `-translate-x-[calc(var(--padding)*-1)]`.
  *  - Cmd (⌘) span: static at rest (absolute right-1); animate target
  *    -translate-x-6 (-24px).
  * Second kbd ("K") is static content that just slides: transition-[translate]
  * duration/ease (same vars), group-data-[animate=true]:translate-x-[33px].
  *
- * NEEDS RECAPTURE (not guessed, left as the closest grounded reproduction):
- * the focused/typed interaction that sets data-animate="true" was never
- * captured (the snapshot only shows the idle, unfocused state) — this
- * module drives it from focus/blur as the only reasonable trigger available,
- * and the Esc span's animate-true position is a spec-mandated fallback
- * (`translate:none`) rather than a captured value. Recapture with the field
- * focused (or the ancestor that sets `--padding`) to confirm both.
+ * ---- Diukur langsung di halaman live (30 Agu 2026) -----------------------
+ * Tiga hal yang dulu ditandai NEEDS RECAPTURE sekarang sudah terjawab dengan
+ * data, bukan dugaan:
+ *
+ * 1. PEMICU data-animate = input BERISI, bukan fokus. Terukur bertahap:
+ *    diam -> "false"; difokuskan tapi masih kosong -> tetap "false";
+ *    diketik -> "true"; kehilangan fokus tapi isinya masih ada -> tetap
+ *    "true". Versi lama modul ini memakai fokus/blur dan itu keliru.
+ *
+ * 2. Semua geseran memakai properti CSS `translate`, BUKAN `transform`.
+ *    Aturan Tailwind-nya berbunyi `translate: var(--tw-translate-x)
+ *    var(--tw-translate-y)`, sehingga di produksi `transform` semua elemen
+ *    ini tetap `none` pada SEMUA keadaan. Memakai transform akan terbaca
+ *    berbeda meski tampak sama.
+ *
+ * 3. `--padding` memang tidak pernah didefinisikan, jadi nilai untuk
+ *    `--tw-translate-x` tidak sah saat penghitungan nilai. Karena Tailwind
+ *    mendaftarkannya lewat @property dengan nilai awal 0, span Esc kembali
+ *    ke 0 (bukan deklarasinya dibuang).
  * ========================================================================== */
 
 /* ---- Clear button (non-cmdk) -------------------------------------------- */
@@ -74,13 +80,17 @@
     max-width: 100%;
     margin: 0;
     padding: 0 10px;
-    border: 0;
+    /* Lebar 0, tapi gaya dan warnanya ditulis seperti produksi (solid +
+       gray-200); tanpa itu warnanya ikut currentColor. */
+    border: 0 solid var(--ds-gray-200);
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
     background: transparent;
     color: inherit;
     font: inherit;
     font-size: 1rem;
+    /* Terukur di halaman live: tinggi baris tombol hapus 24px. */
+    line-height: 24px;
     text-decoration: none;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -219,7 +229,11 @@
         1.00008 94%
     );
     display: flex;
-    align-items: center;
+    /*
+     * TANPA align-items. Daftar kelas produksi memang cuma
+     * `flex gap-1 justify-center pr-2.5 font-medium`, tidak ada items-center.
+     * Terukur di halaman live: align-items-nya `normal`.
+     */
     justify-content: center;
     gap: 4px;
     padding-right: 10px;
@@ -239,54 +253,138 @@
     overflow: hidden !important;
     position: relative;
     color: var(--ds-gray-900) !important;
-    transition-property: transform;
+    /* Utility "transition-transform" milik Tailwind mendaftar EMPAT
+       properti, bukan satu. Terukur di halaman live. */
+    transition-property: transform, translate, scale, rotate;
     transition-duration: var(--duration);
     transition-timing-function: var(--timing);
 }
 
 .cmdkHint[data-animate='true'] .kbdSwap {
     width: 28px;
-    transform: translateX(26px);
+    /* Utility translate-x Tailwind menyetel properti "translate",
+       bukan "transform"; di produksi transform-nya tetap none. */
+    translate: 26px 0px;
 }
 
+/*
+ * Kedua span petunjuk memakai `absolute inset-y-0 flex items-center` di
+ * produksi: display flex, perataan tengah, dan menempel penuh dari atas ke
+ * bawah. Daftar transisinya `transition-transform` milik Tailwind, yaitu empat
+ * properti, bukan hanya `transform`.
+ */
 .escSpan {
     position: absolute;
+    top: 0;
+    bottom: 0;
     left: 4px;
-    transform: translateX(32px);
-    transition-property: transform;
+    display: flex;
+    align-items: center;
+    translate: 32px 0px;
+    /*
+     * `all`, bukan daftar properti. Terukur di halaman live: span Esc memang
+     * tidak memakai utility `transition-*` sama sekali (hanya durasi dan
+     * easing-nya), sehingga daftarnya jatuh ke bawaan CSS yaitu `all`.
+     * Berbeda dari span ⌘ di sebelahnya yang memakai `transition-transform`.
+     */
+    transition-property: all;
     transition-duration: var(--duration);
     transition-timing-function: var(--timing);
 }
 
-/* `--padding` is undefined anywhere in the reference — see header note.
- * The invalid calc() this feeds resolves to the initial value of `translate`
- * (none), reproduced literally rather than guessed. */
+/*
+ * `--padding` tidak pernah didefinisikan di produksi, jadi
+ * `--tw-translate-x: calc(calc(var(--padding) * -1) * -1)` tidak sah saat
+ * penghitungan nilai, dan seluruh deklarasi `translate` ikut gugur.
+ *
+ * Hasilnya BUKAN 0px melainkan `none`, yaitu nilai awal properti `translate`
+ * itu sendiri. Ini diukur, bukan disimpulkan: pada keadaan berisi, span Esc di
+ * produksi ber-translate `none`, sedangkan menulis `0px 0px` terbaca `0px` dan
+ * langsung ketahuan beda.
+ */
 .cmdkHint[data-animate='true'] .escSpan {
-    transform: none;
+    translate: none;
+}
+
+.cmdSpan.cmdSpan {
+    /* Produksi menuliskannya sebagai `!ml-0`, jadi penandanya ikut dipakai:
+       aturan jarak antar span milik Kbd varian small bobotnya lebih tinggi
+       daripada kelas ini. */
+    margin-left: 0 !important;
 }
 
 .cmdSpan {
     position: absolute;
+    top: 0;
+    bottom: 0;
     right: 4px;
+    display: flex;
+    align-items: center;
     margin-left: 0;
-    transition-property: transform;
+    transition-property: transform, translate, scale, rotate;
     transition-duration: var(--duration);
     transition-timing-function: var(--timing);
 }
 
 .cmdkHint[data-animate='true'] .cmdSpan {
-    transform: translateX(-24px);
+    translate: -24px 0px;
 }
 
 /* Second kbd: the static "K" that slides to make room */
 .cmdkKbdK {
     display: flex !important;
     color: var(--ds-gray-900) !important;
-    transition-property: transform;
+    /* Produksi menulis transition-[translate]: hanya satu properti. */
+    transition-property: translate;
     transition-duration: var(--duration);
     transition-timing-function: var(--timing);
 }
 
 .cmdkHint[data-animate='true'] .cmdkKbdK {
-    transform: translateX(33px);
+    translate: 33px 0px;
+}
+
+
+/*
+ * Anak TERAKHIR di dalam kotak kehilangan padding kanannya.
+ *
+ * Terukur pada kelima contoh halaman live: saat tidak ada sufiks, input-nya
+ * ber-padding 12px/0px; saat ada sufiks (petunjuk cmdk atau tombol hapus),
+ * input tetap 12px/12px dan justru sufiksnya yang 12px/0px. Aturan ini KHUSUS
+ * ClearableInput: di halaman Input produksi, ke-22 input-nya tetap 12px/12px.
+ */
+.wrapper.wrapper > :last-child {
+    /* Kelasnya ditulis dua kali untuk menaikkan bobot di atas aturan sufiks
+       bawaan Input (`.container.suffix > :last-child`), yang bobotnya sama
+       sehingga hasilnya bergantung urutan berkas. */
+    padding-right: 0;
+    /*
+     * Sufiks di sini TIDAK memakai garis pemisah maupun latar abu seperti
+     * sufiks Input pada umumnya. Terukur di halaman live: border-left 0 dan
+     * latarnya background-100. Garis 1px itulah yang membuat kotak kita
+     * 1px lebih sempit.
+     */
+    /*
+     * Hanya LEBARNYA yang dinolkan, bukan shorthand `border-left`. Shorthand
+     * itu ikut mengembalikan warnanya ke currentColor, sehingga keempat sisi
+     * jadi berbeda warna dan terbaca sebagai empat nilai. Ini penting karena
+     * aturan ini juga mengenai input itu sendiri saat tidak ada sufiks.
+     */
+    border-left-width: 0;
+    background: var(--ds-background-100);
+}
+
+
+/*
+ * Latar sufiks saat input-nya disabled.
+ *
+ * Produksi: `[&:has(input:disabled)>:last-child]:bg-[var(--ds-gray-100)]`
+ * plus `...:cursor-not-allowed`. Aturannya wajib ditulis ulang di sini
+ * karena `.wrapper.wrapper > :last-child` di atas bobotnya lebih tinggi
+ * daripada aturan disabled bawaan Input, jadi tanpa ini sufiksnya tetap
+ * putih. Terukur di contoh Disabled halaman live: rgb(242, 242, 242).
+ */
+.wrapper.wrapper:has(input:disabled) > :last-child {
+    background: var(--ds-gray-100);
+    cursor: not-allowed;
 }

@@ -249,7 +249,15 @@
     padding: 0 12px;
     color: var(--ds-gray-700);
     background: var(--ds-background-200);
-    border-right: 1px solid var(--ds-gray-alpha-400);
+    /*
+     * Produksi menulis `border-[var(--ds-gray-alpha-400)]`: warnanya kena
+     * KEEMPAT sisi, lalu hanya satu sisi yang diberi lebar. Kalau ditulis
+     * sebagai `border-right: 1px solid ...`, tiga sisi lain tetap memakai
+     * warna bawaan dan terbaca sebagai empat nilai berbeda. Terukur di
+     * halaman live Clearable Input.
+     */
+    border: 0 solid var(--ds-gray-alpha-400);
+    border-right-width: 1px;
 }
 
 .container.suffix > :last-child {
@@ -261,7 +269,9 @@
     padding: 0 12px;
     color: var(--ds-gray-700);
     background: var(--ds-background-200);
-    border-left: 1px solid var(--ds-gray-alpha-400);
+    /* Sama seperti prefix di atas: warna kena keempat sisi, lebar hanya satu. */
+    border: 0 solid var(--ds-gray-alpha-400);
+    border-left-width: 1px;
 }
 
 /* [&>input]:rounded-tl-none [&>input]:rounded-bl-none (and tr/br for suffix) */
@@ -275,9 +285,25 @@
     border-bottom-right-radius: 0;
 }
 
-/* [&>:first-child:not([disabled])]:text-[var(--themed-fg)] - only the error
- * material (geist-themed geist-error) defines --themed-fg (= geist-error),
- * so the rule only becomes visible on error inputs with an affix. */
+/*
+ * [&>:first-child:not([disabled])]:text-[var(--themed-fg)]
+ *
+ * Aturan ini mengenai SEMUA input beraffix, bukan cuma yang error. Saat
+ * --themed-fg tidak didefinisikan, deklarasinya tidak sah pada saat
+ * penghitungan nilai; dan karena `color` itu properti yang diwariskan,
+ * hasilnya jadi warna induknya (gray-1000), bukan dibuang begitu saja.
+ *
+ * Terukur di halaman live Clearable Input: begitu tombol hapusnya muncul
+ * (input berubah jadi beraffix), warna teksnya berpindah dari hitam bawaan
+ * peramban rgb(0, 0, 0) ke rgb(23, 23, 23). Catatan lama di sini menduga
+ * aturannya hanya kelihatan pada input error; itu keliru.
+ */
+.container.prefix > .input:first-child:not(:disabled),
+.container.suffix > .input:first-child:not(:disabled) {
+    color: var(--themed-fg);
+}
+
+/* Material geist-themed geist-error yang mendefinisikan --themed-fg. */
 .container.error.prefix > .input:first-child:not(:disabled),
 .container.error.suffix > .input:first-child:not(:disabled) {
     color: var(--ds-red-900);
@@ -313,15 +339,18 @@
 }
 
 /* ---- Affix content (label[data-geist-input-prefix/-suffix]) ----------------
- * Chunk: [data-geist-input-suffix],[data-geist-input-prefix]
- * { justify-content:center; display:flex }
+ * Chunk lama: [data-geist-input-suffix],[data-geist-input-prefix]
+ * { justify-content:center; display:flex } - TAPI `justify-content: center`
+ * sudah TIDAK berlaku lagi di produksi. Diukur di halaman live Clearable
+ * Input (30 Agu 2026): label sufiksnya ber-justify-content `normal`. Chunk
+ * lokal memang tidak bisa dipercaya untuk nilai, jadi yang dipakai hasil
+ * ukur halaman hidup.
  * Snapshot class: [&>svg]:size-(--ds-control-decoration-size) - the token is
  * not defined in the reference chunks, so (exactly like production) the rule
  * is inert and the icon keeps its intrinsic 16px size.
  * ------------------------------------------------------------------------ */
 .affix {
     display: flex;
-    justify-content: center;
 }
 
 .affix > svg {

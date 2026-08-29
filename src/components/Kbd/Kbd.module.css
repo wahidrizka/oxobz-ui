@@ -26,7 +26,14 @@
     color: var(--ds-gray-1000);
     background: var(--ds-background-100);
     box-shadow: 0 0 0 1px var(--ds-gray-alpha-400);
-    text-align: center;
+    /*
+     * text-align-nya memang `start` di produksi, jadi JANGAN pakai
+     * text-align: center. Yang memusatkan isinya adalah perataan flex:
+     * produksi menulis `inline-flex items-center justify-center`. Terukur di
+     * halaman live Clearable Input, dan tanpa justify-content huruf "K"
+     * menempel ke kiri (meleset 2,1px dari aslinya) karena nilai bawaan flex
+     * itu rata kiri, bukan rata tengah.
+     */
     min-width: var(--oxobz-gap);
     font-size: 0.875rem;
     line-height: 1.7em;
@@ -35,7 +42,14 @@
     min-height: 24px;
     margin-left: 4px;
     padding: 0 6px;
-    display: inline-block;
+    /*
+     * inline-FLEX, bukan inline-block. Terukur di halaman live: <kbd> produksi
+     * memakai inline-flex, dan justru itu yang membuat span di dalamnya
+     * ter-blockify jadi display block setinggi tinggi barisnya (20,4px).
+     */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* chunk: `.kbd span { font-size: .875rem }`

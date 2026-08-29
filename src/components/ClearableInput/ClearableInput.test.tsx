@@ -196,7 +196,15 @@ describe('ClearableInput', () => {
         ).toBeInTheDocument();
     });
 
-    it('toggles data-animate on the cmdk hint on focus/blur', () => {
+    /*
+     * data-animate mengikuti ISI, bukan fokus.
+     *
+     * Diukur bertahap di halaman live (30 Agu 2026): diam "false"; difokuskan
+     * tapi masih kosong tetap "false"; begitu diketik jadi "true"; kehilangan
+     * fokus tapi isinya masih ada tetap "true". Versi lama test ini mengunci
+     * perilaku fokus/blur yang ternyata keliru.
+     */
+    it('sets data-animate on the cmdk hint only while the field has a value', () => {
         const { container } = render(
             <ClearableInput aria-label="Search with cmdk" cmdk />,
         );
@@ -204,10 +212,18 @@ describe('ClearableInput', () => {
             '[aria-label="Press Cmd + K to open the Command Menu"]',
         ) as HTMLElement;
         expect(hint).toHaveAttribute('data-animate', 'false');
+
         const input = container.querySelector('input') as HTMLInputElement;
         fireEvent.focus(input);
+        expect(hint).toHaveAttribute('data-animate', 'false');
+
+        fireEvent.change(input, { target: { value: 'cari' } });
         expect(hint).toHaveAttribute('data-animate', 'true');
+
         fireEvent.blur(input);
+        expect(hint).toHaveAttribute('data-animate', 'true');
+
+        fireEvent.change(input, { target: { value: '' } });
         expect(hint).toHaveAttribute('data-animate', 'false');
     });
 

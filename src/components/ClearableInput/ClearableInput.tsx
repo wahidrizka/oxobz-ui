@@ -5,7 +5,6 @@ import {
     useRef,
     useState,
     type ChangeEventHandler,
-    type FocusEventHandler,
     type KeyboardEventHandler,
     type MouseEventHandler,
     type MutableRefObject,
@@ -25,9 +24,9 @@ export interface ClearableInputProps
      * Renders the "Press Cmd + K to open the Command Menu" shortcut hint
      * (an animated Esc/⌘ swap + a sliding "K" kbd) instead of the plain
      * clear button (Geist "With Cmdk" example). The hint is purely visual —
-     * @oxobz/ui ships no Command Menu to wire ⌘K up to; the animation
-     * toggles on focus/blur (see ClearableInput.module.css header for what
-     * is and isn't grounded in the reference).
+     * @oxobz/ui ships no Command Menu to wire ⌘K up to; the animation runs
+     * whenever the field holds a value (measured on the live page: focusing
+     * an empty field leaves data-animate="false").
      */
     cmdk?: boolean;
 
@@ -87,8 +86,8 @@ function clearNativeInput(input: HTMLInputElement): void {
  * renders no suffix at all (Geist "Default" example).
  *
  * With `cmdk`, the suffix is instead an always-visible shortcut hint with two
- * kbds (an animated Esc/⌘ swap + a sliding "K") — see the CSS module header
- * for exactly which parts of that animation are grounded in the reference.
+ * kbds (an animated Esc/⌘ swap + a sliding "K"). The swap is driven by
+ * `data-animate`, which production sets while the field holds a value.
  */
 const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
     (
@@ -97,10 +96,8 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
             cmdk = false,
             defaultValue,
             disabled,
-            onBlur,
             onChange,
             onClear,
-            onFocus,
             onKeyDown,
             value,
             ...rest
@@ -112,10 +109,6 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
         const [uncontrolledHasValue, setUncontrolledHasValue] = useState(
             () => defaultValue != null && String(defaultValue).length > 0,
         );
-        // Geist's cmdk hint swaps its ⌘K hint for "Esc" while the field is
-        // focused (an inferred trigger — the reference only captures the
-        // idle, unfocused state; see the CSS module header).
-        const [animate, setAnimate] = useState(false);
 
         const hasValue = isControlled
             ? String(value ?? '').length > 0
@@ -153,16 +146,6 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
             }
         };
 
-        const handleFocus: FocusEventHandler<HTMLInputElement> = (e) => {
-            onFocus?.(e);
-            if (cmdk) setAnimate(true);
-        };
-
-        const handleBlur: FocusEventHandler<HTMLInputElement> = (e) => {
-            onBlur?.(e);
-            if (cmdk) setAnimate(false);
-        };
-
         const handleClearClick: MouseEventHandler<HTMLButtonElement> = () => {
             if (disabled) return;
             clearValue();
@@ -172,7 +155,7 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
             <div
                 aria-label="Press Cmd + K to open the Command Menu"
                 className={styles.cmdkHint}
-                data-animate={animate ? 'true' : 'false'}
+                data-animate={hasValue ? 'true' : 'false'}
             >
                 <Kbd aria-hidden="true" className={styles.kbdSwap} small>
                     <span className={styles.escSpan} data-key="esc">
@@ -210,10 +193,9 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
                 data-oxobz-clearable-input=""
                 defaultValue={defaultValue}
                 disabled={disabled}
-                onBlur={handleBlur}
                 onChange={handleChange}
-                onFocus={handleFocus}
                 onKeyDown={handleKeyDown}
+                innerWrapperClassName={styles.wrapper}
                 ref={setInputRef}
                 suffix={suffix}
                 value={value}
