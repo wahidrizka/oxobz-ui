@@ -62,19 +62,27 @@ const Label = forwardRef<HTMLLabelElement, LabelProps>(
         },
         ref,
     ) => {
+        /*
+         * Elemen <label>-nya POLOS; seluruh gayanya ada di <div> di dalamnya.
+         *
+         * Terukur di dua halaman live (Calendar dan Choicebox): produksi
+         * menulis <label data-version="v1" for="..."><div class="block
+         * text-[13px] max-w-full text-gray-900 mb-2 cursor-text">teks</div>
+         * </label>. Label luarnya tanpa kelas, sehingga ukuran hurufnya ikut
+         * warisan (16px) dan display-nya inline.
+         */
         return (
-            <label
-                {...rest}
-                className={cn(
-                    styles.label,
-                    withInput && styles.input,
-                    !bypassCasing && styles.capitalize,
-                    className,
-                )}
-                data-version={dataVersion}
-                ref={ref}
-            >
-                {value ?? children}
+            <label {...rest} data-version={dataVersion} ref={ref}>
+                <div
+                    className={cn(
+                        styles.label,
+                        withInput && styles.input,
+                        !bypassCasing && styles.capitalize,
+                        className,
+                    )}
+                >
+                    {value ?? children}
+                </div>
             </label>
         );
     },

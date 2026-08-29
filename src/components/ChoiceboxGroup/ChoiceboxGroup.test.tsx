@@ -77,26 +77,32 @@ describe('ChoiceboxGroup — radio mode (default)', () => {
         expect(container.querySelector('input[value="trial"]')).not.toBeChecked();
     });
 
-    it('checked item label gets aria-selected="true" and checked class', () => {
+    /*
+      * Diperbaiki 30 Agu 2026. Produksi TIDAK memakai aria-selected di sini
+      * (label memang tidak mendukungnya), dan pembungkus pilihan adalah <li>,
+      * bukan <label>. Keadaan terpilih ditandai kelas pada <li> itu.
+      */
+    it('checked item gets the checked class on its <li>', () => {
         const { container } = render(
             <ChoiceboxGroup label="plan" value="pro" onChange={() => { }}>
                 {twoItems}
             </ChoiceboxGroup>,
         );
-        const checkedLabel = container.querySelector('input[value="pro"]')?.closest('label.choicebox');
-        expect(checkedLabel).toHaveAttribute('aria-selected', 'true');
-        expect(checkedLabel?.className).toContain('checked');
+        const checkedLi = container.querySelector('input[value="pro"]')?.closest('li.choicebox');
+        expect(checkedLi).not.toBeNull();
+        expect(checkedLi).not.toHaveAttribute('aria-selected');
+        expect(checkedLi?.className).toContain('checked');
     });
 
-    it('unchecked item label gets aria-selected="false" and no checked class', () => {
+    it('unchecked item has no checked class on its <li>', () => {
         const { container } = render(
             <ChoiceboxGroup label="plan" value="pro" onChange={() => { }}>
                 {twoItems}
             </ChoiceboxGroup>,
         );
-        const otherLabel = container.querySelector('input[value="trial"]')?.closest('label.choicebox');
-        expect(otherLabel).toHaveAttribute('aria-selected', 'false');
-        expect(otherLabel?.className).not.toContain('checked');
+        const otherLi = container.querySelector('input[value="trial"]')?.closest('li.choicebox');
+        expect(otherLi).not.toBeNull();
+        expect(otherLi?.className).not.toContain('checked');
     });
 
     // ── onChange ──
@@ -249,9 +255,14 @@ describe('ChoiceboxGroup — label & showLabel', () => {
                 {twoItems}
             </ChoiceboxGroup>,
         );
-        const visibleLabel = screen.getByText('Select a plan');
-        expect(visibleLabel.tagName).toBe('LABEL');
-        expect(visibleLabel.className).toContain('label');
+        /*
+         * Struktur Label mengikuti produksi: <label> polos berisi <div>
+         * bergaya, jadi teksnya ada di div itu dan <label>-nya pembungkus.
+         */
+        const teks = screen.getByText('Select a plan');
+        expect(teks.tagName).toBe('DIV');
+        expect(teks.className).toContain('label');
+        expect(teks.parentElement?.tagName).toBe('LABEL');
     });
 
     it('with showLabel, aria-label is not set on the group', () => {
@@ -333,7 +344,7 @@ describe('ChoiceboxGroup — disabled', () => {
                 {twoItems}
             </ChoiceboxGroup>,
         );
-        const labels = container.querySelectorAll('label.choicebox');
+        const labels = container.querySelectorAll('li.choicebox');
         expect(labels).toHaveLength(2);
         for (const label of labels) {
             expect(label.className).toContain('disabled');
@@ -426,15 +437,19 @@ describe('ChoiceboxGroup.Item', () => {
         expect(container.querySelector('.description')).toBeNull();
     });
 
-    it('has data-version="v1" on the item label', () => {
+    /*
+      * Produksi tidak menaruh atribut apa pun di <ul>, <li>, maupun <label>
+      * pilihan. Yang dijaga sekarang justru kebalikannya.
+      */
+    it('leaves the list, item and label free of attributes, like production', () => {
         const { container } = render(
             <ChoiceboxGroup label="plan">
                 <ChoiceboxGroup.Item title="Trial" value="trial" />
             </ChoiceboxGroup>,
         );
-        expect(container.querySelector('label.choicebox')).toHaveAttribute(
+        expect(container.querySelector('ul')).not.toHaveAttribute('data-version');
+        expect(container.querySelector('li.choicebox')).not.toHaveAttribute(
             'data-version',
-            'v1',
         );
     });
 
@@ -451,9 +466,13 @@ describe('ChoiceboxGroup.Item', () => {
         expect(slot.parentElement?.className).toContain('content');
     });
 
-    it('renders children in the DOM even when NOT checked (characterization)', () => {
-        // NOTE: the JSDoc claims children render "when checked", but the
-        // component renders the content slot unconditionally.
+    /*
+     * Diperbaiki 30 Agu 2026. Test lama sengaja mengunci perilaku yang KELIRU
+     * (isi khusus selalu dirender) dan catatannya sendiri menyebut JSDoc-nya
+     * bilang "when checked". Diukur di halaman live: pada pilihan yang tidak
+     * terpilih, span isi itu memang TIDAK ada di DOM.
+     */
+    it('keeps children out of the DOM while the item is NOT checked', () => {
         render(
             <ChoiceboxGroup label="plan">
                 <ChoiceboxGroup.Item title="Trial" value="trial">
@@ -461,7 +480,7 @@ describe('ChoiceboxGroup.Item', () => {
                 </ChoiceboxGroup.Item>
             </ChoiceboxGroup>,
         );
-        expect(screen.getByTestId('slot-unchecked')).toBeInTheDocument();
+        expect(screen.queryByTestId('slot-unchecked')).not.toBeInTheDocument();
     });
 
     it('applies custom className to the item label', () => {
@@ -470,7 +489,7 @@ describe('ChoiceboxGroup.Item', () => {
                 <ChoiceboxGroup.Item title="Trial" value="trial" className="my-item" />
             </ChoiceboxGroup>,
         );
-        const label = container.querySelector('label.choicebox');
+        const label = container.querySelector('li.choicebox');
         expect(label?.className).toContain('my-item');
     });
 

@@ -2,6 +2,14 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Label } from './Label';
 
+/**
+ * Sejak 30 Agu 2026 struktur Label mengikuti produksi: <label> POLOS berisi
+ * <div> yang membawa seluruh kelasnya. Pembantu ini mengambil div itu.
+ */
+function isi(container: HTMLElement) {
+    return container.querySelector('label > div');
+}
+
 describe('Label', () => {
     // ── Rendering (value) ──
 
@@ -19,10 +27,10 @@ describe('Label', () => {
         expect(label?.textContent).toBe('');
     });
 
-    it('applies base label class', () => {
+    it('applies base label class to the inner div', () => {
         const { container } = render(<Label value="Base" />);
-        const label = container.querySelector('label');
-        expect(label?.className).toContain('label');
+        expect(container.querySelector('label')?.className).toBe('');
+        expect(isi(container)?.className).toContain('label');
     });
 
     it('falls back to children when value is omitted', () => {
@@ -46,9 +54,10 @@ describe('Label', () => {
     });
 
     it('passes htmlFor through to the for attribute', () => {
-        render(<Label htmlFor="email-field" value="Email" />);
-        const label = screen.getByText('Email');
-        expect(label).toHaveAttribute('for', 'email-field');
+        // getByText kini mengembalikan <div> di dalamnya, jadi atributnya
+        // diperiksa pada <label> pembungkusnya.
+        const { container } = render(<Label htmlFor="email-field" value="Email" />);
+        expect(container.querySelector('label')).toHaveAttribute('for', 'email-field');
     });
 
     it('does not have a for attribute when htmlFor is omitted', () => {
@@ -62,13 +71,13 @@ describe('Label', () => {
     it('applies input class when withInput is true', () => {
         const { container } = render(<Label value="Input label" withInput />);
         const label = container.querySelector('label');
-        expect(label?.className).toContain('input');
+        expect(isi(container)?.className).toContain('input');
     });
 
     it('does not apply input class by default', () => {
         const { container } = render(<Label value="Plain" />);
         const label = container.querySelector('label');
-        expect(label?.className).not.toContain('input');
+        expect(isi(container)?.className).not.toContain('input');
     });
 
     // ── bypassCasing (opt-out; casing is applied by default) ──
@@ -76,13 +85,13 @@ describe('Label', () => {
     it('applies capitalize class by default', () => {
         const { container } = render(<Label value="default casing" />);
         const label = container.querySelector('label');
-        expect(label?.className).toContain('capitalize');
+        expect(isi(container)?.className).toContain('capitalize');
     });
 
     it('removes capitalize class when bypassCasing is true', () => {
         const { container } = render(<Label value="no casing" bypassCasing />);
         const label = container.querySelector('label');
-        expect(label?.className).not.toContain('capitalize');
+        expect(isi(container)?.className).not.toContain('capitalize');
     });
 
     // ── data-version ──
@@ -104,8 +113,8 @@ describe('Label', () => {
     it('merges custom className with base class', () => {
         const { container } = render(<Label value="Custom" className="my-custom-class" />);
         const label = container.querySelector('label');
-        expect(label?.className).toContain('my-custom-class');
-        expect(label?.className).toContain('label');
+        expect(isi(container)?.className).toContain('my-custom-class');
+        expect(isi(container)?.className).toContain('label');
     });
 
     // ── Combined props ──
@@ -115,17 +124,17 @@ describe('Label', () => {
             <Label value="All props" withInput bypassCasing className="extra" />,
         );
         const label = container.querySelector('label');
-        expect(label?.className).toContain('label');
-        expect(label?.className).toContain('input');
-        expect(label?.className).not.toContain('capitalize');
-        expect(label?.className).toContain('extra');
+        expect(isi(container)?.className).toContain('label');
+        expect(isi(container)?.className).toContain('input');
+        expect(isi(container)?.className).not.toContain('capitalize');
+        expect(isi(container)?.className).toContain('extra');
     });
 
     // ── Prop forwarding ──
 
     it('forwards additional HTML label attributes', () => {
-        render(<Label id="my-label" title="tooltip" value="Attrs" />);
-        const label = screen.getByText('Attrs');
+        const { container } = render(<Label id="my-label" title="tooltip" value="Attrs" />);
+        const label = container.querySelector('label');
         expect(label).toHaveAttribute('id', 'my-label');
         expect(label).toHaveAttribute('title', 'tooltip');
     });

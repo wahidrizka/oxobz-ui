@@ -116,6 +116,12 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
         // nests the input directly and needs no id/for pairing. Called
         // unconditionally (before the guard) to satisfy the rules of hooks.
         const checkboxId = `checkbox-${useId()}`;
+        /*
+         * Produksi menautkan input ke judul pilihannya lewat
+         * aria-labelledby="choicebox-title-<id>". Tanpa itu pembaca layar hanya
+         * mendengar nilai mentahnya.
+         */
+        const titleId = `choicebox-title-${useId()}`;
         if (!ctx) {
             throw new Error('ChoiceboxGroup.Item must be used within a ChoiceboxGroup');
         }
@@ -150,10 +156,18 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
         // geistcn generation: plain flex classes on the label/option/title
         // wrapper (choicebox-jul2026.html) — the old Stack-variable chrome is
         // gone from production.
+        /*
+         * Tiap pilihan dibungkus <li>, bukan <label> langsung di dalam <ul>.
+         *
+         * Terukur di halaman live: <ul> > <li> > <label> > <div>. Yang membawa
+         * garis tepi, sudut membulat, dan pemotongan isi adalah <li>-nya
+         * (400x70), sedangkan <label> di dalamnya polos (398x68) dan hanya
+         * mengurus tata letak kolom. Semua aturan keadaan (.checked,
+         * .disabled, .hasContent) menempel pada .choicebox, dan karena label
+         * beserta isinya tetap keturunan <li>, aturan itu tetap berlaku.
+         */
         return (
-            <label
-                {...rest}
-                ref={ref}
+            <li
                 className={cn(
                     styles.choicebox,
                     isChecked && styles.checked,
@@ -161,9 +175,8 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                     children != null && styles.hasContent,
                     className,
                 )}
-                data-version="v1"
-                aria-selected={isChecked}
             >
+            <label {...rest} ref={ref} className={styles.label}>
                 {/* Option row */}
                 <div className={styles.option} data-slot="choicebox-group-item-option">
                     {/* Title + Description */}
@@ -171,7 +184,9 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                         className={styles.titleWrapper}
                         data-slot="choicebox-group-item-title-description"
                     >
-                        <span className={styles.title}>{title}</span>
+                        <span className={styles.title} id={titleId}>
+                            {title}
+                        </span>
                         {description && (
                             <span className={styles.description}>{description}</span>
                         )}
@@ -193,6 +208,7 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                                     styles.input,
                                 )}
                                 type="radio"
+                                aria-labelledby={titleId}
                                 value={value}
                                 checked={isChecked}
                                 disabled={isDisabled}
@@ -222,6 +238,7 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                                     )}
                                     id={checkboxId}
                                     type="checkbox"
+                                    aria-labelledby={titleId}
                                     value={value}
                                     checked={isChecked}
                                     disabled={isDisabled}
@@ -243,9 +260,21 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                     )}
                 </div>
 
-                {/* Custom content slot */}
-                <span className={styles.content}>{children}</span>
+                {/*
+                 * Isi khusus hanya dirender saat pilihan ini TERPILIH.
+                 *
+                 * Terukur di seksi "Custom content" halaman live: pada pilihan
+                 * yang terpilih, anak terakhir <label> adalah <span> setinggi
+                 * 40px berisi badge; pada yang tidak terpilih, anak terakhirnya
+                 * adalah baris pilihan itu sendiri, jadi span isinya memang
+                 * tidak ada di DOM. Dokumennya pun menyebut "Custom content is
+                 * displayed when selecting the option."
+                 */}
+                {isChecked && children != null ? (
+                    <span className={styles.content}>{children}</span>
+                ) : null}
             </label>
+            </li>
         );
     },
 );
@@ -352,14 +381,18 @@ function ChoiceboxGroupRoot({
                      * for= attribute for fidelity and add the id to make the
                      * accessible name resolve.
                      */
-                    <Label id={labelId} htmlFor={labelId} data-version="v1">
+                    /* Tanpa kapitalisasi: label grup di halaman live tampil apa
+                       adanya ("Choicebox group disabled"), bukan Title Case. */
+                    <Label id={labelId} htmlFor={labelId} data-version="v1" bypassCasing>
                         {label}
                     </Label>
                 )}
                 {/* geistcn generation: plain flex list (gap-3), no Stack vars */}
+                {/* Produksi tidak menaruh atribut apa pun di <ul>, <li>, maupun
+                    <label> pilihan; hanya akar grup yang membawa peran dan
+                    label ARIA-nya. */}
                 <ul
                     className={cn(direction === 'column' && styles.vertical, listClassName)}
-                    data-version="v1"
                 >
                     {children}
                 </ul>

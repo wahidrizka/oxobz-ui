@@ -40,6 +40,21 @@
 }
 
 /* ── Choicebox item (each <label>) ────────────────────── */
+/*
+ * Label di dalam <li>: polos, hanya tata letak. Terukur di produksi
+ * `flex flex-1 flex-col items-stretch justify-start cursor-pointer`, tanpa
+ * garis tepi maupun sudut membulat.
+ */
+.label {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    cursor: pointer;
+}
+
+/* Kelas ini kini menempel pada <li>, bukan pada <label>. */
 .choicebox {
     flex: 1 1 0%;
     display: flex;
@@ -51,10 +66,23 @@
     overflow: hidden;
     border: 1px solid var(--ds-gray-400);
     border-radius: 6px;
+    /*
+     * Utilitas `transition-colors duration-150 ease-in` milik Tailwind,
+     * disalin utuh: SEPULUH properti, bukan tiga. Lengkung waktunya
+     * cubic-bezier(0.4, 0, 1, 1), yaitu nilai kelas `ease-in` Tailwind, BUKAN
+     * kata kunci `ease-in` bawaan CSS (cubic-bezier(0.42, 0, 1, 1)).
+     */
     transition:
-        color 0.15s ease-in,
-        background-color 0.15s ease-in,
-        border-color 0.15s ease-in;
+        color 0.15s cubic-bezier(0.4, 0, 1, 1),
+        background-color 0.15s cubic-bezier(0.4, 0, 1, 1),
+        border-color 0.15s cubic-bezier(0.4, 0, 1, 1),
+        outline-color 0.15s cubic-bezier(0.4, 0, 1, 1),
+        text-decoration-color 0.15s cubic-bezier(0.4, 0, 1, 1),
+        fill 0.15s cubic-bezier(0.4, 0, 1, 1),
+        stroke 0.15s cubic-bezier(0.4, 0, 1, 1),
+        --tw-gradient-from 0.15s cubic-bezier(0.4, 0, 1, 1),
+        --tw-gradient-via 0.15s cubic-bezier(0.4, 0, 1, 1),
+        --tw-gradient-to 0.15s cubic-bezier(0.4, 0, 1, 1);
 }
 
 .choicebox:hover:not(.disabled) {
@@ -86,6 +114,13 @@
     justify-content: space-between;
     gap: 24px;
     padding: 12px;
+    /*
+     * `h-full` seperti produksi. Saat satu pilihan dalam satu baris punya isi
+     * khusus, semua kotak jadi lebih tinggi; baris pilihan yang mengisi penuh
+     * membuat tombol radionya tetap di tengah kotak, bukan di tengah 68px
+     * bagian atasnya saja. Terukur: baris produksi 109px, punya kita 68px.
+     */
+    height: 100%;
 }
 
 /* no content below → the option row stretches the whole box */
@@ -136,9 +171,13 @@
     color: var(--ds-blue-900);
 }
 
+/*
+ * Teks pilihan yang nonaktif: gray-800, bukan gray-500. Terukur di halaman
+ * live rgb(125, 125, 125) pada judul maupun keterangannya.
+ */
 .choicebox.disabled .title,
 .choicebox.disabled .description {
-    color: var(--ds-gray-500);
+    color: var(--ds-gray-800);
 }
 
 /* ── Embedded radio control ───────────────────────────── */

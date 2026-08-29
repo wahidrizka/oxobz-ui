@@ -9,6 +9,8 @@
 
 .label {
     color: var(--ds-gray-900);
+    /* Produksi menulis `cursor-text` pada div ini. */
+    cursor: text;
     margin-bottom: var(--oxobz-space-2x);
     max-width: 100%;
     font-size: 13px;
