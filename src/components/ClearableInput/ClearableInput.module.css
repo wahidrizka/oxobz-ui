@@ -270,8 +270,9 @@
 /*
  * Kedua span petunjuk memakai `absolute inset-y-0 flex items-center` di
  * produksi: display flex, perataan tengah, dan menempel penuh dari atas ke
- * bawah. Daftar transisinya `transition-transform` milik Tailwind, yaitu empat
- * properti, bukan hanya `transform`.
+ * bawah. Yang BERBEDA di antara keduanya justru daftar transisinya: span ⌘
+ * memakai `transition-transform` (empat properti), span Esc tidak memakai
+ * utility transisi sama sekali sehingga daftarnya jatuh ke bawaan `all`.
  */
 .escSpan {
     position: absolute;
