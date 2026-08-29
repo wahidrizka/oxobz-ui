@@ -56,9 +56,15 @@
     border: 1px solid var(--checkbox-color) !important;
 }
 
-.icon svg {
-    flex-shrink: 0;
-}
+/*
+ * TIDAK ada flex-shrink: 0 di sini.
+ *
+ * Kotak centang punya garis tepi 1px, jadi area isinya 14px. Di produksi svg
+ * ikonnya membiarkan diri menyusut mengikuti area itu: atributnya 16px tapi
+ * terukur 14px lebar dan tetap 16px tinggi (melimpah ke atas-bawah, karena
+ * perataannya center). Mengunci flex-shrink ke 0 membuat lebarnya bertahan
+ * 16px dan ikonnya jadi 2px lebih lebar daripada aslinya.
+ */
 
 .icon svg path {
     visibility: hidden;
