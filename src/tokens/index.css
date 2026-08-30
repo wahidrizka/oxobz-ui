@@ -107,7 +107,14 @@ body {
 
 /* === Utility: Screen Reader Only === */
 .oxobz-sr-only {
-    clip: rect(0, 0, 0, 0);
+    /*
+     * `clip-path: inset(50%)`, bukan `clip: rect(0,0,0,0)` yang sudah usang.
+     * Utility `sr-only` produksi berbunyi persis:
+     *   clip-path:inset(50%);white-space:nowrap;border-width:0;width:1px;
+     *   height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden
+     * Terukur bedanya di halaman Checkbox live 30 Agu 2026.
+     */
+    clip-path: inset(50%);
     white-space: nowrap;
     border-width: 0;
     width: 1px;

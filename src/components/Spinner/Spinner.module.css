@@ -43,7 +43,22 @@
     top: 50%;
     left: 50%;
     transform-origin: center;
-    border-radius: 9999px;
+    /*
+     * Pemusatan lewat properti `translate`, BUKAN ikut ditumpuk ke transform.
+     * Produksi memakai utility `-translate-x-1/2 -translate-y-1/2` yang
+     * menghasilkan `translate: -50% -50%`, sementara `transform` dipakai
+     * khusus untuk rotate + translate(146%) lewat gaya inline. Tanpa ini
+     * setiap batang meleset setengah ukurannya sendiri: terukur 1,5px pada
+     * sumbu x dan 0,75px pada sumbu y (halaman Button live, 30 Agu 2026).
+     */
+    translate: -50% -50%;
+    /*
+     * Angka produksi APA ADANYA. Utility `rounded-full` Tailwind v4
+     * berbunyi `border-radius: 2147483647px`, dan peramban memangkasnya
+     * ke 33554432px. Menulis 9999px menghasilkan angka terhitung yang
+     * berbeda meski bentuk bulatnya sama.
+     */
+    border-radius: 2147483647px;
     background: currentColor;
     will-change: transform;
 
@@ -60,4 +75,47 @@
     to {
         opacity: 0.15;
     }
+}
+
+/*
+ * Ukuran baku sebagai KELAS, bukan gaya inline.
+ *
+ * Produksi memakai utility `size-3`, `size-4`, dan seterusnya, sehingga
+ * elemen spinner-nya tidak membawa atribut style sama sekali. Ukuran
+ * bebas (angka px yang bukan salah satu di bawah) tetap lewat gaya
+ * inline, dan produksi memang tidak punya kasus seperti itu.
+ */
+.s12 {
+    width: 12px;
+    height: 12px;
+}
+
+.s16 {
+    width: 16px;
+    height: 16px;
+}
+
+.s20 {
+    width: 20px;
+    height: 20px;
+}
+
+.s24 {
+    width: 24px;
+    height: 24px;
+}
+
+.s32 {
+    width: 32px;
+    height: 32px;
+}
+
+.s40 {
+    width: 40px;
+    height: 40px;
+}
+
+.s56 {
+    width: 56px;
+    height: 56px;
 }

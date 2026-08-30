@@ -35,6 +35,17 @@ export interface SpinnerProps extends HTMLAttributes<HTMLDivElement> {
  *   xl → size-6 (24px), 2xl → size-8 (32px), 3xl → size-10 (40px),
  *   4xl → size-14 (56px).
  */
+/** Kelas ukuran baku; padanan utility `size-*` milik produksi. */
+const KELAS_UKURAN: Record<number, string | undefined> = {
+    12: styles.s12,
+    16: styles.s16,
+    20: styles.s20,
+    24: styles.s24,
+    32: styles.s32,
+    40: styles.s40,
+    56: styles.s56,
+};
+
 const SIZE_MAP: Record<SpinnerSize, number> = {
     sm: 12,
     md: 16,
@@ -94,6 +105,18 @@ function getBarParams(px: number): BarParams {
 export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
     ({ size = 20, color, className, style, ...props }, ref) => {
         const px = typeof size === 'number' ? size : SIZE_MAP[size];
+        /*
+         * Ukuran baku dipasang lewat kelas supaya elemennya tidak membawa
+         * atribut style, persis seperti produksi yang memakai `size-3` dan
+         * kawan-kawannya. Ukuran bebas tetap lewat gaya inline.
+         */
+        const kelasUkuran = KELAS_UKURAN[px];
+        const gayaLain: React.CSSProperties = {
+            ...(kelasUkuran ? {} : { height: px, width: px }),
+            ...(color ? ({ color, '--spinner-color': color } as React.CSSProperties) : {}),
+            ...style,
+        };
+        const gayaAkar = Object.keys(gayaLain).length > 0 ? gayaLain : undefined;
         const { bars: barCount, duration, barHeight, barWidth } = getBarParams(px);
         const step = 360 / barCount; // rotation degrees per bar
 
@@ -127,18 +150,19 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
                 ref={ref}
                 role="status"
                 aria-label="Loading"
-                className={cn(styles.spinner, className)}
-                data-oxobz-spinner=""
+                className={cn(styles.spinner, kelasUkuran, className)}
+                /*
+                 * `data-glyph="circular"` ADA di produksi, sedangkan penanda
+                 * `data-geist-spinner` dan `data-version` TIDAK. Terukur di
+                 * halaman Button live 30 Agu 2026: atribut elemen spinner
+                 * produksi persis role, aria-label, data-testid, data-glyph,
+                 * dan class. Tidak ada yang lain.
+                 */
+                data-glyph="circular"
                 /* Nilai testid disalin apa adanya dari produksi, sama seperti
                    `legacy/skeleton` dan `calendar/trigger/button`. */
                 data-testid="geistcn/spinner"
-                data-version="v1"
-                style={{
-                    height: px,
-                    width: px,
-                    ...(color ? ({ color, '--spinner-color': color } as React.CSSProperties) : {}),
-                    ...style,
-                }}
+                style={gayaAkar}
                 {...props}
             >
                 {bars}

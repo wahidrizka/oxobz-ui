@@ -52,7 +52,17 @@
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-flex;
     position: relative;
-    transform: rotate(0.000001deg);
+    /*
+     * Properti `rotate`, bukan `transform`.
+     *
+     * Produksi memakai utility `rotate-[0.000001deg]` yang menyetel
+     * properti `rotate`, sehingga `transform`-nya tetap `none`. Terukur
+     * di halaman Checkbox live 30 Agu 2026: rotate = 1e-06deg,
+     * transform = none. Sudut sekecil itu memang trik lama untuk
+     * memaksa penghalusan tepi, jadi tampilannya sama, tapi nilainya
+     * terbaca beda kalau ditulis lewat transform.
+     */
+    rotate: 0.000001deg;
     border: 1px solid var(--checkbox-color) !important;
 }
 
@@ -132,4 +142,19 @@
 
 .input:focus-visible:not(:checked):not(:disabled)+.icon {
     background-color: var(--ds-gray-200);
+}
+
+/*
+ * Warna coretan svg lewat CSS, bukan atribut `stroke` di markup.
+ *
+ * Produksi memakai kelas `stroke-[var(--geist-background)]` dan
+ * `stroke-[var(--checkbox-color)]`, jadi elemen path dan line-nya tidak
+ * membawa atribut stroke sama sekali (terukur 30 Agu 2026).
+ */
+.tanda {
+    stroke: var(--oxobz-background);
+}
+
+.garis {
+    stroke: var(--checkbox-color);
 }

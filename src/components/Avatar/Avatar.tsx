@@ -217,7 +217,17 @@ export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
  * per-slot margins.
  */
 function slotStyle(index: number, count: number, reverse: boolean): CSSProperties {
-    return { zIndex: reverse ? index + 1 : count - index };
+    /*
+     * Deretnya mulai dari NOL, bukan satu.
+     *
+     * Terukur di halaman Avatar live 30 Agu 2026: kelompok berisi tiga
+     * avatar memberi [2, 1, 0], yang berisi empat memberi [3, 2, 1, 0].
+     * Rumus lama menghasilkan [3, 2, 1] dan [4, 3, 2, 1].
+     *
+     * Untuk mode `reverse` halaman live tidak punya contohnya, jadi
+     * dipakai cerminan aturan yang sama (0 di depan, naik ke belakang).
+     */
+    return { zIndex: reverse ? index : count - 1 - index };
 }
 
 export function AvatarGroup({

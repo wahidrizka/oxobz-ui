@@ -154,14 +154,14 @@ describe('Tabs', () => {
                 },
             ],
         });
-        const trigger = container.querySelector('[data-oxobz-tooltip]');
+        const trigger = container.querySelector('[data-testid="legacy/tooltip-trigger"]');
         expect(trigger).toBeInTheDocument();
         expect(trigger?.querySelector('button[value="mango"]')).toBeInTheDocument();
     });
 
     it('does not wrap tabs without a tooltip', () => {
         const { container } = renderTabs();
-        expect(container.querySelector('[data-oxobz-tooltip]')).toBeNull();
+        expect(container.querySelector('[data-testid="legacy/tooltip-trigger"]')).toBeNull();
     });
 
     // ── Icons ──

@@ -3,20 +3,28 @@ import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
 import { Banner } from './Banner';
 
-/** Selects the Banner root div. */
+/*
+ * Akar Banner dikenali lewat kelas modulnya.
+ *
+ * Penanda `data-oxobz-banner` dan `data-version` sudah dihapus: di
+ * seluruh halaman Banner produksi tidak ada satu pun atribut yang
+ * mengandung kata banner (terukur 30 Agu 2026), jadi penanda itu membuat
+ * atribut kita berlebih dibanding referensi.
+ */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-banner]');
+    return container.querySelector('[class*="message"]');
 }
 
 describe('Banner', () => {
     // ── Rendering ──
 
-    it('renders the message row as the root, with data-oxobz-banner and data-version="v1"', () => {
+    it('renders the message row as the root, without any component marker', () => {
         const { container } = render(<Banner>Message</Banner>);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
-        expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).not.toHaveAttribute('data-version');
+        expect(root).not.toHaveAttribute('data-oxobz-banner');
         // Production emits no wrapper of its own: the message row IS the root.
         expect(root?.className).toContain('message');
     });
@@ -36,7 +44,8 @@ describe('Banner', () => {
         expect(roots[1].className).toContain('message');
     });
 
-    it('allows a custom data-version', () => {
+    /* data-version tidak lagi jadi bagian API: produksi tidak memakainya. */
+    it('meneruskan data-version kalau memang diberikan pemakainya', () => {
         const { container } = render(<Banner data-version="v2">Message</Banner>);
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
@@ -110,7 +119,8 @@ describe('Banner', () => {
         const ref = createRef<HTMLDivElement>();
         render(<Banner ref={ref}>Message</Banner>);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-banner');
+        expect(ref.current).not.toHaveAttribute('data-oxobz-banner');
+        expect(ref.current?.className).toContain('message');
     });
 
     // ── Prop forwarding ──

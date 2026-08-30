@@ -10,8 +10,15 @@ import { Spinner } from './Spinner';
  * per-size bar counts/durations/dimensions, rotate+translate(146%).
  */
 
+/*
+ * Akar spinner dikenali lewat role="status".
+ *
+ * Penanda `data-oxobz-spinner` sudah dihapus karena produksi tidak
+ * punya padanannya; yang ada justru `data-glyph="circular"`. Terukur di
+ * halaman Button live 30 Agu 2026.
+ */
 function rootOf(container: HTMLElement): HTMLElement {
-    return container.querySelector('[data-oxobz-spinner]') as HTMLElement;
+    return container.querySelector('[role="status"]') as HTMLElement;
 }
 
 function barsOf(container: HTMLElement): HTMLElement[] {
@@ -33,11 +40,26 @@ describe('Spinner', () => {
         expect(root.firstElementChild?.getAttribute('aria-hidden')).toBe('true');
     });
 
-    it('sizes the root via inline width/height (default 20px)', () => {
+    /*
+     * Ukuran BAKU dipasang lewat kelas, bukan gaya inline.
+     *
+     * Produksi memakai utility `size-3`, `size-4`, dan seterusnya, jadi
+     * elemen spinner-nya tidak membawa atribut style sama sekali
+     * (terukur di halaman Button live 30 Agu 2026). Ukuran bebas tetap
+     * lewat gaya inline, dan itu diuji terpisah di bawah.
+     */
+    it('memakai kelas ukuran, tanpa gaya inline, untuk ukuran baku', () => {
         const { container } = render(<Spinner />);
         const root = rootOf(container);
-        expect(root.style.width).toBe('20px');
-        expect(root.style.height).toBe('20px');
+        expect(root.getAttribute('style')).toBeNull();
+        expect(root.className).toContain('s20');
+    });
+
+    it('masih memakai gaya inline untuk ukuran bebas', () => {
+        const { container } = render(<Spinner size={19} />);
+        const root = rootOf(container);
+        expect(root.style.width).toBe('19px');
+        expect(root.style.height).toBe('19px');
     });
 
     // ---- Per-size bar parameters (measured table) ----
@@ -53,7 +75,7 @@ describe('Spinner', () => {
         (token, px, count, duration, h, w) => {
             const { container } = render(<Spinner size={token} />);
             const root = rootOf(container);
-            expect(root.style.width).toBe(`${px}px`);
+            expect(root.className).toContain(`s${px}`);
             const bars = barsOf(container);
             expect(bars).toHaveLength(count);
             expect(bars[0].style.getPropertyValue('--animation-duration')).toBe(duration);
@@ -109,11 +131,17 @@ describe('Spinner', () => {
         const ref = createRef<HTMLDivElement>();
         render(<Spinner ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-spinner');
+        expect(ref.current).toHaveAttribute('data-glyph', 'circular');
+        expect(ref.current).not.toHaveAttribute('data-oxobz-spinner');
     });
 
-    it('keeps data-version="v1"', () => {
+    /*
+     * TANPA data-version. Elemen spinner produksi hanya membawa role,
+     * aria-label, data-testid, data-glyph, dan class (terukur 30 Agu
+     * 2026). Tidak ada data-version di sana.
+     */
+    it('tidak memasang data-version', () => {
         const { container } = render(<Spinner />);
-        expect(rootOf(container)).toHaveAttribute('data-version', 'v1');
+        expect(rootOf(container)).not.toHaveAttribute('data-version');
     });
 });

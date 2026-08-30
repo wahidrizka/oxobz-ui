@@ -110,6 +110,7 @@ const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(
             onMouseEnter,
             onMouseLeave,
             position = 'top',
+            style,
             tabIndex,
             text,
             tip = true,
@@ -181,8 +182,21 @@ const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(
                 {...rest}
                 aria-describedby={visible ? tooltipId : undefined}
                 className={cn(styles.container, className)}
-                data-oxobz-tooltip=""
+                /*
+                 * Atribut pemicu disamakan dengan produksi, terukur di halaman
+                 * Colors live 30 Agu 2026 (92 pemicu, semuanya sama):
+                 *   data-testid="legacy/tooltip-trigger"
+                 *   data-version="v1"
+                 *   style="-webkit-touch-callout:none"
+                 *   tabindex="0"
+                 *   data-state="closed" | "delayed-open"
+                 * Tidak ada penanda `data-geist-tooltip` di sana, jadi
+                 * `data-oxobz-tooltip` milik kita dihapus.
+                 */
+                data-state={visible ? 'delayed-open' : 'closed'}
+                data-testid="legacy/tooltip-trigger"
                 data-version={dataVersion}
+                style={{ WebkitTouchCallout: 'none', ...style }}
                 onBlur={handleBlur}
                 onFocus={handleFocus}
                 onMouseEnter={handleMouseEnter}

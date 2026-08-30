@@ -6,7 +6,7 @@ import { Tooltip } from './Tooltip';
 /** Returns the trigger span of the (single) rendered Tooltip */
 function getTrigger(container: HTMLElement): HTMLElement {
     const trigger = container.querySelector<HTMLElement>(
-        '[data-oxobz-tooltip]',
+        '[data-testid="legacy/tooltip-trigger"]',
     );
     if (!trigger) {
         throw new Error('Tooltip trigger not found');
@@ -17,7 +17,9 @@ function getTrigger(container: HTMLElement): HTMLElement {
 describe('Tooltip', () => {
     // ── Rendering ──
 
-    it('renders a trigger span with data-oxobz-tooltip, data-version="v1" and tabindex="0"', () => {
+    /* Penanda pemicu mengikuti produksi: data-testid legacy/tooltip-trigger
+       plus data-state, TANPA data-oxobz-tooltip (terukur 30 Agu 2026). */
+    it('renders a trigger span with the production markers and tabindex="0"', () => {
         const { container } = render(
             <Tooltip text="The Evil Rabbit Jumped over the Fence">
                 <span>Top</span>
@@ -27,6 +29,8 @@ describe('Tooltip', () => {
         expect(trigger.tagName).toBe('SPAN');
         expect(trigger).toHaveAttribute('data-version', 'v1');
         expect(trigger).toHaveAttribute('tabindex', '0');
+        expect(trigger).toHaveAttribute('data-state', 'closed');
+        expect(trigger).not.toHaveAttribute('data-oxobz-tooltip');
         expect(trigger.classList.contains('container')).toBe(true);
         expect(screen.getByText('Top')).toBeInTheDocument();
     });
@@ -409,7 +413,8 @@ describe('Tooltip', () => {
             </Tooltip>,
         );
         expect(ref.current).toBeInstanceOf(HTMLSpanElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-tooltip');
+        expect(ref.current).not.toHaveAttribute('data-oxobz-tooltip');
+        expect(ref.current).toHaveAttribute('data-testid', 'legacy/tooltip-trigger');
     });
 
     // ── Meta ──

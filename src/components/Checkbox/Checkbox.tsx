@@ -41,15 +41,15 @@ function CheckboxSvg() {
         <svg fill="none" height="16" viewBox="0 0 20 20" width="16">
             {/* Checkmark path — hidden by default, visible when checked */}
             <path
+                className={styles.tanda}
                 d="M14 7L8.5 12.5L6 10"
-                stroke="var(--oxobz-background)"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
             />
             {/* Indeterminate dash line — visible when .indeterminate class applied */}
             <line
-                stroke="var(--checkbox-color)"
+                className={styles.garis}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"

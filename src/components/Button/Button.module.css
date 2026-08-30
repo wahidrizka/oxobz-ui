@@ -44,7 +44,15 @@
     outline: none;
     vertical-align: baseline;
     text-decoration: none;
-    appearance: none;
+    /*
+     * TANPA `appearance: none`.
+     *
+     * Terukur di halaman live Button (30 Agu 2026): ke-44 tombol produksi
+     * ber-appearance `button`, yaitu nilai bawaan peramban yang tidak
+     * disentuh sama sekali. Latar, border, dan bentuknya sudah kita atur
+     * sendiri, jadi mematikan appearance tidak mengubah tampilan tapi
+     * terbaca beda.
+     */
 
     position: relative;
     display: flex;
@@ -67,7 +75,17 @@
 
     cursor: pointer;
     user-select: none;
-    transform: translateZ(0);
+    /*
+     * `translate`, bukan `transform`.
+     *
+     * Produksi memakai utility Tailwind `translate-z-0` yang berbunyi
+     * `translate: var(--tw-translate-x) var(--tw-translate-y)
+     * var(--tw-translate-z)`, sehingga hasilnya `translate: 0px` dan
+     * `transform` tetap `none`. Menulis `transform: translateZ(0)`
+     * menghasilkan matriks identitas dan itu terbaca beda di setiap
+     * tombol.
+     */
+    translate: 0px 0px 0px;
     /*
      * Produksi menulis daftar properti di dalam satu utility Tailwind, tapi
      * daftarnya mengandung spasi sehingga terpecah jadi dua kelas dan tidak

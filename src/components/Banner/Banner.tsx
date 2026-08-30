@@ -27,8 +27,6 @@ export interface BannerProps extends HTMLAttributes<HTMLDivElement> {
     /** Banner message. May contain a leading `<b>` for emphasis. */
     children?: ReactNode;
 
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -63,7 +61,7 @@ export interface BannerProps extends HTMLAttributes<HTMLDivElement> {
  */
 const Banner = forwardRef<HTMLDivElement, BannerProps>(
     (
-        { button, children, className, 'data-version': dataVersion = 'v1', ...rest },
+        { button, children, className, ...rest },
         ref,
     ) => {
         const cta = button ? (
@@ -98,8 +96,13 @@ const Banner = forwardRef<HTMLDivElement, BannerProps>(
                     {...rest}
                     ref={ref}
                     className={cn(styles.message, !button && styles.solo, className)}
-                    data-oxobz-banner=""
-                    data-version={dataVersion}
+                    /*
+                     * TANPA penanda komponen. Terukur di halaman Banner live
+                     * 30 Agu 2026: tidak ada satu pun atribut yang mengandung
+                     * kata banner di seluruh halaman produksi, jadi
+                     * data-oxobz-banner dan data-version di sini justru
+                     * membuat atributnya berlebih.
+                     */
                 >
                     <p className={cn('text-copy-16', styles.text)}>{children}</p>
                     {cta}

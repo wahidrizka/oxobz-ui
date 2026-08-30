@@ -120,16 +120,28 @@ function ButtonSlots({
     prefixNode,
     suffixNode,
     svgOnly,
+    loading,
     children,
 }: {
     prefixNode: ReactNode;
     suffixNode: ReactNode;
     svgOnly?: boolean;
+    loading?: boolean;
     children?: ReactNode;
 }): ReactNode {
     return (
         <>
-            {prefixNode ? <span className={styles.prefix}>{prefixNode}</span> : null}
+            {/*
+              * `aria-hidden` HANYA saat memuat, yaitu ketika isi slot ini
+              * spinner. Terukur di halaman Button live 30 Agu 2026: dari lima
+              * span prefix produksi, tiga yang berisi spinner membawa
+              * aria-hidden="true", dua yang berisi ikon biasa tidak.
+              */}
+            {prefixNode ? (
+                <span aria-hidden={loading || undefined} className={styles.prefix}>
+                    {prefixNode}
+                </span>
+            ) : null}
             <span className={cn(styles.content, svgOnly ? styles.flex : undefined)}>{children}</span>
             {suffixNode ? <span className={styles.suffix}>{suffixNode}</span> : null}
         </>
@@ -227,6 +239,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 {...mergeProps(stateProps, props)}
             >
                 <ButtonSlots
+                    loading={loading}
                     prefixNode={effectivePrefix}
                     suffixNode={suffixIcon}
                     svgOnly={svgOnly}
@@ -242,7 +255,12 @@ Button.displayName = 'Button';
 
 // ---- ButtonLink ----
 
-export interface ButtonLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'prefix'> {
+export interface ButtonLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'prefix' | 'type'> {
+    /**
+     * Sama seperti Button. Produksi memasang `type` juga pada tautannya,
+     * terukur di halaman Banner live (a role="link" type="submit").
+     */
+    typeName?: 'submit' | 'button' | 'reset';
     variant?: ButtonVariant;
     size?: ButtonSize;
     shape?: ButtonShape;
@@ -266,6 +284,7 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
             shape,
             shadow = false,
             svgOnly = false,
+            typeName = 'submit',
             prefix: prefixIcon,
             suffix: suffixIcon,
             loading = false,
@@ -288,6 +307,10 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
             <a
                 ref={(node) => setRefs(node, ref, localRef)}
                 role="link"
+                /* `type` ikut dipasang walau ini <a>. Terukur di halaman Banner
+                   live: tautan produksi membawa type="submit" persis seperti
+                   tombolnya, sebab dua-duanya lewat komponen yang sama. */
+                type={typeName}
                 tabIndex={0}
                 className={linkClasses}
                 data-oxobz-button=""
@@ -299,6 +322,7 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(
                 {...mergeProps(stateProps, props)}
             >
                 <ButtonSlots
+                    loading={loading}
                     prefixNode={effectivePrefix}
                     suffixNode={suffixIcon}
                     svgOnly={svgOnly}
@@ -427,6 +451,7 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
                 {...mergeProps(stateProps, props)}
             >
                 <ButtonSlots
+                    loading={loading}
                     prefixNode={effectivePrefix}
                     suffixNode={suffixIcon}
                     svgOnly={svgOnly}

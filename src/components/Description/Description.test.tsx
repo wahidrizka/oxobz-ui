@@ -98,7 +98,7 @@ describe('Description', () => {
         );
         const iconWrapper = container.querySelector('dt > span[class*="icon"]');
         expect(iconWrapper).toBeInTheDocument();
-        const trigger = iconWrapper?.querySelector('[data-oxobz-tooltip]');
+        const trigger = iconWrapper?.querySelector('[data-testid="legacy/tooltip-trigger"]');
         expect(trigger).toBeInTheDocument();
     });
 
@@ -107,7 +107,7 @@ describe('Description', () => {
             <Description content="Value" title="Section Title" tooltip="A one-sentence definition." />,
         );
         const trigger = container.querySelector(
-            '[data-oxobz-tooltip]',
+            '[data-testid="legacy/tooltip-trigger"]',
         ) as HTMLElement;
         fireEvent.mouseEnter(trigger);
         expect(screen.getByRole('tooltip')).toHaveTextContent(

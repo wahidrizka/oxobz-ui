@@ -95,7 +95,7 @@ describe('SearchInput', () => {
         );
         expect(screen.queryByTestId('custom-prefix')).not.toBeInTheDocument();
         expect(
-            container.querySelector('[data-oxobz-spinner]'),
+            container.querySelector('[data-glyph="circular"]'),
         ).toBeInTheDocument();
     });
 
