@@ -134,10 +134,11 @@ describe('Badge', () => {
         expect(el?.className).toContain('lg');
     });
 
-    it('renders as span by default', () => {
+    /* Akar badge produksi adalah <div> (terukur pada 73 badge, 30 Agu 2026). */
+    it('renders as div by default', () => {
         render(<Badge>span badge</Badge>);
         const el = screen.getByText('span badge').closest('[data-oxobz-badge]');
-        expect(el?.tagName).toBe('SPAN');
+        expect(el?.tagName).toBe('DIV');
     });
 
     it('renders as anchor when href is provided', () => {
@@ -184,8 +185,8 @@ describe('Badge', () => {
     });
 
     it('forwards ref', () => {
-        const ref = { current: null } as React.RefObject<HTMLSpanElement | null>;
+        const ref = { current: null } as React.RefObject<HTMLDivElement | null>;
         render(<Badge ref={ref}>ref test</Badge>);
-        expect(ref.current).toBeInstanceOf(HTMLSpanElement);
+        expect(ref.current).toBeInstanceOf(HTMLDivElement);
     });
 });

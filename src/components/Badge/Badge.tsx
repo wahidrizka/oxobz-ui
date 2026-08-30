@@ -1,4 +1,11 @@
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+import {
+    cloneElement,
+    forwardRef,
+    isValidElement,
+    type HTMLAttributes,
+    type ReactElement,
+    type ReactNode,
+} from 'react';
 import { cn } from '../../utils/cn';
 import styles from './Badge.module.css';
 
@@ -8,7 +15,7 @@ export type BadgeVariant =
 export type BadgeSize = 'sm' | 'md' | 'lg';
 export type BadgeContrast = 'low';
 
-export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
     variant?: BadgeVariant;
     size?: BadgeSize;
     /** Tone the color variant down for dense surfaces (renders the "-subtle" style) */
@@ -18,14 +25,32 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
     href?: string;
 }
 
-export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
+export const Badge = forwardRef<HTMLDivElement, BadgeProps>(
     ({ variant = 'gray', size = 'md', contrast, icon, href, className, children, ...props }, ref) => {
 
-        // Pill variant renders as <a>, otherwise <span>
-        const Tag = (href ? 'a' : 'span') as 'span';
+        /*
+         * Akar badge adalah <div>, bukan <span>.
+         *
+         * Terukur di halaman Badge live 30 Agu 2026: ke-73 badge produksi
+         * memakai <div>. Varian bertautan tetap <a>.
+         */
+        const Tag = (href ? 'a' : 'div') as 'div';
 
         // contrast="low" derives the subtle class from the variant (e.g. blue -> blue-subtle)
         // and adds the shared `subtle` class that paints the ::before overlay.
+        /*
+         * Ikon di dalam badge memakai data-slot="icon", bukan penanda ikon
+         * biasa. Terukur di halaman Badge live 30 Agu 2026: svg ikon badge
+         * produksi membawa data-slot="icon", dan aturan gaya badge-nya pun
+         * menunjuk `data-[slot=icon]`. Di luar badge, ikon tetap memakai
+         * penanda bawaannya.
+         */
+        const ikonBadge = isValidElement(icon)
+            ? cloneElement(icon as ReactElement<{ 'data-slot'?: string }>, {
+                  'data-slot': 'icon',
+              })
+            : icon;
+
         const subtle = contrast === 'low';
         const variantClass = subtle ? `${variant}-subtle` : variant;
 
@@ -54,7 +79,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
                  * sementara punya kita dulu terbungkus span sehingga svg-nya
                  * static.
                  */}
-                {icon}
+                {ikonBadge}
                 {/*
                  * Varian pill (yang dirender sebagai <a>) menaruh teksnya
                  * LANGSUNG, tanpa pembungkus. Terukur di seksi Pill halaman

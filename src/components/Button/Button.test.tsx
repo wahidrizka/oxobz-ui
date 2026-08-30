@@ -384,12 +384,15 @@ describe('ButtonLink', () => {
 });
 
 describe('CustomButton', () => {
-    it('renders a button with custom + data-oxobz-custom-button', () => {
+    /* Penanda `data-custom-button` ADA di produksi, `data-oxobz-custom-button`
+       tidak (terukur di halaman Button live 30 Agu 2026). */
+    it('renders a button with custom + data-custom-button', () => {
         render(<CustomButton>custom btn</CustomButton>);
         const el = screen.getByText('custom btn').closest('[data-oxobz-button]') as HTMLButtonElement;
         expect(el.tagName).toBe('BUTTON');
         expect(el.className).toContain('custom');
-        expect(el).toHaveAttribute('data-oxobz-custom-button', '');
+        expect(el).toHaveAttribute('data-custom-button', '');
+        expect(el).not.toHaveAttribute('data-oxobz-custom-button');
     });
 
     it('sets normal/hover/active color CSS variables', () => {
@@ -409,10 +412,13 @@ describe('CustomButton', () => {
         expect(el.style.getPropertyValue('--button-custom-bg-active')).toBe('var(--ds-blue-900)');
     });
 
-    it('applies width via inline style', () => {
+    /* Produksi memasang min-width dan max-width, bukan width. */
+    it('applies width as min-width and max-width', () => {
         render(<CustomButton width={160}>wide</CustomButton>);
         const el = screen.getByText('wide').closest('[data-oxobz-button]') as HTMLElement;
-        expect(el.style.width).toBe('160px');
+        expect(el.style.minWidth).toBe('160px');
+        expect(el.style.maxWidth).toBe('160px');
+        expect(el.style.width).toBe('');
     });
 
     it('default typeName is submit', () => {

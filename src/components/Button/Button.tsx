@@ -427,9 +427,15 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
             '--button-custom-fg-active': active?.foreground,
             '--button-custom-bg-active': active?.background,
             '--button-custom-border-active': active?.border,
-            width,
-            // Produksi juga mengunci max-width ke nilai yang sama. Tanpa ini
-            // tombol tetap 100% max-width dan bisa melar di wadah sempit.
+            /*
+             * `min-width`, BUKAN `width`.
+             *
+             * Terukur di halaman Button live 30 Agu 2026: gaya inline tombol
+             * custom produksi berbunyi `min-width:160px;max-width:160px`,
+             * tanpa `width` sama sekali. Menulis `width` membuat min-width
+             * terbaca `auto` dan itu beda.
+             */
+            minWidth: width,
             maxWidth: width,
         } as React.CSSProperties;
 
@@ -441,7 +447,6 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
                 className={buttonClasses}
                 data-oxobz-button=""
                 data-custom-button=""
-                data-oxobz-custom-button=""
                 data-prefix={String(hasPrefix)}
                 data-suffix={String(hasSuffix)}
                 data-version="v1"

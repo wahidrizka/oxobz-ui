@@ -34,7 +34,15 @@
     --badge-bg-color: #000;
 
     white-space: nowrap;
-    font-feature-settings: "tnum";
+    /*
+     * TANPA font-feature-settings sendiri.
+     *
+     * Produksi memakai utility `tabular-nums`, yang menyetel
+     * `font-variant-numeric: tabular-nums` (nilai itu sudah cocok di
+     * kedua sisi). `font-feature-settings` dibiarkan diwarisi dari html,
+     * yaitu `"calt" 0, "rlig", "ss11"`. Menuliskan "tnum" di sini
+     * menimpanya dan terbaca beda pada 187 elemen halaman Badge.
+     */
     font-variant-numeric: tabular-nums;
     color: var(--badge-color);
     background-color: var(--badge-bg-color);
@@ -346,4 +354,18 @@ button.pill:hover {
 
 :global(.dark-theme) .red {
     --badge-bg-color: var(--ds-red-800);
+}
+
+/*
+ * Ikon badge membawa transform identitas.
+ *
+ * Produksi menulisnya lewat utility
+ * `**:data-[slot=icon]:[-webkit-transform:translate(0px,0px)]`, jadi
+ * setiap ikon di dalam badge ber-transform matrix(1, 0, 0, 1, 0, 0)
+ * dan bukan `none`. Trik lama untuk memaksa lapisan sendiri; tampilannya
+ * sama tapi nilainya terbaca beda kalau tidak ikut dipasang.
+ */
+.badge [data-slot='icon'] {
+    -webkit-transform: translate(0px, 0px);
+    transform: translate(0px, 0px);
 }
