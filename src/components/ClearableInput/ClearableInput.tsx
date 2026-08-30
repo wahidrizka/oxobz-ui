@@ -2,6 +2,7 @@
 
 import {
     forwardRef,
+    useEffect,
     useRef,
     useState,
     type ChangeEventHandler,
@@ -92,10 +93,12 @@ function clearNativeInput(input: HTMLInputElement): void {
 const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
     (
         {
+            'aria-label': ariaLabel,
             className,
             cmdk = false,
             defaultValue,
             disabled,
+            label,
             onChange,
             onClear,
             onKeyDown,
@@ -105,6 +108,40 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
         forwardedRef,
     ) => {
         const inputRef = useRef<HTMLInputElement | null>(null);
+
+        /*
+         * Lebar <label> dipasang sebagai gaya inline, mengikuti kotak isi
+         * induknya.
+         *
+         * Terukur di halaman live pada tiga lebar layar (30 Agu 2026):
+         *   viewport 1400 -> induk 860, label style width: 812px
+         *   viewport 1000 -> induk 885, label style width: 837px
+         *   viewport  700 -> induk 601, label style width: 553px
+         * Selisihnya selalu 48px, yaitu padding kiri-kanan wadah demo,
+         * jadi angkanya sama dengan lebar KOTAK ISI induk. Yang diamati
+         * induknya, bukan lebar label atau lebar kotak input, sebab kedua
+         * yang terakhir ikut berubah begitu lebarnya dipasang dan hasilnya
+         * akan saling mengunci saat layar diubah ukurannya.
+         *
+         * Catatan: perilaku ini khusus ClearableInput. Label milik Input
+         * biasa di halaman /input produksi TIDAK membawa gaya inline ini
+         * (sudah diperiksa terpisah).
+         */
+        useEffect(() => {
+            if (label === undefined) return;
+            const labelEl = inputRef.current?.closest('label');
+            const induk = labelEl?.parentElement;
+            if (!labelEl || !induk) return;
+            if (typeof ResizeObserver === 'undefined') return;
+            const pengamat = new ResizeObserver((entri) => {
+                const kotak = entri[0]?.contentRect;
+                if (kotak) labelEl.style.width = `${kotak.width}px`;
+            });
+            pengamat.observe(induk);
+            return () => {
+                pengamat.disconnect();
+            };
+        }, [label]);
         const isControlled = value !== undefined;
         const [uncontrolledHasValue, setUncontrolledHasValue] = useState(
             () => defaultValue != null && String(defaultValue).length > 0,
@@ -189,13 +226,23 @@ const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
         return (
             <Input
                 {...rest}
+                /*
+                 * TANPA penanda `data-oxobz-clearable-input`.
+                 *
+                 * Terukur di halaman live 30 Agu 2026: input produksi hanya
+                 * membawa `data-geist-input`, tidak ada penanda kedua untuk
+                 * varian clearable. Konvensi penanda per komponen di
+                 * CLAUDE.md karena itu tidak berlaku di sini, sebab
+                 * komponen ini memang menumpang elemen milik Input.
+                 */
+                aria-label={ariaLabel ?? (label ? label : undefined)}
                 className={className}
-                data-oxobz-clearable-input=""
                 defaultValue={defaultValue}
                 disabled={disabled}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 innerWrapperClassName={styles.wrapper}
+                label={label}
                 ref={setInputRef}
                 suffix={suffix}
                 value={value}

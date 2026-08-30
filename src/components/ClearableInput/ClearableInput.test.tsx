@@ -16,7 +16,9 @@ describe('ClearableInput', () => {
         const input = wrapper?.querySelector('input');
         expect(input).toBeInTheDocument();
         expect(input).toHaveAttribute('data-oxobz-input');
-        expect(input).toHaveAttribute('data-oxobz-clearable-input');
+        /* TANPA penanda kedua: input produksi cuma membawa `data-geist-input`,
+           tidak ada penanda khusus varian clearable (terukur 30 Agu 2026). */
+        expect(input).not.toHaveAttribute('data-oxobz-clearable-input');
     });
 
     it('renders no suffix at all while the field is empty', () => {

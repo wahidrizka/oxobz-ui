@@ -249,7 +249,11 @@
 
 /* First kbd: the Esc/⌘ swap container */
 .kbdSwap {
-    display: flex !important;
+    /* TANPA `display: flex`. Kbd dasar sudah inline-flex, dan saat petunjuk
+       ini tampil ia jadi anak flex sehingga otomatis ter-blockify jadi flex.
+       Di layar di bawah 960px petunjuknya disembunyikan, induknya bukan flex
+       lagi, dan produksi kembali ke inline-flex. Memaksa flex di sini membuat
+       nilainya beda persis pada lebar itu (terukur 30 Agu 2026). */
     overflow: hidden !important;
     position: relative;
     color: var(--ds-gray-900) !important;
@@ -333,7 +337,7 @@
 
 /* Second kbd: the static "K" that slides to make room */
 .cmdkKbdK {
-    display: flex !important;
+    /* Alasan sama seperti .kbdSwap: biarkan inline-flex bawaan Kbd. */
     color: var(--ds-gray-900) !important;
     /* Produksi menulis transition-[translate]: hanya satu properti. */
     transition-property: translate;

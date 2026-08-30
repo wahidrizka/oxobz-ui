@@ -25,24 +25,29 @@ describe('Grid', () => {
             expect(container.firstChild).toBeDefined();
         });
 
-        it('render data-oxobz-grid-system attribute pada System', () => {
+        /*
+         * Pembungkus System TIDAK membawa penanda apa pun, sama seperti
+         * produksi (terukur 30 Agu 2026). Dulu di sini ada
+         * `data-oxobz-grid-system` dan itu membuat atributnya berlebih
+         * dibanding referensi.
+         */
+        it('tidak menambah penanda apa pun pada System', () => {
             const { container } = render(
                 <Grid.System>
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]');
-            expect(system).not.toBeNull();
+            expect(container.querySelector('[data-oxobz-grid-system]')).toBeNull();
         });
 
-        it('render data-grid dan data-oxobz-grid attribute pada Grid', () => {
+        it('render data-grid saja pada Grid, tanpa penanda tambahan', () => {
             const { container } = render(
                 <Grid.System>
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
             expect(container.querySelector('[data-grid]')).not.toBeNull();
-            expect(container.querySelector('[data-oxobz-grid]')).not.toBeNull();
+            expect(container.querySelector('[data-oxobz-grid]')).toBeNull();
         });
 
         it('render sebagai section element', () => {
@@ -51,14 +56,14 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const grid = container.querySelector('[data-oxobz-grid]');
+            const grid = container.querySelector('[data-grid]');
             expect(grid!.tagName.toLowerCase()).toBe('section');
         });
     });
 
     // ---- Grid.Cell ----
     describe('Grid.Cell', () => {
-        it('render cell dengan data-grid-cell dan data-oxobz-grid-cell', () => {
+        it('render cell dengan data-grid-cell saja', () => {
             const { container } = render(
                 <Grid.System>
                     <Grid columns={3} rows={2}>
@@ -67,7 +72,7 @@ describe('Grid', () => {
                 </Grid.System>,
             );
             expect(container.querySelector('[data-grid-cell]')).not.toBeNull();
-            expect(container.querySelector('[data-oxobz-grid-cell]')).not.toBeNull();
+            expect(container.querySelector('[data-oxobz-grid-cell]')).toBeNull();
         });
 
         it('render children di dalam cell', () => {
@@ -130,7 +135,9 @@ describe('Grid', () => {
             expect(cell.style.getPropertyValue('--sm-cell-rows')).toBe('2');
         });
 
-        it('placement angka tunggal diformat "N / span 1"', () => {
+        /* Angka tunggal diteruskan apa adanya, seperti produksi: sel dengan
+           column={1} di halaman live menghasilkan `--sm-grid-column: 1`. */
+        it('placement angka tunggal diteruskan apa adanya', () => {
             const { container } = render(
                 <Grid.System>
                     <Grid columns={3} rows={2}>
@@ -141,7 +148,7 @@ describe('Grid', () => {
                 </Grid.System>,
             );
             const cell = container.querySelector('[data-grid-cell]') as HTMLElement;
-            expect(cell.style.getPropertyValue('--sm-grid-column')).toBe('2 / span 1');
+            expect(cell.style.getPropertyValue('--sm-grid-column')).toBe('2');
             expect(cell.style.getPropertyValue('--sm-cell-columns')).toBe('1');
         });
     });
@@ -359,7 +366,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             expect(system.className).toMatch(/systemDebug/);
         });
 
@@ -392,7 +399,7 @@ describe('Grid', () => {
                     <Grid columns={1} rows={1} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             expect(system.className).toMatch(/systemDashed/);
         });
 
@@ -402,7 +409,7 @@ describe('Grid', () => {
                     <Grid columns={1} rows={1} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             expect(system.className).not.toMatch(/systemDashed/);
         });
     });
@@ -435,7 +442,9 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            /* Dengan unstable_useContainer, anak pertama container adalah
+               pembungkusnya; system-nya ada satu tingkat di dalam. */
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.className).toMatch(/useContainer/);
         });
 
@@ -445,7 +454,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             const lazy = system.querySelector('[class*="gridSystemLazyContent"]');
             expect(lazy).not.toBeNull();
             // section (children) must come before lazyContent
@@ -459,7 +468,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             const lazy = system.querySelector('[class*="gridSystemLazyContent"]')!;
             const overlay = system.querySelector('[class*="systemDebugOverlay"]')!;
             expect(lazy.compareDocumentPosition(overlay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -483,7 +492,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             expect(system.style.getPropertyValue('--guide-width')).toBe('2px');
         });
 
@@ -493,7 +502,7 @@ describe('Grid', () => {
                     <Grid columns={5} rows={3} />
                 </Grid.System>,
             );
-            const grid = container.querySelector('[data-oxobz-grid]') as HTMLElement;
+            const grid = container.querySelector('[data-grid]') as HTMLElement;
             expect(grid.style.getPropertyValue('--grid-columns')).toBe('5');
             expect(grid.style.getPropertyValue('--grid-rows')).toBe('3');
         });
@@ -504,7 +513,7 @@ describe('Grid', () => {
                     <Grid columns={{ sm: 1, md: 2, lg: 3 }} rows={{ sm: 6, md: 3, lg: 2 }} />
                 </Grid.System>,
             );
-            const grid = container.querySelector('[data-oxobz-grid]') as HTMLElement;
+            const grid = container.querySelector('[data-grid]') as HTMLElement;
             expect(grid.style.getPropertyValue('--sm-grid-columns')).toBe('1');
             expect(grid.style.getPropertyValue('--md-grid-columns')).toBe('2');
             expect(grid.style.getPropertyValue('--lg-grid-columns')).toBe('3');
@@ -516,7 +525,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const grid = container.querySelector('[data-oxobz-grid]') as HTMLElement;
+            const grid = container.querySelector('[data-grid]') as HTMLElement;
             expect(grid.style.getPropertyValue('--sm-height')).toBe('fit-content');
         });
 
@@ -526,7 +535,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} height="preserve-aspect-ratio" />
                 </Grid.System>,
             );
-            const grid = container.querySelector('[data-oxobz-grid]') as HTMLElement;
+            const grid = container.querySelector('[data-grid]') as HTMLElement;
             expect(grid.style.getPropertyValue('--sm-height')).toContain('calc(');
         });
     });
@@ -539,7 +548,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = container.querySelector('[data-oxobz-grid-system]') as HTMLElement;
+            const system = (container.firstElementChild as HTMLElement);
             expect(system.className).toContain('custom-system');
         });
 
@@ -549,7 +558,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} className="custom-grid" />
                 </Grid.System>,
             );
-            const grid = container.querySelector('[data-oxobz-grid]') as HTMLElement;
+            const grid = container.querySelector('[data-grid]') as HTMLElement;
             expect(grid.className).toContain('custom-grid');
         });
 

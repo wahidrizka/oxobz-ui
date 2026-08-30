@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createRef, type ReactNode } from 'react';
+import { createRef, type ComponentProps, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastArea, useToasts, type ToastOptions, type ToastType } from './Toast';
 
@@ -31,6 +31,23 @@ function renderWithArea(ui: ReactNode) {
     return render(<ToastArea>{ui}</ToastArea>);
 }
 
+/**
+ * Merender ToastArea LALU memunculkan satu toast.
+ *
+ * Perlu karena wadahnya baru dibuat saat ada isinya, persis seperti
+ * produksi: di vercel.com/geist/toast tidak ada satu pun simpul toast
+ * sebelum tombolnya diklik (diukur 30 Agu 2026).
+ */
+function renderAreaBerisi(props: ComponentProps<typeof ToastArea> = {}) {
+    const hasil = render(
+        <ToastArea {...props}>
+            <TypedTrigger kind="message" text="halo" />
+        </ToastArea>,
+    );
+    fireShow();
+    return hasil;
+}
+
 function fireShow() {
     fireEvent.click(screen.getByRole('button', { name: 'show' }));
 }
@@ -47,7 +64,7 @@ describe('Toast', () => {
     /* ── ToastArea (provider + region) ── */
 
     it('renders the toast region with data-oxobz-toast-area and data-version="v1"', () => {
-        const { container } = render(<ToastArea />);
+        const { container } = renderAreaBerisi();
         const area = container.querySelector('[data-oxobz-toast-area]');
         expect(area).toBeInTheDocument();
         expect(area?.tagName).toBe('DIV');
@@ -56,12 +73,16 @@ describe('Toast', () => {
     });
 
     it('announces politely by default and allows override', () => {
-        const { container, rerender } = render(<ToastArea />);
+        const { container, rerender } = renderAreaBerisi();
         expect(container.querySelector('[data-oxobz-toast-area]')).toHaveAttribute(
             'aria-live',
             'polite',
         );
-        rerender(<ToastArea aria-live="assertive" />);
+        rerender(
+            <ToastArea aria-live="assertive">
+                <TypedTrigger kind="message" text="halo" />
+            </ToastArea>,
+        );
         expect(container.querySelector('[data-oxobz-toast-area]')).toHaveAttribute(
             'aria-live',
             'assertive',
@@ -69,14 +90,14 @@ describe('Toast', () => {
     });
 
     it('merges a custom className onto the region', () => {
-        const { container } = render(<ToastArea className="my-area" />);
+        const { container } = renderAreaBerisi({ className: 'my-area' });
         const area = container.querySelector('[data-oxobz-toast-area]');
         expect(area?.className).toContain('toastArea');
         expect(area?.className).toContain('my-area');
     });
 
     it('applies the center class when center is set', () => {
-        const { container } = render(<ToastArea center />);
+        const { container } = renderAreaBerisi({ center: true });
         expect(container.querySelector('[data-oxobz-toast-area]')?.className).toContain(
             'center',
         );
@@ -84,7 +105,7 @@ describe('Toast', () => {
 
     it('forwards the ref to the region element', () => {
         const ref = createRef<HTMLDivElement>();
-        render(<ToastArea ref={ref} />);
+        renderAreaBerisi({ ref });
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
         expect(ref.current).toHaveAttribute('data-oxobz-toast-area');
     });
@@ -148,11 +169,14 @@ describe('Toast', () => {
         const { container } = renderWithArea(
             <MessageTrigger options={{ text: 'Queued', preserve: true }} />,
         );
-        const area = container.querySelector('[data-oxobz-toast-area]');
+        /* Wadahnya dicari ULANG sesudah tiap toast: sebelum ada isinya wadah
+           itu memang belum dibuat, sama seperti produksi. */
+        const area = () => container.querySelector('[data-oxobz-toast-area]');
+        expect(area()).toBeNull();
         fireShow();
-        expect(area?.className).not.toContain('multiple');
+        expect(area()?.className).not.toContain('multiple');
         fireShow();
-        expect(area?.className).toContain('multiple');
+        expect(area()?.className).toContain('multiple');
     });
 
     /* ── success / warning / error ── */

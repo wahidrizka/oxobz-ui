@@ -11,6 +11,16 @@ import styles from './Grid.module.css';
 
 // ---- Types ----
 
+/*
+ * CATATAN penanda data (30 Agu 2026)
+ *
+ * Grid TIDAK memakai penanda `data-oxobz-*`, berbeda dari komponen lain.
+ * Terukur di halaman live: elemen grid produksi hanya membawa `data-grid`
+ * dan `data-grid-cell` tanpa awalan apa pun, dan pembungkus System-nya tidak
+ * membawa penanda sama sekali. Menambah penanda sendiri di sini membuat
+ * atributnya berlebih dibanding referensi.
+ */
+
 /** Responsive value: single value or per-breakpoint. Public API uses { sm, md, lg }. */
 type ResponsiveValue<T> = T | { sm?: T; smd?: T; md?: T; lg?: T };
 
@@ -126,12 +136,19 @@ function resolveAtBreakpoint<T>(resolved: ResolvedResponsive<T>, bp: Breakpoint)
     }
 }
 
-/** Format a placement value for `--*-grid-column` / `--*-grid-row`. */
+/**
+ * Format a placement value for `--*-grid-column` / `--*-grid-row`.
+ *
+ * Angka tunggal diteruskan APA ADANYA, bukan diubah jadi "N / span 1".
+ * Terukur di halaman live 30 Agu 2026: sel produksi dengan `column={1}`
+ * menghasilkan `--sm-grid-column: 1`, dan `grid-column-end`-nya `auto`.
+ * Menuliskannya "1 / span 1" membuat grid-column-end jadi `span 1`, dan itu
+ * terbaca beda di setiap sel halaman.
+ */
 function formatPlacement(value: string | number): string {
     const s = String(value).trim();
     if (s === 'auto') return 'auto';
-    if (s.includes('/')) return s; // e.g. "1/3", "1/-1"
-    return `${s} / span 1`; // single track
+    return s; // "1", "1/3", "1/-1" — semuanya apa adanya
 }
 
 /** Derive the `--*-cell-columns` / `--*-cell-rows` span count from a placement value. */
@@ -406,7 +423,6 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
                 ref={ref}
                 className={systemClasses}
                 style={systemStyle}
-                data-oxobz-grid-system=""
                 {...props}
             >
                 {children}
@@ -438,7 +454,6 @@ export const GridCell = forwardRef<HTMLDivElement, GridCellProps>(
                 className={cn(styles.block, className)}
                 style={{ ...cellVars, ...style }}
                 data-grid-cell=""
-                data-oxobz-grid-cell=""
                 {...props}
             >
                 {children}
@@ -522,7 +537,6 @@ const GridRoot = forwardRef<HTMLElement, GridProps>(
                 className={cn(styles.grid, className)}
                 style={{ ...gridVars, ...style }}
                 data-grid=""
-                data-oxobz-grid=""
                 {...props}
             >
                 {children}

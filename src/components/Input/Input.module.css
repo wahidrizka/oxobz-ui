@@ -175,9 +175,16 @@
     outline: none;
 }
 
-.input::placeholder {
-    color: var(--ds-gray-700);
-}
+/*
+ * Placeholder pada keadaan normal TIDAK diwarnai.
+ *
+ * Chunk lama menyebut gray-700, tapi halaman hidup berkata lain: daftar kelas
+ * input produksi cuma memuat `disabled:placeholder:text-[var(--accents-3)]`,
+ * yaitu khusus keadaan disabled. Terukur pada keempat input halaman Clearable
+ * Input (30 Agu 2026): warna ::placeholder-nya bawaan peramban
+ * `oklab(0 0 0 / 0.5)`, sedangkan punya kita rgb(143, 143, 143). Warnanya
+ * memang mirip, tapi tetap beda.
+ */
 
 .input[readonly] {
     background: var(--ds-background-200);
@@ -185,10 +192,17 @@
 }
 
 /* July-2026 capture additions: number-input chrome is stripped
-   ([appearance:textfield] + webkit spin buttons appearance-none). */
+   ([appearance:textfield] + webkit spin buttons appearance-none).
+
+   TAPI nilai akhirnya `none`, bukan `textfield`. Daftar kelas produksi memang
+   memuat DUA-DUANYA (`appearance-none` dan `[appearance:textfield]`), dan yang
+   menang di urutan CSS-nya adalah `appearance-none`. Terukur di halaman live
+   Clearable Input 30 Agu 2026: kelima input-nya ber-appearance `none`.
+   Tombol putar-angka tetap hilang lewat aturan ::-webkit-*-spin-button di
+   bawah, jadi tujuan aslinya tidak berubah. */
 .input {
     -moz-appearance: textfield;
-    appearance: textfield;
+    appearance: none;
 }
 
 .input::-webkit-inner-spin-button,

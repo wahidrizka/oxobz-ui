@@ -321,6 +321,16 @@ const ToastArea = forwardRef<HTMLDivElement, ToastAreaProps>(
         return (
             <ToastContext.Provider value={api}>
                 {children}
+                {/*
+                 * Wadahnya BARU dibuat saat ada isinya.
+                 *
+                 * Diukur di halaman live vercel.com/geist/toast (30 Agu 2026):
+                 * sebelum tombolnya diklik tidak ada satu pun simpul toast di
+                 * halaman; sesudah diklik barulah muncul wadah baru di ujung
+                 * body. Versi lama komponen ini selalu merender wadah kosong,
+                 * dan itu jadi satu elemen berlebih di SETIAP halaman docs.
+                 */}
+                {items.length > 0 ? (
                 <div
                     {...rest}
                     aria-live={ariaLive}
@@ -342,6 +352,7 @@ const ToastArea = forwardRef<HTMLDivElement, ToastAreaProps>(
                         />
                     ))}
                 </div>
+                ) : null}
             </ToastContext.Provider>
         );
     },
