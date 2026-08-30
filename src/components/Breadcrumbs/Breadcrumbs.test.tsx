@@ -5,13 +5,14 @@ import { Breadcrumb, BreadcrumbItem } from './Breadcrumbs';
 
 /** Selects the root <nav>. */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-breadcrumbs]');
+    return container.querySelector('nav');
 }
 
 describe('Breadcrumb', () => {
     // ── Rendering (text variant, default) ──
 
-    it('renders a nav with data-oxobz-breadcrumbs, data-variant="text" and data-version="v1"', () => {
+    /* Nav produksi tidak membawa penanda komponen, cuma aria-label. */
+    it('renders a nav with aria-label and no component markers', () => {
         const { container } = render(
             <Breadcrumb>
                 <BreadcrumbItem>Home</BreadcrumbItem>
@@ -22,11 +23,14 @@ describe('Breadcrumb', () => {
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('NAV');
         expect(root).toHaveAttribute('aria-label', 'Breadcrumb');
-        expect(root).toHaveAttribute('data-variant', 'text');
-        expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).not.toHaveAttribute('data-variant');
+        expect(root).not.toHaveAttribute('data-version');
+        expect(root).not.toHaveAttribute('data-oxobz-breadcrumbs');
     });
 
-    it('allows a custom data-version', () => {
+    /* data-version tetap diteruskan kalau pemakainya memberikannya, tapi
+       tidak lagi dipasang sendiri oleh komponen. */
+    it('meneruskan data-version dari pemakainya', () => {
         const { container } = render(
             <Breadcrumb data-version="v2">
                 <BreadcrumbItem>Home</BreadcrumbItem>
@@ -46,7 +50,7 @@ describe('Breadcrumb', () => {
         expect(list).toBeInTheDocument();
         expect(list?.className).toContain('ol');
 
-        const items = container.querySelectorAll('li[data-oxobz-breadcrumbs-item]');
+        const items = container.querySelectorAll('li');
         expect(items).toHaveLength(2);
         items.forEach((item) => expect(item.className).toContain('textItem'));
     });
@@ -58,7 +62,7 @@ describe('Breadcrumb', () => {
                 <BreadcrumbItem>Dashboard</BreadcrumbItem>
             </Breadcrumb>,
         );
-        const items = container.querySelectorAll('li[data-oxobz-breadcrumbs-item]');
+        const items = container.querySelectorAll('li');
         items.forEach((item) => {
             expect(item.querySelector('svg')).toBeInTheDocument();
         });
@@ -70,7 +74,7 @@ describe('Breadcrumb', () => {
                 <BreadcrumbItem>Home</BreadcrumbItem>
             </Breadcrumb>,
         );
-        const item = container.querySelector('[data-oxobz-breadcrumbs-item]');
+        const item = container.querySelector('li');
         // The label text is a direct child of the <li>, not wrapped in a span.
         expect(item?.querySelector('span')).toBeNull();
         expect(item).toHaveTextContent('Home');
@@ -86,14 +90,14 @@ describe('Breadcrumb', () => {
             </Breadcrumb>,
         );
         const root = getRoot(container);
-        expect(root).toHaveAttribute('data-variant', 'menu');
+        expect(root).not.toHaveAttribute('data-variant');
 
         const wrapper = container.querySelector('.menuWrapper');
         expect(wrapper).toBeInTheDocument();
         expect(container.querySelector('ol')).not.toBeInTheDocument();
 
         const buttons = container.querySelectorAll(
-            'button[data-oxobz-breadcrumbs-item]',
+            'button',
         );
         expect(buttons).toHaveLength(2);
         buttons.forEach((button) => {

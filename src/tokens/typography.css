@@ -277,18 +277,32 @@
     color: hsl(var(--ds-gray-900-value));
 }
 
+/*
+ * Berat huruf <strong> berbeda antara label dan copy, terukur di halaman
+ * Typography live 30 Agu 2026:
+ *   .text-label-* > strong  -> 500, gray-1000
+ *   .text-copy-*  > strong  -> 550, gray-1000
+ *   .text-heading-* > strong -> 500, gray-900 (sudah benar di atas)
+ *   <strong> tanpa kelas induk -> 550, gray-1000
+ * Sebelumnya copy ikut 500 dan strong polos memakai bawaan peramban (700).
+ */
 .text-label-20>strong,
 .text-label-18>strong,
 .text-label-16>strong,
 .text-label-14>strong,
 .text-label-13>strong,
-.text-label-12>strong,
+.text-label-12>strong {
+    font-weight: 500;
+    color: hsl(var(--ds-gray-1000-value));
+}
+
+strong,
 .text-copy-24>strong,
 .text-copy-20>strong,
 .text-copy-18>strong,
 .text-copy-16>strong,
 .text-copy-14>strong,
 .text-copy-13>strong {
-    font-weight: 500;
+    font-weight: 550;
     color: hsl(var(--ds-gray-1000-value));
 }

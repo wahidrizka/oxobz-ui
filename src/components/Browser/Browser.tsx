@@ -47,7 +47,7 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
         }, [address]);
         return (
             <div ref={ref} className={cn(styles.containerQuery, className)} {...props}>
-                <div className={styles.browser} data-oxobz-browser="">
+                <div className={styles.browser}>
                     {/* Header bar */}
                     <div className={styles.header} data-oxobz-browser-header-root="true">
                         {/* Left: traffic lights + nav */}

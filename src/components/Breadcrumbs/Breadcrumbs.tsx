@@ -28,8 +28,6 @@ export interface BreadcrumbProps extends HTMLAttributes<HTMLElement> {
     /** Trail style — text separators or menu pills. Default: 'text'. */
     type?: BreadcrumbType;
 
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
 
     /** Breadcrumb.Item children. */
     children?: ReactNode;
@@ -144,7 +142,6 @@ const BreadcrumbItem = forwardRef<HTMLElement, BreadcrumbItemProps>(
                                 disabled && styles.disabled,
                                 className,
                             )}
-                            data-oxobz-breadcrumbs-item=""
                             disabled={disabled}
                             onClick={onClick}
                             type="button"
@@ -167,7 +164,6 @@ const BreadcrumbItem = forwardRef<HTMLElement, BreadcrumbItemProps>(
                     disabled && styles.disabled,
                     className,
                 )}
-                data-oxobz-breadcrumbs-item=""
                 onClick={disabled ? undefined : onClick}
             >
                 {href && !disabled ? (
@@ -205,7 +201,7 @@ BreadcrumbItem.displayName = 'Breadcrumb.Item';
  */
 const BreadcrumbRoot = forwardRef<HTMLElement, BreadcrumbProps>(
     (
-        { type: variant = 'text', className, children, 'data-version': dataVersion = 'v1', ...rest },
+        { type: variant = 'text', className, children, ...rest },
         ref,
     ) => {
         return (
@@ -215,9 +211,8 @@ const BreadcrumbRoot = forwardRef<HTMLElement, BreadcrumbProps>(
                     ref={ref}
                     aria-label="Breadcrumb"
                     className={cn(className)}
-                    data-oxobz-breadcrumbs=""
-                    data-variant={variant}
-                    data-version={dataVersion}
+                    /* TANPA penanda komponen: nav produksi cuma membawa
+                       aria-label dan kelasnya (terukur 30 Agu 2026). */
                 >
                     {variant === 'menu' ? (
                         <div className={styles.menuWrapper}>{children}</div>

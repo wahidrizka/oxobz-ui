@@ -358,30 +358,13 @@
      * bukan sekadar warna. Daftar ini dibaca dari nilai terhitung di halaman
      * live, bukan dikira-kira.
      */
-    transition:
-        color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        outline-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        text-decoration-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        fill 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        stroke 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        --tw-gradient-from 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        --tw-gradient-via 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        --tw-gradient-to 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        translate 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        scale 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        rotate 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        filter 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        -webkit-backdrop-filter 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        backdrop-filter 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        display 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        content-visibility 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        overlay 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        pointer-events 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Longhand terpisah, seperti produksi: satu durasi dan satu
+       lengkung waktu untuk seluruh daftar properti. Bentuk shorthand
+       berdaftar membuat tiap longhand terhitung berisi sepuluh nilai,
+       dan itu terbaca beda di setiap elemen. */
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /*

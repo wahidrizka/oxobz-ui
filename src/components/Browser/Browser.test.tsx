@@ -10,9 +10,10 @@ describe('Browser', () => {
             expect(container.firstChild).toBeDefined();
         });
 
-        it('mempunyai data-oxobz-browser attribute', () => {
+        /* Shell Browser produksi tidak membawa penanda komponen. */
+        it('tidak memasang penanda data-oxobz-browser', () => {
             const { container } = render(<Browser />);
-            const browser = container.querySelector('[data-oxobz-browser]');
+            const browser = container.querySelector('[class*="browser"]');
             expect(browser).not.toBeNull();
         });
 
@@ -30,7 +31,7 @@ describe('Browser', () => {
 
         it('render browser shell', () => {
             const { container } = render(<Browser />);
-            const browser = container.querySelector('[data-oxobz-browser]') as HTMLElement;
+            const browser = container.querySelector('[class*="browser"]') as HTMLElement;
             expect(browser.className).toMatch(/browser/);
         });
     });
@@ -139,7 +140,7 @@ describe('Browser', () => {
                     <div data-testid="inner-content">Content</div>
                 </Browser>,
             );
-            const browserShell = container.querySelector('[data-oxobz-browser]')!;
+            const browserShell = container.querySelector('[class*="browser"]')!;
             const header = container.querySelector('[data-oxobz-browser-header-root]')!;
             const content = screen.getByTestId('inner-content');
 

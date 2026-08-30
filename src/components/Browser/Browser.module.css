@@ -1,3 +1,10 @@
+/*
+ * Penskalaan memakai properti `scale`, bukan `transform`.
+ *
+ * Produksi memakai utility `scale-[...]` milik Tailwind yang menyetel
+ * properti `scale`, sehingga `transform`-nya tetap `none`. Terukur di
+ * halaman live 30 Agu 2026. Hasil di layar sama, nilainya beda.
+ */
 /* ========================================
  *  Browser CSS Modules
  *
@@ -161,7 +168,7 @@
     align-items: center;
     justify-content: center;
     transition: all 150ms cubic-bezier(0, 0, 0.2, 1);
-    transform: scale(0);
+    scale: 0;
     opacity: 0;
 }
 
@@ -170,7 +177,7 @@
     align-items: center;
     justify-content: center;
     transition: all 150ms cubic-bezier(0, 0, 0.2, 1);
-    transform: scale(1);
+    scale: 1;
     opacity: 1;
 }
 
