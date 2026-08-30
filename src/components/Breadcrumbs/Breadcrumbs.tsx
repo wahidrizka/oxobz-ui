@@ -204,6 +204,30 @@ const BreadcrumbRoot = forwardRef<HTMLElement, BreadcrumbProps>(
         { type: variant = 'text', className, children, ...rest },
         ref,
     ) => {
+        /*
+         * Varian menu TIDAK dibungkus <nav>.
+         *
+         * Terukur di halaman Breadcrumbs live 30 Agu 2026: varian teks
+         * memakai <nav aria-label="Breadcrumb"> berisi <ol>, sedangkan varian
+         * menu cuma satu <div class="flex gap-2 ..."> yang langsung berisi
+         * pemicu-pemicunya. Membungkusnya dengan <nav> membuat satu tingkat
+         * berlebih dan seluruh cabang di bawahnya tidak berpasangan saat
+         * dibandingkan.
+         */
+        if (variant === 'menu') {
+            return (
+                <BreadcrumbContext.Provider value={{ variant }}>
+                    <div
+                        {...rest}
+                        ref={ref as Ref<HTMLDivElement>}
+                        className={cn(styles.menuWrapper, className)}
+                    >
+                        {children}
+                    </div>
+                </BreadcrumbContext.Provider>
+            );
+        }
+
         return (
             <BreadcrumbContext.Provider value={{ variant }}>
                 <nav
@@ -214,11 +238,7 @@ const BreadcrumbRoot = forwardRef<HTMLElement, BreadcrumbProps>(
                     /* TANPA penanda komponen: nav produksi cuma membawa
                        aria-label dan kelasnya (terukur 30 Agu 2026). */
                 >
-                    {variant === 'menu' ? (
-                        <div className={styles.menuWrapper}>{children}</div>
-                    ) : (
-                        <ol className={styles.ol}>{children}</ol>
-                    )}
+                    <ol className={styles.ol}>{children}</ol>
                 </nav>
             </BreadcrumbContext.Provider>
         );

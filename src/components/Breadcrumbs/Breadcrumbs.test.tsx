@@ -89,11 +89,12 @@ describe('Breadcrumb', () => {
                 <BreadcrumbItem>Dashboard</BreadcrumbItem>
             </Breadcrumb>,
         );
-        const root = getRoot(container);
-        expect(root).not.toHaveAttribute('data-variant');
-
+        /* Varian menu tidak dibungkus <nav>: akarnya langsung div.menuWrapper,
+           persis seperti produksi (terukur 30 Agu 2026). */
+        expect(container.querySelector('nav')).not.toBeInTheDocument();
         const wrapper = container.querySelector('.menuWrapper');
         expect(wrapper).toBeInTheDocument();
+        expect(wrapper).toBe(container.firstElementChild);
         expect(container.querySelector('ol')).not.toBeInTheDocument();
 
         const buttons = container.querySelectorAll(
