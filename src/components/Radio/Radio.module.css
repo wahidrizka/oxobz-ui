@@ -41,31 +41,47 @@
 }
 
 /* ── Icon (radio circle) ──────────────────────────────── */
+/*
+ * geistcn generation (live radio page, verified 3 Sep 2026): rounded-full,
+ * not 50%. Transition written as separate longhands so duration and timing
+ * read as SINGLE values (the shorthand list form doubles them). Curve is the
+ * Tailwind `ease-in` cubic-bezier(0.4, 0, 1, 1), NOT the CSS `ease-in`
+ * keyword (cubic-bezier(0.42, 0, 1, 1)). Same values on the standalone radio
+ * and the choicebox-embedded radio.
+ */
 .icon {
     border: 1px solid var(--radio-color);
     background: var(--ds-background-100);
-    border-radius: 50%;
+    border-radius: 2147483647px; /* = rounded-full produksi (Tailwind v4) */
     width: 1rem;
     height: 1rem;
-    /* geistcn July capture: transition-[border-color,background] 200ms ease-in */
-    transition: border-color 0.2s ease-in, background 0.2s ease-in;
+    transition-property: border-color, background;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
     position: relative;
 }
 
-/* Dot — pseudo‑element */
+/* Dot — pseudo‑element.
+ * Produksi memusatkan titik lewat properti `translate` dan menskalakannya lewat
+ * properti `scale` (utility Tailwind), jadi `transform` tetap `none`. Ditulis
+ * sebagai satu `transform: translate() scale()` akan terbaca sebagai matrix dan
+ * beda dari produksi. transition-property = transform,translate,scale,rotate
+ * (utility `transition-transform`). */
 .icon::after {
     content: "";
     background: var(--radio-color);
-    border-radius: 50%;
+    border-radius: 2147483647px; /* = rounded-full produksi (Tailwind v4) */
     width: 0.5rem;
     height: 0.5rem;
-    /* geistcn July capture: after:transition-transform 150ms ease-in */
-    transition: transform 0.15s ease-in;
+    transition-property: transform, translate, scale, rotate;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
     display: block;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0);
+    translate: -50% -50%;
+    scale: 0;
 }
 
 /* ── Focus ring ────────────────────────────────────────── */
@@ -76,5 +92,5 @@
 
 /* ── Dot visible when checked ──────────────────────────── */
 .input:checked+.icon::after {
-    transform: translate(-50%, -50%) scale(1);
+    scale: 1;
 }
