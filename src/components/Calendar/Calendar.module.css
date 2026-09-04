@@ -113,10 +113,14 @@
 .stacked {
     flex-direction: column;
     display: inline-flex;
+    /* Kolom stacked TIDAK memusatkan anaknya. `.hasSelect` memasang
+       align-items:center untuk tata letak baris; di stacked produksi memakai
+       nilai bawaan (normal), jadi dikembalikan di sini. */
+    align-items: normal;
     height: var(--ds-size-medium);
 }
 
-.calendar.stacked[data-size='small'] {
+.calendar.stacked.sizeSmall {
     height: var(--ds-size-small);
 }
 
@@ -141,6 +145,43 @@
 /* No range yet: production swaps text-gray-1000! for text-gray-700!. */
 .triggerPlaceholder {
     color: var(--ds-gray-700);
+}
+
+/*
+ * Hover pemicu = gaya INPUT, bukan gaya tombol secondary. Produksi hanya
+ * menggelapkan garis tepi (gray-400 -> gray-500), latar tetap putih dan warna
+ * teks tetap seperti dasarnya. Tanpa override ini, hover Button secondary
+ * (bg gray-100, teks gray-1000, ring gray-alpha-200) yang menang karena
+ * selektornya lebih kuat, jadi dipakai !important seperti produksi.
+ */
+.trigger[data-hover] {
+    background: var(--ds-background-100) !important;
+    box-shadow: 0 0 0 1px var(--ds-gray-500) !important;
+}
+
+/* Placeholder tetap gray-700 saat hover (override teks gray-1000 secondary). */
+.triggerPlaceholder[data-hover] {
+    color: var(--ds-gray-700) !important;
+}
+
+/* Saat popover terbuka, produksi menaikkan z-index pemicu ke 1. */
+.trigger[data-state='open'] {
+    z-index: 1;
+}
+
+/* Tombol sr-only pertama popover: produksi memberi cursor pointer (bukan
+   default) meski tak terlihat. Kelas tambahan; presence class tetap cocok. */
+.srOnlyButton {
+    cursor: pointer;
+}
+
+/*
+ * Pemicu ukuran small mendapat min-height sebesar tingginya. Terukur di
+ * produksi: HANYA pemicu small yang membawa gaya inline
+ * `min-height:var(--ds-size-small)` (yang medium tidak, min-height-nya auto).
+ */
+.calendar.sizeSmall .trigger {
+    min-height: var(--ds-size-small, 32px);
 }
 
 .triggerIcon {
@@ -196,7 +237,7 @@
     height: var(--ds-size-medium);
 }
 
-.calendar[data-size='small'] .comboboxWrapper {
+.calendar.sizeSmall .comboboxWrapper {
     height: var(--ds-size-small);
 }
 
@@ -232,12 +273,15 @@
     /* Produksi menulis text-left di sini; hanya varian compact yang dibiarkan
        memakai nilai bawaan `start`. */
     text-align: left;
-    cursor: pointer;
+    /* Kursor teks saat diam (ini input teks sungguhan), berubah jadi pointer
+       hanya saat hover. Terukur di produksi: cursor=text (diam), class
+       `hover:cursor-pointer`. */
+    cursor: text;
     white-space: nowrap;
     transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.calendar[data-size='small'] .comboboxInput {
+.calendar.sizeSmall .comboboxInput {
     height: 32px;
     padding: 0 0 0 34px;
 }
@@ -258,6 +302,7 @@
 .comboboxInput:hover:not(:disabled) {
     background: var(--ds-gray-100);
     box-shadow: 0 0 0 1px var(--ds-gray-500);
+    cursor: pointer;
     z-index: 10;
 }
 
@@ -289,12 +334,12 @@
 }
 
 /*
- * Bobot selektornya sengaja dinaikkan. Aturan `.calendar[data-size='small']
+ * Bobot selektornya sengaja dinaikkan. Aturan `.calendar.sizeSmall
  * .comboboxInput` memakai shorthand `padding` dan bobotnya lebih tinggi
  * daripada `.compact .comboboxInput`, sehingga padding 34px sempat menang dan
  * menahan lebar kotak di 34px meski lebarnya sudah disetel 32px.
  */
-.calendar.compact[data-size='small'] .comboboxInput {
+.calendar.compact.sizeSmall .comboboxInput {
     width: var(--ds-size-small);
     padding-left: 8px;
 }
@@ -324,16 +369,20 @@
     top: 11px;
     left: 13px;
     z-index: 10;
+    /* svg beratribut 16, dikecilkan ke 14px (--ds-control-decoration-size)
+       lewat CSS, sama seperti produksi. */
+    width: 14px;
+    height: 14px;
     pointer-events: none;
     color: var(--ds-gray-700);
 }
 
-.calendar[data-size='small'] .comboboxInputPrefix {
+.calendar.sizeSmall .comboboxInputPrefix {
     top: 9px;
     left: 9px;
 }
 
-.calendar[data-size='small'] .comboboxInputSuffix {
+.calendar.sizeSmall .comboboxInputSuffix {
     right: 9px;
 }
 
@@ -345,6 +394,9 @@
     top: 50%;
     right: 12px;
     z-index: 10;
+    /* svg beratribut 16, dikecilkan ke 14px lewat CSS, sama seperti produksi. */
+    width: 14px;
+    height: 14px;
     pointer-events: none;
     color: var(--ds-gray-700);
     /*
@@ -381,6 +433,16 @@
     background: var(--ds-gray-900);
     opacity: 0;
     transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * Di tata letak compact combobox ada di KANAN (tombol di kiri), jadi garisnya
+ * pindah ke tepi KIRI combobox (di antara tombol dan combobox). Terukur di
+ * produksi: `left:1px; right:auto` (bukan right:-1px milik tata letak biasa).
+ */
+.compact .comboboxDivider {
+    left: 1px;
+    right: auto;
 }
 
 .comboboxWrapper[data-open='true'] .comboboxInputSuffix {
@@ -548,7 +610,8 @@
 }
 
 .content {
-    /* Produksi: `rounded-[6px]` pada pembungkus konten popover. */
+    /* Produksi: `relative rounded-[6px]` pada pembungkus konten popover. */
+    position: relative;
     border-radius: 6px;
     --padding: 12px;
     padding: var(--padding);
@@ -581,7 +644,10 @@
     margin-left: -12px;
     margin-right: -12px;
     padding: 10px 12px 0;
-    border-top: 1px solid var(--ds-gray-100);
+    /* Produksi memberi warna gray-100 di KEEMPAT sisi (hanya sisi atas yang
+       lebar 1px terlihat), jadi border-color dipasang menyeluruh. */
+    border: 0 solid var(--ds-gray-100);
+    border-top-width: 1px;
 }
 
 /* In horizontal layout the inputs sit in their own column, no full-bleed border. */
@@ -591,21 +657,19 @@
     border-top: none;
 }
 
-/* space-y-2: 8px between the input groups / Apply / timezone rows... */
-.inputsWrapper > * + * {
-    margin-top: 8px;
+/*
+ * Produksi membungkus keempat baris dalam satu div `space-y-2`. Jaraknya 8px
+ * lahir dari margin-bottom tiap baris kecuali yang terakhir; timezone (baris
+ * terakhir) menambah margin-top 4px (mt-1) sendiri. Terukur dari DOM live:
+ * Start/End/Apply margin-bottom 8px, timezone margin-top 4px margin-bottom 0.
+ * Antar-baris margin-nya kolaps jadi gap tetap 8px.
+ */
+.inputGroups > *:not(:last-child) {
+    margin-bottom: 8px;
 }
 
-/* ...except the timezone row, whose own mt-1 (4px) wins in production. */
-/*
- * Jaraknya 8px, bukan 4px.
- *
- * Di produksi baris ini memang ditulis `mt-1` (4px), TAPI induknya memakai
- * `space-y-2` yang selektornya lebih kuat, sehingga yang berlaku 8px. Terukur:
- * tombol Apply berakhir di 500,5 dan select zona waktu mulai di 508,5.
- */
-.inputsWrapper > .timezoneRow {
-    margin-top: 8px;
+.inputGroups > .timezoneRow {
+    margin-top: 4px;
 }
 
 /* Label wrapper (`mb-1 flex items-center justify-between`). */
@@ -631,7 +695,7 @@
     color: var(--ds-red-700);
 }
 
-/* `block text-[13px] text-gray-900 capitalize mb-0` */
+/* `block text-[13px] text-gray-900 capitalize mb-0 cursor-text` */
 .inputGroupLabel {
     display: block;
     max-width: 100%;
@@ -639,6 +703,7 @@
     font-size: 13px;
     font-weight: 400;
     text-transform: capitalize;
+    cursor: text;
 }
 
 /* Row: `flex gap-2` — date input w-full, time input w-36 (144px). */
@@ -711,6 +776,12 @@
     padding-left: 16px;
 }
 
+/* Label pembungkus select. Sebagai anak flex .timezoneRow ia menyusut ke lebar
+   select. Transisinya terukur `all 0.2s ease` (default) di produksi. */
+.timezoneLabel {
+    transition: all 0.2s;
+}
+
 /*
  * Built-in timezone select — the `geist-ghost` preset: no ring
  * (--themed-border: transparent), text forced gray-800, h-8, px-3 pr-9,
@@ -721,6 +792,9 @@
     position: relative;
     display: flex;
     align-items: center;
+    /* geist-ghost: --themed-fg = accents-5 (#666 = rgb 102), bukan gray-800.
+       Select di dalamnya menimpa dengan !text-gray-800; wrapper tetap accents-5. */
+    color: var(--accents-5);
 }
 
 .timezoneSelect {
@@ -742,14 +816,14 @@
        snapshot); the ellipsis + cap live here, the measurement in
        Calendar.tsx. transition-width mirrors the label's own class. */
     width: var(--tz-width, auto);
-    max-width: 146px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition:
-        width 0.2s,
-        box-shadow 0.2s,
-        color 0.2s;
+    /* Produksi: `transition-[box-shadow,color] duration-200` = SATU durasi untuk
+       kedua properti (bukan per-properti), kurva cubic .4,0,.2,1. */
+    transition-property: box-shadow, color;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .timezoneSelect:hover {
@@ -767,13 +841,166 @@
     display: inline-flex;
     pointer-events: none;
     color: var(--ds-gray-700);
-    transition: color 0.15s ease-in;
+    /* Produksi memakai Tailwind `transition-colors ease-in`: daftar properti
+       warna penuh + kurva cubic .4,0,1,1 (BUKAN kata kunci ease-in). */
+    transition-property: color, background-color, border-color, outline-color,
+        text-decoration-color, fill, stroke, --tw-gradient-from,
+        --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* Ikon chevron dipasang atribut 16 (seperti produksi) tapi dikecilkan ke
+   14px lewat kelas, sama seperti `size-(--ds-control-decoration-size)`. */
+.timezoneChevronIcon {
+    width: var(--ds-control-decoration-size, 14px);
+    height: var(--ds-control-decoration-size, 14px);
+}
+
+/*
+ * Tiap <option> punya kelas (produksi `text-gray-500`), TAPI select memaksa
+ * `[&_option]:text-gray-1000`, jadi warna terhitungnya gray-1000.
+ */
+.timezoneOption {
+    color: var(--ds-gray-1000);
 }
 
 /* Pinned variant — a bare `text-xs text-gray-800` span. */
 .pinnedTimezone {
     color: var(--ds-gray-800);
     font-size: 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mobile (drawer, <=600px) — struktur berbeda dari desktop           */
+/* ------------------------------------------------------------------ */
+/*
+ * Diukur dari halaman live 375px. Ringkas: (a) pemicu TANPA div .calendarRoot
+ * (tombol anak langsung Skeleton), (b) combobox preset jadi <button> polos
+ * (bukan cmdk), (c) kalender ber-preset non-compact menumpuk VERTIKAL
+ * (combobox atas, pemicu bawah) dengan tinggi dikunci satu kontrol — sama
+ * bentuk seperti .stacked, (d) compact tetap horizontal seperti desktop.
+ */
+
+/* Non-compact + presets: kolom vertikal (seperti .stacked). */
+.mobile.hasSelect:not(.compact) {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: normal;
+    height: var(--ds-size-medium);
+}
+
+.mobile.sizeSmall.hasSelect:not(.compact) {
+    height: var(--ds-size-small);
+}
+
+/* Pemicu di bawah combobox → hanya sisi bawahnya yang membulat. */
+.mobile.hasSelect:not(.compact) .trigger {
+    border-radius: 0 0 5px 5px;
+}
+
+/* ---- Combobox mobile: <div> pembungkus + <button> (bukan cmdk) ---- */
+.comboboxMobile {
+    position: relative;
+    display: flex;
+    height: var(--ds-size-medium);
+}
+
+.sizeSmall .comboboxMobile {
+    height: var(--ds-size-small);
+}
+
+/* Tombol combobox mobile — gaya sama dengan .comboboxInput (ring gray-400,
+   bg-100, teks gray-700 14px, px-34), tapi elemennya <button> dan non-compact
+   hanya membulat di atas (combobox di atas pemicu). */
+.comboboxMobileButton {
+    position: relative;
+    width: 100%;
+    height: var(--ds-size-medium);
+    /* padding-left 40px (medium, produksi px-10); small 34px di bawah. */
+    padding: 0 0 0 40px;
+    border: 0 solid var(--ds-gray-200);
+    border-radius: 5px 5px 0 0;
+    background: var(--ds-background-100);
+    background-clip: padding-box;
+    box-shadow: 0 0 0 1px var(--ds-gray-400);
+    color: var(--ds-gray-700);
+    font-family: var(--font-sans, inherit);
+    font-size: 14px;
+    font-weight: 400;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    outline: none;
+    /* Produksi `transition-[box-shadow,border-color,background] duration-150`:
+       tiga properti, satu durasi. Longhand terpisah agar nilainya cocok. */
+    transition-property: box-shadow, border-color, background;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sizeSmall .comboboxMobileButton {
+    height: var(--ds-size-small);
+    padding-left: 34px;
+}
+
+.comboboxMobileButton:hover:not(:disabled) {
+    background: var(--ds-gray-100);
+    box-shadow: 0 0 0 1px var(--ds-gray-500);
+    z-index: 10;
+}
+
+.comboboxMobileButton:focus {
+    box-shadow:
+        0 0 0 1px var(--ds-gray-600),
+        0px 0px 0px 4px rgba(0, 0, 0, 0.16);
+    z-index: 10;
+}
+
+/* Preset terpilih -> teks gray-1000 (produksi). Spesifisitas dinaikkan
+   (0,2,0) agar menang atas `.comboboxMobileButton` yang didefinisikan
+   sesudah `.comboboxInputFilled`. Ditaruh SEBELUM aturan compact agar
+   compact (teks transparan) tetap menang di tata letak itu. */
+.comboboxMobileButton.comboboxInputFilled {
+    color: var(--ds-gray-1000);
+}
+
+/* Compact mobile: combobox di kanan pemicu, menyusut jadi kotak chevron
+   (teks transparan, tanpa padding), hanya membulat kanan. */
+.compact .comboboxMobileButton {
+    border-radius: 0 5px 5px 0;
+    width: var(--ds-size-medium);
+    padding: 0;
+    color: transparent;
+    overflow: hidden;
+}
+
+.compact.sizeSmall .comboboxMobileButton {
+    width: var(--ds-size-small);
+}
+
+/* Ikon combobox mobile — nilai hand-tuned produksi, BEDA per-ukuran (diukur
+   di 375). clock: medium top11/left12 (desktop 11/13), small top8/left9
+   (desktop 9/9). chevron: medium right12 (=desktop, tak dioverride), small
+   right8 (desktop 9). Spesifisitas .calendar.mobile.sizeSmall (0,4,0) menang
+   atas .calendar.sizeSmall (0,3,0). */
+.calendar.mobile .comboboxInputPrefix {
+    left: 12px;
+}
+
+.calendar.mobile.sizeSmall .comboboxInputPrefix {
+    top: 8px;
+    left: 9px;
+}
+
+.calendar.mobile.sizeSmall .comboboxInputSuffix {
+    right: 8px;
+}
+
+/* Compact mobile: garis tepi di kiri 0 (produksi memakai kelas `left-1px`
+   yang tidak valid -> jatuh ke 0), beda dari compact desktop (1px). */
+.mobile.compact .comboboxDivider {
+    left: 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -792,23 +1019,168 @@
  * halaman live membuka drawer pada 600px dan popover pada 601px.
  */
 
+/*
+ * Backdrop: bg-background-200/50 dihitung lewat oklab (persis Tailwind live),
+ * bukan srgb, plus transisi opacity 0.3s kurva cubic-bezier(0.32,0.72,0,1).
+ */
 .drawerBackdrop {
     position: fixed;
     inset: 0;
     z-index: var(--ds-z-modal);
-    background: color-mix(in srgb, var(--ds-background-200) 50%, transparent);
+    background: color-mix(in oklab, var(--ds-background-200) 50%, transparent);
+    transition-property: opacity;
+    transition-duration: 0.3s;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.drawer {
+/*
+ * Viewport: kontainer full-screen (fixed) yang menaruh drawer menempel ke
+ * bawah lewat flex align-items:flex-end. Produksi z-index 300,
+ * pointer-events:none (celah viewport meneruskan klik ke backdrop; drawer
+ * sendiri memasang pointer-events:auto).
+ */
+.drawerViewport {
     position: fixed;
-    inset-inline: 0;
-    bottom: 0;
-    z-index: var(--ds-z-modal);
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    pointer-events: none;
+}
+
+/*
+ * Popup: blok STATIS di dalam Viewport (diposisikan flex-end), bukan fixed.
+ * Flatten kelas produksi: bg-background-100, rounded-t-xl (12px), border-t
+ * gray-alpha-400 (warna border keempat sisi = alpha-400 walau hanya atas yang
+ * berlebar), max-h 90dvh, overflow-y auto, transition-transform 400ms kurva
+ * cubic-bezier(0.32,0.72,0,1), translate-y dari var swipe (0px saat diam).
+ */
+.drawer {
+    position: static;
     width: 100%;
     max-height: 90dvh;
     overflow-y: auto;
-    border-top: 1px solid var(--ds-gray-alpha-400);
+    border: 0 solid var(--ds-gray-alpha-400);
+    border-top-width: 1px;
     border-radius: 12px 12px 0 0;
     background: var(--ds-background-100);
     outline: none;
+    pointer-events: auto;
+    translate: var(--drawer-swipe-movement-y, 0px);
+    transition-property: transform, translate, scale, rotate;
+    transition-duration: 0.4s;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * Handle: pembungkusnya memakai INLINE style di JSX (sticky, top 0, z 10) —
+ * produksi menulis gaya itu inline, bukan lewat class. Anaknya di bawah ini
+ * adalah gradien pudar absolute 24px yang membuat konten memudar di tepi atas
+ * saat tergulir. Bukan bar geser yang terlihat.
+ */
+.drawerHandleGradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 24px;
+    background: linear-gradient(
+        180deg,
+        var(--ds-background-100) 25%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    pointer-events: none;
+}
+
+/*
+ * Judul drawer: disembunyikan sr-only lewat kelas global oxobz-sr-only, gaya
+ * huruf dari text-heading-20; di sini hanya warna dan rata kiri (meniru
+ * text-gray-1000 text-left produksi, terlihat hanya saat konteks .sticky).
+ */
+.drawerTitle {
+    color: var(--ds-gray-1000);
+    text-align: left;
+}
+
+/*
+ * Body drawer: isi (panel) padding 20px, jangkar relative, potong luapan
+ * mendatar, tinggi minimum 500px. Huruf (size 14 / line-height 20 / font
+ * design-system) datang dari kelas global text-copy-14; di sini hanya warna
+ * gray-900 (text-gray-900 produksi).
+ */
+.drawerBody {
+    position: relative;
+    padding: var(--modal-padding, 20px);
+    overflow-x: hidden;
+    min-height: 500px;
+    color: var(--ds-gray-900);
+}
+
+/* Di tema gelap produksi memberi body drawer background-200. */
+:global(.dark-theme) .drawerBody {
+    background: var(--ds-background-200);
+}
+
+/*
+ * Sentinel bayangan gulir setinggi 1px, tak menangkap pointer. Yang atas
+ * absolute di puncak body, yang bawah statis di dasar. Di produksi keduanya
+ * sasaran IntersectionObserver untuk memunculkan bayangan atas/bawah.
+ */
+.scrollSentinelTop {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 1px;
+    pointer-events: none;
+}
+
+.scrollSentinelBottom {
+    width: 100%;
+    height: 1px;
+    pointer-events: none;
+}
+
+/*
+ * Override khusus DRAWER (portal, jadi tak bisa lewat .calendar.mobile).
+ * Produksi drawer memakai urutan kolom NORMAL (input di atas, grid di bawah),
+ * bukan column-reverse popover: tak ada konteks group/popover side=bottom.
+ * Konsekuensinya input berpindah ke atas dengan pembatas di BAWAH: margin
+ * bawah 12, full-bleed -12 mendatar, padding 0 12 12, tanpa border (diukur
+ * lebar border 0 di drawer live).
+ */
+.drawerBody .calendarContentWrapper {
+    flex-direction: column;
+}
+
+.drawerBody .inputsWrapper {
+    margin: 0 -12px 12px;
+    padding: 0 12px 12px;
+    border-top-width: 0;
+}
+
+/*
+ * Di drawer, grid MEWARISI konteks body (warna gray-900, huruf 14/20) seperti
+ * produksi. Komponen grid memasang nilai eksplisit yang pas untuk popover
+ * desktop, jadi di sini judul bulan & tombol caret dikembalikan ke inherit.
+ */
+.drawerBody h2 {
+    color: inherit;
+}
+
+.drawerBody button[aria-label='Previous'],
+.drawerBody button[aria-label='Next'] {
+    font-size: inherit;
+    line-height: inherit;
+}
+
+/*
+ * Select zona waktu di drawer memakai huruf 16/24 (produksi; select lebar
+ * penuh memakai ukuran lebih besar di drawer), termasuk option-nya.
+ */
+.drawerBody .timezoneSelect,
+.drawerBody .timezoneOption {
+    font-size: 16px;
+    line-height: 24px;
 }

@@ -9,6 +9,7 @@ import {
     useRef,
     useState,
     type ChangeEvent,
+    type CSSProperties,
     type HTMLAttributes,
     type KeyboardEvent,
     type ReactNode,
@@ -50,6 +51,57 @@ function useIsSmallScreen(): boolean {
     // Awalnya selalu false supaya render di server dan render pertama di
     // browser sama persis; media query baru dibaca setelah komponen terpasang.
     return kecil;
+}
+
+/*
+ * Kunci gulir halaman saat drawer mobile terbuka.
+ *
+ * Base UI Drawer dengan modal="trap-focus" TIDAK mengunci gulir (di Base UI,
+ * scroll-lock hanya jalan saat modal===true). Produksi Geist memakai util
+ * scroll-lock TERPISAH di atas Base UI Drawer. Diambil apa adanya dari bundel
+ * produksi (chunk 2h38obwtw-sfa.js), sebuah pengunci ber-hitung-acuan yang saat
+ * mengunci menulis ke <html>: overflow:clip, border-right:<lebar scrollbar>px
+ * solid transparent, dan scrollbar-width:none (menghapus gutter sehingga konten
+ * melebar dari 360 ke 375), serta ke <body>: overflow:clip. Semua nilai inline
+ * sebelumnya disimpan dan dikembalikan saat membuka kunci. Hitung-acuan memakai
+ * modul supaya beberapa drawer di satu halaman tidak saling menimpa.
+ */
+let scrollLockCount = 0;
+let savedBodyOverflow = '';
+let savedHtmlOverflow = '';
+let savedHtmlBorderRight = '';
+let savedHtmlScrollbarWidth = '';
+
+function useDrawerScrollLock(active: boolean): void {
+    useEffect(() => {
+        if (!active) return;
+        if (scrollLockCount === 0) {
+            const html = document.documentElement;
+            const body = document.body;
+            savedBodyOverflow = body.style.overflow;
+            savedHtmlOverflow = html.style.overflow;
+            savedHtmlBorderRight = html.style.borderRight;
+            savedHtmlScrollbarWidth = html.style.getPropertyValue('scrollbar-width');
+            const scrollbarWidth = window.innerWidth - html.clientWidth;
+            body.style.overflow = 'clip';
+            html.style.overflow = 'clip';
+            html.style.borderRight = `${scrollbarWidth}px solid transparent`;
+            html.style.setProperty('scrollbar-width', 'none');
+        }
+        scrollLockCount += 1;
+
+        return () => {
+            scrollLockCount -= 1;
+            if (scrollLockCount === 0) {
+                const html = document.documentElement;
+                const body = document.body;
+                body.style.overflow = savedBodyOverflow;
+                html.style.overflow = savedHtmlOverflow;
+                html.style.borderRight = savedHtmlBorderRight;
+                html.style.setProperty('scrollbar-width', savedHtmlScrollbarWidth);
+            }
+        };
+    }, [active]);
 }
 
 export type { DateValue, RangeValue, WeekDayIndex };
@@ -454,7 +506,15 @@ const TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
  */
 function ClockGlyph({ className }: { className?: string }): React.JSX.Element {
     return (
-        <svg viewBox="0 0 16 16" height={14} width={14} aria-hidden="true" className={className}>
+        <svg
+            viewBox="0 0 16 16"
+            height={16}
+            width={16}
+            data-slot="oxobz-icon"
+            data-glyph="circular"
+            style={{ color: 'var(--ds-gray-700)' }}
+            className={className}
+        >
             <path
                 fill="currentColor"
                 d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0m0 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13m.75 6.12 1.7 1.28.6.45-.9 1.2-.6-.45-1.9-1.43a1 1 0 0 1-.4-.8V3.5h1.5z"
@@ -582,7 +642,7 @@ function parsePeriodInput(raw: string, now: Date): RangeValue<Date> | null {
  *
  * Rendered DOM (mirrors the geistcn snapshots in calendar-open.html):
  * ```html
- * <div data-oxobz-calendar-popover data-version="v1" style="--width: 250px">
+ * <div data-oxobz-calendar data-version="v1" style="--width: 250px">
  *   <button data-oxobz-button aria-haspopup="dialog" aria-expanded>Select Date Range</button>
  *   <div role="dialog" data-state="open">
  *     <div class="content">
@@ -594,9 +654,11 @@ function parsePeriodInput(raw: string, now: Date): RangeValue<Date> | null {
  *   </div>
  * </div>
  * ```
- * The outer `data-oxobz-calendar-popover` attribute name is kept as-is
- * (pre-dates this component's public rename to `Calendar`) — this pass
- * corrects props/API only, not already-verified DOM/data-attributes.
+ * The outer marker is `data-oxobz-calendar` (matches production's
+ * `data-geist-calendar`; the earlier `data-oxobz-calendar-popover` was a
+ * leftover from the pre-rename `CalendarPopover` and never existed in
+ * production). Size is conveyed by a class (`.sizeSmall`), not a `data-size`
+ * attribute, because production tags no size attribute on the root.
  */
 const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
     (
@@ -643,6 +705,11 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const [isOpen, setIsOpen] = useState(false);
         const isSmallScreen = useIsSmallScreen();
         const [presetsOpen, setPresetsOpen] = useState(false);
+
+        // Kunci gulir halaman hanya saat drawer mobile benar-benar terbuka,
+        // meniru util scroll-lock terpisah milik produksi (Base UI trap-focus
+        // sendiri tidak mengunci gulir).
+        useDrawerScrollLock(isSmallScreen && isOpen);
 
         /*
          * Timezone the time inputs are rendered in. Seeded from
@@ -727,6 +794,8 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const rootRef = useRef<HTMLDivElement | null>(null);
         const dialogId = useId();
         const listboxId = useId();
+        const tzSelectId = useId();
+        const drawerTitleId = useId();
 
         /*
          * Pembalikan arah popover (buka ke atas saat ruang bawah habis)
@@ -954,6 +1023,12 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             presetEntries.length > 0 && styles.hasSelect,
             compact && styles.compact,
             stacked && styles.stacked,
+            // Size lewat kelas, bukan data-size: produksi tidak memasang atribut
+            // ukuran apa pun di root (diukur), hanya membedakan lewat kelas.
+            small && styles.sizeSmall,
+            // Mobile (drawer, <=600px): tata letak vertikal untuk non-compact +
+            // combobox berbasis tombol. Digate di sini agar desktop tak tersentuh.
+            isSmallScreen && styles.mobile,
             className,
         );
 
@@ -963,8 +1038,13 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * tata letak COMPACT, bukan ukuran small/medium. Terukur di halaman
          * Sizes: baris small yang tidak compact tetap 250px, dan yang compact
          * tetap 180px di kedua baris.
+         *
+         * Di MOBILE (drawer, <=600px) non-compact memakai 100% dan mengisi
+         * lebar kontainer (root `--width:100%; width:100%`), sedangkan compact
+         * tetap 180px/auto seperti desktop. Terukur di halaman live 375px.
          */
-        const widthVar = compact ? '180px' : '250px';
+        const widthVar = compact ? '180px' : isSmallScreen ? '100%' : '250px';
+        const rootWidth = isSmallScreen && !compact ? '100%' : 'auto';
 
         /*
          * ---- Preset combobox (rendered only when presets are supplied) ----
@@ -1006,6 +1086,15 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         spellCheck={false}
                         disabled={disabled}
                         /*
+                         * Atribut yang dibawa combobox produksi apa adanya:
+                         * data-error dari komponen Input Geist, data-state dari
+                         * pemicu popover-nya, dan gaya inline padding-right:0.
+                         * Diukur di DOM live tiap combobox (tertutup).
+                         */
+                        data-error="false"
+                        data-state={presetsOpen ? 'open' : 'closed'}
+                        style={{ paddingRight: 0 }}
+                        /*
                          * Compact tidak punya placeholder sama sekali, dan saat
                          * sebuah preset terpilih produksi menuliskan label
                          * preset itu sebagai placeholder (tertutup nilainya,
@@ -1034,7 +1123,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                      * membuat kotaknya jadi 16px dan svg di dalamnya static.
                      */}
                     {!compact ? <ClockGlyph className={styles.comboboxInputPrefix} /> : null}
-                    <ChevronDown size={14} color="gray-700" className={styles.comboboxInputSuffix} />
+                    {/* Ikon 16px (atribut svg), diperkecil ke 14px lewat CSS
+                        --ds-control-decoration-size, persis produksi. */}
+                    <ChevronDown size={16} color="gray-700" className={styles.comboboxInputSuffix} />
                     {/*
                      * Garis 1px di tepi kanan combobox. Selalu ada, tembus
                      * pandang (opacity 0) sampai dibutuhkan; ukurannya menempel
@@ -1106,6 +1197,39 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             ) : null;
 
         /*
+         * ---- Preset combobox: varian MOBILE (drawer, <=600px) ----
+         * Di layar sempit produksi TIDAK memakai cmdk. Comboboxnya jadi sebuah
+         * <button> polos (teks "Select Period") yang membuka drawer preset,
+         * dibungkus <div> biasa (bukan cmdk-root), plus ikon jam/chevron dan
+         * garis tepi. Diukur dari DOM live 375: button tanpa data-testid/aria,
+         * hanya type=button + gaya inline `text-align:left; padding-right:0`.
+         * Non-compact mengisi lebar (w-full), compact menyusut jadi kotak
+         * chevron (width --ds-size-small, teks transparan).
+         */
+        const presetComboboxMobile: ReactNode =
+            presetEntries.length > 0 ? (
+                <div
+                    className={styles.comboboxMobile}
+                    style={compact ? undefined : { width: 'var(--width)' }}
+                >
+                    <button
+                        type="button"
+                        className={cn(
+                            styles.comboboxMobileButton,
+                            comboText && styles.comboboxInputFilled,
+                        )}
+                        style={{ textAlign: 'left', paddingRight: 0 }}
+                        onClick={() => setIsOpen(true)}
+                    >
+                        {comboText || COMBOBOX_PLACEHOLDER}
+                    </button>
+                    {!compact ? <ClockGlyph className={styles.comboboxInputPrefix} /> : null}
+                    <ChevronDown size={16} color="gray-700" className={styles.comboboxInputSuffix} />
+                    <div aria-hidden="true" className={styles.comboboxDivider} />
+                </div>
+            ) : null;
+
+        /*
          * ---- Trigger button ----
          * Extracted to a variable (rather than inlined in the JSX below) so
          * it can swap render order with `presetCombobox`: production's
@@ -1120,16 +1244,22 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const triggerButton: ReactNode = (
             <Button
                 variant="secondary"
-                typeName="button"
+                typeName="submit"
                 size={small ? 'small' : 'medium'}
                 prefix={<CalendarIcon size={16} color="gray-700" className={styles.triggerIcon} />}
                 disabled={disabled}
-                aria-haspopup="dialog"
-                aria-expanded={isOpen}
-                aria-controls={dialogId}
-                data-state={isOpen ? 'open' : 'closed'}
-                data-testid="calendar/trigger/button"
-                title={TRIGGER_PLACEHOLDER}
+                /*
+                 * Di MOBILE (drawer) produksi TIDAK memasang atribut dialog di
+                 * pemicu: tanpa aria-haspopup/aria-expanded/aria-controls,
+                 * data-state, data-testid, atau title (itu milik pemicu popover
+                 * desktop). Diukur di DOM live 375. Di desktop semua tetap ada.
+                 */
+                aria-haspopup={isSmallScreen ? undefined : 'dialog'}
+                aria-expanded={isSmallScreen ? undefined : isOpen}
+                aria-controls={isSmallScreen ? undefined : dialogId}
+                data-state={isSmallScreen ? undefined : isOpen ? 'open' : 'closed'}
+                data-testid={isSmallScreen ? undefined : 'calendar/trigger/button'}
+                title={isSmallScreen ? undefined : triggerLabel}
                 className={cn(styles.trigger, !range && styles.triggerPlaceholder)}
                 onClick={() => setIsOpen((o) => !o)}
                 onKeyDown={handleTriggerKeyDown}
@@ -1149,6 +1279,13 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          */
         const inputsSection: ReactNode = (
             <div className={styles.inputsWrapper}>
+                {/*
+                 * Produksi membungkus keempat baris (Start / End / Apply /
+                 * timezone) dalam satu div `space-y-2`. Jaraknya lahir dari
+                 * margin-bottom tiap baris (kecuali timezone yang pakai mt-1),
+                 * bukan dari margin-top: lihat `.inputGroups` di CSS.
+                 */}
+                <div className={styles.inputGroups}>
                 <div>
                     <div className={styles.inputGroupHeader}>
                         <label data-version="v1">
@@ -1180,7 +1317,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             onKeyDown={handleTimeKeyDown}
                             className={styles.dateInput}
                             innerWrapperClassName={styles.dateInputWrapper}
-                            data-testid="calendar/input/start-date"
+                            aria-labelledby="start-date"
                         />
                         {showTimeInput ? (
                             <Input
@@ -1188,7 +1325,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 placeholder={timePlaceholder}
                                 value={startTime}
                                 className={styles.timeInput}
-                                data-testid="calendar/input/start-time"
+                                aria-labelledby="time"
                                 error={errors.startTime ? ' ' : undefined}
                                 showErrorMessage={false}
                                 onChange={(e) => {
@@ -1230,7 +1367,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             onKeyDown={handleTimeKeyDown}
                             className={styles.dateInput}
                             innerWrapperClassName={styles.dateInputWrapper}
-                            data-testid="calendar/input/end-date"
+                            aria-labelledby="end-date"
                         />
                         {showTimeInput ? (
                             <Input
@@ -1238,7 +1375,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 placeholder={timePlaceholder}
                                 value={endTime}
                                 className={styles.timeInput}
-                                data-testid="calendar/input/end-time"
+                                aria-labelledby="time"
                                 error={errors.endTime ? ' ' : undefined}
                                 showErrorMessage={false}
                                 onChange={(e) => {
@@ -1265,11 +1402,10 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 <div>
                     <Button
                         variant="secondary"
-                        typeName="button"
+                        typeName="submit"
                         size="small"
                         disabled={disabled}
                         className={styles.applyButton}
-                        data-testid="calendar/apply"
                         onClick={commitTimeInputs}
                     >
                         Apply
@@ -1297,83 +1433,113 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             {pinnedTimezone}
                         </span>
                     ) : (
-                        <div className={styles.timezoneSelectWrapper}>
-                            <select
-                                aria-label="Timezone"
-                                className={styles.timezoneSelect}
-                                style={{ '--tz-width': `${tzWidth}px` } as React.CSSProperties}
-                                value={tzValue}
-                                onChange={handleTimezoneChange}
-                                data-testid="calendar/timezone-select"
+                        /*
+                         * Produksi = komponen Geist Select varian ghost:
+                         * <label for><div data-geist-select><select><span chevron>.
+                         * Select-nya TANPA aria-label (label pembungkus kosong),
+                         * jadi kita tiru persis: label -> div penanda -> select.
+                         */
+                        <label
+                            className={styles.timezoneLabel}
+                            htmlFor={tzSelectId}
+                            data-version="v1"
+                        >
+                            <div
+                                className={styles.timezoneSelectWrapper}
+                                data-oxobz-select=""
+                                data-version="v1"
                             >
-                                {TIMEZONE_OPTIONS.map((tz) => (
-                                    <option key={tz.value} value={tz.value}>
-                                        {tz.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <span className={styles.timezoneSelectChevron}>
-                                {/* 14px, sama seperti ikon hias kontrol lain
-                                    (--ds-control-decoration-size). */}
-                                <ChevronDown size={14} />
-                            </span>
-                        </div>
+                                <select
+                                    id={tzSelectId}
+                                    aria-invalid="false"
+                                    className={styles.timezoneSelect}
+                                    style={{ '--tz-width': `${tzWidth}px` } as React.CSSProperties}
+                                    value={tzValue}
+                                    onChange={handleTimezoneChange}
+                                >
+                                    {TIMEZONE_OPTIONS.map((tz) => (
+                                        <option
+                                            key={tz.value}
+                                            className={styles.timezoneOption}
+                                            value={tz.value}
+                                        >
+                                            {tz.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span className={styles.timezoneSelectChevron}>
+                                    {/* Produksi: <svg height/width=16 class="size-(--ds-control-decoration-size)">
+                                        jadi atribut 16 tapi computed 14px lewat kelas. */}
+                                    <ChevronDown
+                                        size={16}
+                                        className={styles.timezoneChevronIcon}
+                                    />
+                                </span>
+                            </div>
+                        </label>
                     )}
+                </div>
                 </div>
             </div>
         );
 
         /*
-         * Isi panel, dipakai apa adanya baik oleh popover (layar lebar) maupun
-         * drawer (layar sempit). Yang berbeda hanya wadahnya.
+         * Inti panel (input + grid). Pembungkus di sekelilingnya BERBEDA antar
+         * wadah: popover memakai `.content` (relative, rounded 6, padding 12),
+         * drawer memakai <div> polos (kotak & padding disediakan body drawer).
+         */
+        const panelInner = (
+            <div
+                className={
+                    horizontalLayout
+                        ? styles.calendarContentWrapperHorizontal
+                        : styles.calendarContentWrapper
+                }
+            >
+                {inputsSection}
+                <CalendarGrid
+                    value={range}
+                    onChange={applyRange}
+                    minValue={minValue}
+                    maxValue={maxValue}
+                    isDateUnavailable={isDateUnavailable}
+                    weekStartsOn={weekStartsOn}
+                    defaultFocusedMonth={range?.start}
+                    autoFocus
+                />
+            </div>
+        );
+
+        /*
+         * Panel POPOVER (desktop): diawali tombol kosong khusus pembaca layar,
+         * anak PERTAMA popover. Produksi menuliskannya persis begini: <button
+         * type="button" class="sr-only"></button>, jadi sasaran fokus pertama.
+         * Drawer produksi TIDAK memakai tombol ini (diukur di DOM live 375).
          */
         const panel = (
             <>
-                {/*
-                 * Tombol kosong khusus pembaca layar, anak PERTAMA popover.
-                 * Produksi menuliskannya persis begini: <button type="button"
-                 * class="sr-only"></button>. Ia menjadi sasaran fokus pertama
-                 * begitu popover terbuka.
-                 */}
-                <button type="button" className="oxobz-sr-only" />
-            <div className={styles.content}>
-                <div
-                    className={
-                        horizontalLayout
-                            ? styles.calendarContentWrapperHorizontal
-                            : styles.calendarContentWrapper
-                    }
-                >
-                    {inputsSection}
-                    <CalendarGrid
-                        value={range}
-                        onChange={applyRange}
-                        minValue={minValue}
-                        maxValue={maxValue}
-                        isDateUnavailable={isDateUnavailable}
-                        weekStartsOn={weekStartsOn}
-                        defaultFocusedMonth={range?.start}
-                        autoFocus
-                    />
-                </div>
-            </div>
+                <button
+                    type="button"
+                    className={cn('oxobz-sr-only', styles.srOnlyButton)}
+                />
+                <div className={styles.content}>{panelInner}</div>
             </>
         );
 
         /*
-         * Tombol pemicu selalu dibungkus DUA lapis, sama seperti produksi:
-         * Skeleton (span data-testid="legacy/skeleton", lebarnya var(--width))
-         * lalu sebuah div `relative inline-flex` yang di produksi bernama
-         * `group/calendar`.
-         *
-         * Lapisan ini bukan hiasan. Pada tata letak stacked, pembungkus luarnya
-         * dikunci setinggi satu kontrol, dan tanpa dua lapis ini tombol menjadi
-         * anak flex langsung lalu MENGERUT dari 36px jadi 21px. Dua div itulah
-         * yang menahan tingginya.
+         * Tombol pemicu dibungkus Skeleton (span data-testid="legacy/skeleton",
+         * lebarnya var(--width)). Di DESKTOP ada satu lapis lagi: div
+         * `relative inline-flex` (produksi `group/calendar`) yang menahan tinggi
+         * pada tata letak stacked dan jadi jangkar popover. Di MOBILE (drawer)
+         * produksi TIDAK memakai lapis ini — tombolnya anak langsung Skeleton.
          */
         const pemicuTerbungkus = (
             <Skeleton show={skeleton} style={{ width: 'var(--width)' }}>
-                <div className={styles.calendarRoot}>{triggerButton}</div>
+                {isSmallScreen ? (
+                    triggerButton
+                ) : (
+                    <div className={styles.calendarRoot}>{triggerButton}</div>
+                )}
             </Skeleton>
         );
 
@@ -1386,20 +1552,19 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     else if (ref) ref.current = node;
                 }}
                 className={wrapperClasses}
-                data-oxobz-calendar-popover=""
+                data-oxobz-calendar=""
                 data-version={dataVersion}
-                data-size={size}
                 data-disabled={disabled || undefined}
-                style={{ '--width': widthVar, width: 'auto', ...rest.style } as React.CSSProperties}
+                style={{ '--width': widthVar, width: rootWidth, ...rest.style } as React.CSSProperties}
             >
                 {compact ? (
                     <>
                         {pemicuTerbungkus}
-                        {presetCombobox}
+                        {isSmallScreen ? presetComboboxMobile : presetCombobox}
                     </>
                 ) : (
                     <>
-                        {presetCombobox}
+                        {isSmallScreen ? presetComboboxMobile : presetCombobox}
                         {pemicuTerbungkus}
                     </>
                 )}
@@ -1428,18 +1593,89 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * data-base-ui-focusable dan data-swipe-direction="down").
          */
         if (isSmallScreen) {
+            /*
+             * Struktur drawer produksi (DOM live 375): Portal > Backdrop +
+             * Viewport(presentation) > Popup(dialog) yang berisi handle geser,
+             * judul <h3> "Select Date Range", lalu body pembungkus panel. Judul
+             * memberi nama dialog via aria-labelledby (bukan aria-label). Penanda
+             * data-oxobz-modal(-title/-body) menormalkan ke data-ds-modal seperti
+             * data-geist-modal produksi.
+             *
+             * modal="trap-focus" (bukan default true): forensik bundel produksi
+             * (chunk 2h38obwtw-sfa.js) membuktikan Geist memakai nilai ini. Di
+             * Base UI, InternalBackdrop hanya dirender saat modal===true strict,
+             * dan scroll-lock hanya aktif saat open && modal===true. Nilai
+             * "trap-focus" mematikan keduanya (produksi cuma punya Backdrop +
+             * Viewport, tanpa InternalBackdrop terpisah, dan tanpa kompensasi
+             * scrollbar) sambil tetap menjebak fokus.
+             */
             return (
-                <Drawer.Root open={isOpen} onOpenChange={setIsOpen}>
+                <Drawer.Root open={isOpen} onOpenChange={setIsOpen} modal="trap-focus">
                     {kontrol}
                     <Drawer.Portal>
                         <Drawer.Backdrop className={styles.drawerBackdrop} />
-                        <Drawer.Popup
-                            id={dialogId}
-                            aria-label="Choose date range"
-                            className={styles.drawer}
-                        >
-                            {panel}
-                        </Drawer.Popup>
+                        <Drawer.Viewport className={styles.drawerViewport}>
+                            <Drawer.Popup
+                                id={dialogId}
+                                aria-labelledby={drawerTitleId}
+                                data-oxobz-modal=""
+                                className={styles.drawer}
+                            >
+                                {/* Pembungkus handle: produksi memakai INLINE
+                                    style (bukan class) — sticky, top 0, z 10. */}
+                                <div
+                                    style={{
+                                        position: 'sticky',
+                                        top: 0,
+                                        zIndex: 10,
+                                    }}
+                                >
+                                    <div className={styles.drawerHandleGradient} />
+                                </div>
+                                <h3
+                                    id={drawerTitleId}
+                                    data-oxobz-modal-title=""
+                                    className={cn(
+                                        'text-heading-20',
+                                        'oxobz-sr-only',
+                                        styles.drawerTitle,
+                                    )}
+                                >
+                                    Select Date Range
+                                </h3>
+                                <div
+                                    data-oxobz-modal-body=""
+                                    className={cn(
+                                        'text-copy-14',
+                                        styles.drawerBody,
+                                    )}
+                                    style={
+                                        {
+                                            '--modal-padding': '20px',
+                                        } as CSSProperties
+                                    }
+                                >
+                                    {/* Pembungkus polos (live [2/0]): kotak &
+                                        padding ada di body drawer, bukan di
+                                        sini. */}
+                                    <div>{panelInner}</div>
+                                    {/*
+                                     * Dua sentinel setinggi 1px (sasaran
+                                     * IntersectionObserver bayangan gulir),
+                                     * persis DOM live: atas absolute, bawah
+                                     * statis; aria-hidden, pointer-events-none.
+                                     */}
+                                    <div
+                                        aria-hidden="true"
+                                        className={styles.scrollSentinelTop}
+                                    />
+                                    <div
+                                        aria-hidden="true"
+                                        className={styles.scrollSentinelBottom}
+                                    />
+                                </div>
+                            </Drawer.Popup>
+                        </Drawer.Viewport>
                     </Drawer.Portal>
                 </Drawer.Root>
             );
@@ -1459,10 +1695,10 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 <Popover.Portal>
                     <Popover.Content
                         id={dialogId}
-                        aria-label="Choose date range"
                         side="bottom"
                         align={popoverAlignment}
                         sideOffset={8}
+                        collisionPadding={16}
                         className={cn(styles.popover, horizontalLayout && styles.popoverHorizontal)}
                         onKeyDown={handleTriggerKeyDown}
                     >

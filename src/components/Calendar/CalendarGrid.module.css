@@ -45,12 +45,12 @@
  * memisahkannya dari tabel dengan elemen kosong setinggi 8px (lihat
  * .headerSpacer), bukan dengan margin-bottom.
  */
+/* Margin -3px 0 dipasang inline (produksi juga inline), bukan di sini. */
 .header {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin: -3px 0;
 }
 
 /* Pemisah 8px antara header dan tabel (produksi: <span class="h-2 block">). */
@@ -118,12 +118,38 @@
        ke `text-base`: 16px dengan tinggi baris 24px. */
     font-size: 16px;
     line-height: 24px;
+    /*
+     * Panah produksi = tombol POLOS: teks bisa diseleksi (auto), tanpa batas
+     * lebar, tanpa translate, dan TANPA transisi (durasi 0). Semua ini
+     * menimpa gaya dasar Button (user-select:none, max-w-full, translate,
+     * transisi 0.15s).
+     */
+    user-select: auto;
+    max-width: none;
+    translate: none;
+    transition-duration: 0s;
+    transition-timing-function: ease;
 }
 
 /* Panah kiri didorong ke kanan oleh margin-left auto (produksi memakainya
    sebagai gaya inline). */
 .caretButtonPrev {
     margin-left: auto;
+}
+
+/*
+ * Ikon panah. Produksi: keduanya `shrink-0`; panah KIRI juga
+ * `size-(--ds-control-decoration-size)` (atribut 16 tapi computed 14), panah
+ * KANAN tetap 16. Atribut svg dipasang 16 di TSX, kelas ini yang mengecilkan.
+ */
+.navIcon {
+    flex-shrink: 0;
+}
+
+.navIconPrev {
+    flex-shrink: 0;
+    width: var(--ds-control-decoration-size, 14px);
+    height: var(--ds-control-decoration-size, 14px);
 }
 
 .caretButton[data-oxobz-button]:hover:not(:disabled) {
@@ -152,22 +178,27 @@
     table-layout: fixed;
 }
 
-.table thead,
-.table tbody {
+/*
+ * thead / tbody / tr diberi kelas sendiri (bukan selektor turunan) supaya tiap
+ * elemen punya atribut class seperti produksi (`block`, `flex flex-nowrap
+ * my-2`). Nilai terhitungnya sama, hanya bentuk atributnya yang disamakan.
+ */
+.thead {
     display: block;
 }
 
-.table tbody {
+.tbody {
+    display: block;
     margin-top: 14.5px;
 }
 
-.table tr {
+.row {
     display: flex;
     flex-wrap: nowrap;
     margin: 8px 0;
 }
 
-.table tr:last-of-type {
+.row:last-of-type {
     margin-bottom: 0;
 }
 

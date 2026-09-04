@@ -8,29 +8,48 @@ import { Calendar, type CalendarPresets } from './Calendar';
 const JULY_2026 = new Date(2026, 6, 1);
 
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-calendar]');
+    // Calendar chrome marks its root with data-oxobz-calendar; the internal
+    // CalendarGrid root is plain (production has no marker there), so fall back
+    // to the first rendered element for standalone CalendarGrid renders.
+    return (
+        container.querySelector('[data-oxobz-calendar]') ?? container.firstElementChild
+    );
 }
 
 function day(container: HTMLElement, iso: string) {
-    return container.querySelector<HTMLSpanElement>(`[data-date="${iso}"]`);
+    return container.querySelector<HTMLSpanElement>(`[data-testid="calendar/cell/date-${Number(iso.slice(8, 10))}"]`);
 }
+
+/*
+ * The Start/End date+time inputs, the Apply button, and the timezone select no
+ * longer carry data-testid (production output does not), so tests locate them
+ * by the same stable, production-matching attributes: aria-labelledby on the
+ * inputs, the accessible role/name for Apply, and the sole native <select> for
+ * the timezone. The popover portals to document.body, so these scan the whole
+ * document rather than a render container.
+ */
+const startDateInput = () =>
+    document.querySelector('input[aria-labelledby="start-date"]') as HTMLInputElement | null;
+const endDateInput = () =>
+    document.querySelector('input[aria-labelledby="end-date"]') as HTMLInputElement | null;
+const timeInputs = () =>
+    Array.from(document.querySelectorAll('input[aria-labelledby="time"]')) as HTMLInputElement[];
+const startTimeInput = () => timeInputs()[0] ?? null;
+const endTimeInput = () => timeInputs()[1] ?? null;
+const timezoneSelect = () => document.querySelector('select') as HTMLSelectElement | null;
+const applyButton = () => screen.getByRole('button', { name: /Apply/ });
 
 describe('CalendarGrid', () => {
     // ── Rendering ──
 
-    it('renders a root with data-oxobz-calendar and data-version="v1"', () => {
+    it('renders a plain root wrapping the grid (production marks no attributes there)', () => {
         const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
-        expect(root).toHaveAttribute('data-version', 'v1');
-        expect(root?.className).toContain('contentWrapper');
-    });
-
-    it('allows a custom data-version', () => {
-        const { container } = render(
-            <CalendarGrid data-version="v2" defaultFocusedMonth={JULY_2026} />,
-        );
-        expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
+        // Production's grid root carries no data-oxobz-calendar / data-version /
+        // data-size (the Calendar chrome root holds the marker instead).
+        expect(root).not.toHaveAttribute('data-oxobz-calendar');
+        expect(root?.querySelector('table[role="grid"]')).toBeInTheDocument();
     });
 
     it('renders the month/year title', () => {
@@ -150,8 +169,11 @@ describe('CalendarGrid', () => {
             const cell = day(container, `2026-07-${d}`)?.closest('td');
             expect(cell).toHaveAttribute('aria-selected', 'true');
         }
-        expect(day(container, '2026-07-09')?.closest('td')).not.toHaveAttribute(
+        // Production sets aria-selected on every cell (false when unselected),
+        // not only on the selected band.
+        expect(day(container, '2026-07-09')?.closest('td')).toHaveAttribute(
             'aria-selected',
+            'false',
         );
         expect(day(container, '2026-07-10')?.className).toContain('selected');
         expect(day(container, '2026-07-11')?.className).toContain('inRange');
@@ -228,7 +250,7 @@ describe('CalendarGrid', () => {
     };
 
     const fokuskanSel = (container: HTMLElement, iso: string) => {
-        const sel = container.querySelector(`[data-date="${iso}"]`) as HTMLElement;
+        const sel = container.querySelector(`[data-testid="calendar/cell/date-${Number(iso.slice(8, 10))}"]`) as HTMLElement;
         sel.focus();
         return sel;
     };
@@ -244,9 +266,9 @@ describe('CalendarGrid', () => {
         );
         fokuskanSel(container, '2026-07-10');
         tekanTombol('ArrowRight');
-        expect(document.activeElement).toHaveAttribute('data-date', '2026-07-11');
+        expect(document.activeElement).toHaveAttribute('data-testid', 'calendar/cell/date-11');
         tekanTombol('ArrowDown');
-        expect(document.activeElement).toHaveAttribute('data-date', '2026-07-18');
+        expect(document.activeElement).toHaveAttribute('data-testid', 'calendar/cell/date-18');
     });
 
     it('jumps a month with PageDown', () => {
@@ -293,29 +315,30 @@ describe('CalendarGrid', () => {
     it('exposes exactly one tabbable day (roving tabindex)', () => {
         const { container } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
         const tabbable = container.querySelectorAll(
-            '[data-date][tabindex="0"]',
+            '[data-testid^="calendar/cell/date-"][tabindex="0"]',
         );
         expect(tabbable).toHaveLength(1);
     });
 
     // ── size ──
 
-    it('reflects the size prop as data-size', () => {
+    it('accepts the size prop without changing the plain root', () => {
+        // Production reflects size on the Calendar chrome (class), not on the
+        // grid root, so the grid root stays plain regardless of size.
         const { container } = render(
             <CalendarGrid defaultFocusedMonth={JULY_2026} size="small" />,
         );
-        expect(getRoot(container)).toHaveAttribute('data-size', 'small');
+        expect(getRoot(container)).not.toHaveAttribute('data-size');
     });
 
     // ── Custom className ──
 
-    it('appends a custom className after the module class', () => {
+    it('puts a custom className on the plain root', () => {
         const { container } = render(
             <CalendarGrid className="custom-cal" defaultFocusedMonth={JULY_2026} />,
         );
         const root = getRoot(container);
-        expect(root?.className).toContain('contentWrapper');
-        expect(root?.className.endsWith('custom-cal')).toBe(true);
+        expect(root?.className).toContain('custom-cal');
     });
 
     // ── Ref forwarding ──
@@ -324,7 +347,7 @@ describe('CalendarGrid', () => {
         const ref = createRef<HTMLDivElement>();
         render(<CalendarGrid ref={ref} defaultFocusedMonth={JULY_2026} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-calendar');
+        expect(ref.current?.querySelector('table[role="grid"]')).toBeInTheDocument();
     });
 
     // ── displayName ──
@@ -362,9 +385,9 @@ function trigger() {
 describe('Calendar', () => {
     // ── Trigger rendering ──
 
-    it('renders a root with data-oxobz-calendar-popover and data-version="v1"', () => {
+    it('renders a root with data-oxobz-calendar and data-version="v1"', () => {
         const { container } = render(<Calendar />);
-        const root = container.querySelector('[data-oxobz-calendar-popover]');
+        const root = container.querySelector('[data-oxobz-calendar]');
         expect(root).toBeInTheDocument();
         expect(root).toHaveAttribute('data-version', 'v1');
     });
@@ -482,7 +505,7 @@ describe('Calendar', () => {
     it('shows time inputs by default (showTimeInput defaults to true)', () => {
         render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        const startTime = startTimeInput() as HTMLInputElement;
         expect(startTime).toBeInTheDocument();
         /*
          * Jam ditampilkan mengikuti locale pembaca, persis seperti produksi:
@@ -507,8 +530,8 @@ describe('Calendar', () => {
         const end = new Date(Date.UTC(2026, 6, 1, 12, 0));
         render(<Calendar value={{ start, end }} pinnedTimezone="UTC" />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
-        const endTime = screen.getByTestId('calendar/input/end-time') as HTMLInputElement;
+        const startTime = startTimeInput() as HTMLInputElement;
+        const endTime = endTimeInput() as HTMLInputElement;
         expect(startTime.value).toMatch(/^(00[:.]00|12[:.]00\s?AM)$/i);
         expect(endTime.value).toMatch(/^(12[:.]00|12[:.]00\s?PM)$/i);
     });
@@ -517,9 +540,9 @@ describe('Calendar', () => {
         const start = new Date(Date.UTC(2026, 6, 1, 0, 0));
         render(<Calendar value={{ start, end: start }} />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        const startTime = startTimeInput() as HTMLInputElement;
         const sebelum = startTime.value;
-        fireEvent.change(screen.getByTestId('calendar/timezone-select'), {
+        fireEvent.change(timezoneSelect(), {
             target: { value: 'UTC' },
         });
         // Di UTC nilainya pasti tengah malam; kalau runner-nya memang sudah
@@ -531,7 +554,7 @@ describe('Calendar', () => {
     it('sizes the timezone select the way production does (character count)', () => {
         render(<Calendar />);
         fireEvent.click(trigger());
-        const select = screen.getByTestId('calendar/timezone-select');
+        const select = timezoneSelect();
         fireEvent.change(select, { target: { value: 'UTC' } });
         // "UTC" tepat 3 karakter, jadi produksi memberinya 54px.
         expect(select.getAttribute('style')).toContain('--tz-width: 54px');
@@ -545,7 +568,7 @@ describe('Calendar', () => {
         const end = new Date(2026, 6, 1, 23, 59);
         render(<Calendar value={{ start, end }} onChange={onChange} />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time');
+        const startTime = startTimeInput();
         fireEvent.change(startTime, { target: { value: '1:30PM' } });
         fireEvent.keyDown(startTime, { key: 'Enter' });
         expect(onChange).toHaveBeenCalled();
@@ -568,7 +591,7 @@ describe('Calendar', () => {
     it('lets the date inputs be typed into', () => {
         render(<Calendar value={rentang} />);
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
+        const startDate = startDateInput() as HTMLInputElement;
         expect(startDate.readOnly).toBe(false);
         expect(startDate.value).toBe('Jul 1, 2026');
     });
@@ -576,13 +599,13 @@ describe('Calendar', () => {
     it('stays quiet while typing and only complains on Enter', () => {
         render(<Calendar value={rentang} />);
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date');
+        const startDate = startDateInput();
         fireEvent.change(startDate, { target: { value: 'ngawur' } });
         expect(screen.queryByText('Invalid date format')).not.toBeInTheDocument();
         fireEvent.keyDown(startDate, { key: 'Enter' });
         expect(screen.getByText('Invalid date format')).toBeInTheDocument();
         expect(startDate).toHaveAttribute('aria-invalid', 'true');
-        expect(screen.getByTestId('calendar/input/end-date')).toHaveAttribute(
+        expect(endDateInput()).toHaveAttribute(
             'aria-invalid',
             'false',
         );
@@ -591,7 +614,7 @@ describe('Calendar', () => {
     it('clears the message as soon as the field is edited again', () => {
         render(<Calendar value={rentang} />);
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date');
+        const startDate = startDateInput();
         fireEvent.change(startDate, { target: { value: 'ngawur' } });
         fireEvent.keyDown(startDate, { key: 'Enter' });
         expect(screen.getByText('Invalid date format')).toBeInTheDocument();
@@ -603,7 +626,7 @@ describe('Calendar', () => {
         const onChange = vi.fn();
         render(<Calendar value={rentang} onChange={onChange} />);
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
+        const startDate = startDateInput() as HTMLInputElement;
         // Bentuk panjang juga diterima, lalu ditulis ulang jadi bentuk pendek.
         fireEvent.change(startDate, { target: { value: 'July 2, 2026' } });
         fireEvent.keyDown(startDate, { key: 'Enter' });
@@ -617,7 +640,7 @@ describe('Calendar', () => {
         const onChange = vi.fn();
         render(<Calendar value={rentang} onChange={onChange} />);
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date');
+        const startDate = startDateInput();
         fireEvent.change(startDate, { target: { value: 'Jul 9, 2026' } });
         fireEvent.keyDown(startDate, { key: 'Enter' });
         expect(screen.getByText('Start date cannot be after end date')).toBeInTheDocument();
@@ -634,7 +657,7 @@ describe('Calendar', () => {
             />,
         );
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date');
+        const startDate = startDateInput();
         fireEvent.change(startDate, { target: { value: 'Jun 1, 2026' } });
         fireEvent.keyDown(startDate, { key: 'Enter' });
         expect(screen.getByText('Outside of allowed range')).toBeInTheDocument();
@@ -644,7 +667,7 @@ describe('Calendar', () => {
     it('reports unreadable time text', () => {
         render(<Calendar value={rentang} />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time');
+        const startTime = startTimeInput();
         fireEvent.change(startTime, { target: { value: '99:99' } });
         fireEvent.keyDown(startTime, { key: 'Enter' });
         expect(screen.getByText('Invalid time format')).toBeInTheDocument();
@@ -653,7 +676,7 @@ describe('Calendar', () => {
     it('renders date inputs reflecting the selected range', () => {
         render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         fireEvent.click(trigger());
-        const startDate = screen.getByTestId('calendar/input/start-date') as HTMLInputElement;
+        const startDate = startDateInput() as HTMLInputElement;
         // No leading zero on the day — snapshot value format "Jul 4, 2026"
         // (only the static placeholder is the zero-padded "Jan 01, 2025").
         expect(startDate.value).toBe('Jul 4, 2026');
@@ -674,7 +697,7 @@ describe('Calendar', () => {
     it('renders the built-in ghost timezone select with exactly UTC + Local options', () => {
         render(<Calendar />);
         fireEvent.click(trigger());
-        const select = screen.getByTestId('calendar/timezone-select') as HTMLSelectElement;
+        const select = timezoneSelect() as HTMLSelectElement;
         expect(select.className).toContain('timezoneSelect');
         const options = Array.from(select.options).map((o) => o.value);
         expect(options[0]).toBe('UTC');
@@ -761,17 +784,11 @@ describe('Calendar', () => {
         );
     });
 
-    it('sizes the combobox with the calendar (data-size drives medium 36px vs small 32px styling)', () => {
+    it('sizes the combobox with the calendar (sizeSmall class drives medium 36px vs small 32px styling)', () => {
         const { container, rerender } = render(<Calendar presets={PRESETS} />);
-        expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
-            'data-size',
-            'medium',
-        );
+        expect(container.querySelector('[data-oxobz-calendar]')?.className).not.toContain('sizeSmall');
         rerender(<Calendar presets={PRESETS} size="small" />);
-        expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
-            'data-size',
-            'small',
-        );
+        expect(container.querySelector('[data-oxobz-calendar]')?.className).toContain('sizeSmall');
     });
 
     /*
@@ -803,10 +820,10 @@ describe('Calendar', () => {
     it('hides only the time sub-inputs when showTimeInput={false}, keeping the date row', () => {
         render(<Calendar showTimeInput={false} />);
         fireEvent.click(trigger());
-        expect(screen.queryByTestId('calendar/input/start-time')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('calendar/input/end-time')).not.toBeInTheDocument();
-        expect(screen.getByTestId('calendar/input/start-date')).toBeInTheDocument();
-        expect(screen.getByTestId('calendar/input/end-date')).toBeInTheDocument();
+        expect(startTimeInput()).not.toBeInTheDocument();
+        expect(endTimeInput()).not.toBeInTheDocument();
+        expect(startDateInput()).toBeInTheDocument();
+        expect(endDateInput()).toBeInTheDocument();
     });
 
     // ── Apply (commits typed Start/End time onto the range) ──
@@ -817,7 +834,7 @@ describe('Calendar', () => {
     it('renders an Apply button with an Enter-key hint below the End row', () => {
         render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} />);
         fireEvent.click(trigger());
-        const apply = screen.getByTestId('calendar/apply');
+        const apply = applyButton();
         expect(apply).toHaveTextContent('Apply');
         expect(apply).toHaveTextContent('↵');
     });
@@ -825,24 +842,24 @@ describe('Calendar', () => {
     it('still renders Apply when showTimeInput is false (matches every surveyed popover, not gated on time inputs)', () => {
         render(<Calendar showTimeInput={false} />);
         fireEvent.click(trigger());
-        expect(screen.getByTestId('calendar/apply')).toBeInTheDocument();
+        expect(applyButton()).toBeInTheDocument();
     });
 
     it('still renders Apply with pinnedTimezone', () => {
         render(<Calendar pinnedTimezone="America/Los_Angeles" />);
         fireEvent.click(trigger());
-        expect(screen.getByTestId('calendar/apply')).toBeInTheDocument();
+        expect(applyButton()).toBeInTheDocument();
     });
 
     it('commits typed Start/End time onto the range on Apply click, without closing the popover', () => {
         const onChange = vi.fn();
         render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} onChange={onChange} />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
-        const endTime = screen.getByTestId('calendar/input/end-time') as HTMLInputElement;
+        const startTime = startTimeInput() as HTMLInputElement;
+        const endTime = endTimeInput() as HTMLInputElement;
         fireEvent.change(startTime, { target: { value: '09:30' } });
         fireEvent.change(endTime, { target: { value: '17:45' } });
-        fireEvent.click(screen.getByTestId('calendar/apply'));
+        fireEvent.click(applyButton());
 
         expect(onChange).toHaveBeenCalledTimes(1);
         const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
@@ -860,7 +877,7 @@ describe('Calendar', () => {
         const onChange = vi.fn();
         render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} onChange={onChange} />);
         fireEvent.click(trigger());
-        const startTime = screen.getByTestId('calendar/input/start-time') as HTMLInputElement;
+        const startTime = startTimeInput() as HTMLInputElement;
         fireEvent.change(startTime, { target: { value: '08:15' } });
         fireEvent.keyDown(startTime, { key: 'Enter' });
 
@@ -882,7 +899,7 @@ describe('Calendar', () => {
         const onChange = vi.fn();
         render(<Calendar onChange={onChange} />);
         fireEvent.click(trigger());
-        fireEvent.click(screen.getByTestId('calendar/apply'));
+        fireEvent.click(applyButton());
         expect(onChange).toHaveBeenCalledTimes(1);
         const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
         const hariIni = new Date();
@@ -897,7 +914,7 @@ describe('Calendar', () => {
     it('always renders the built-in UTC / Local timezone select when no pinnedTimezone is given', () => {
         render(<Calendar />);
         fireEvent.click(trigger());
-        expect(screen.getByTestId('calendar/timezone-select')).toBeInTheDocument();
+        expect(timezoneSelect()).toBeInTheDocument();
         expect(screen.getByRole('option', { name: 'UTC' })).toBeInTheDocument();
         const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         expect(screen.getByRole('option', { name: `Local (${localTz})` })).toBeInTheDocument();
@@ -906,8 +923,8 @@ describe('Calendar', () => {
     it('still renders the timezone select when showTimeInput is false (horizontalLayout demo)', () => {
         render(<Calendar horizontalLayout showTimeInput={false} />);
         fireEvent.click(trigger());
-        expect(screen.getByTestId('calendar/timezone-select')).toBeInTheDocument();
-        expect(screen.queryByTestId('calendar/input/start-time')).not.toBeInTheDocument();
+        expect(timezoneSelect()).toBeInTheDocument();
+        expect(startTimeInput()).not.toBeInTheDocument();
     });
 
     it('renders pinnedTimezone as read-only text instead of the select', () => {
@@ -916,7 +933,7 @@ describe('Calendar', () => {
         expect(screen.getByTestId('calendar/pinned-timezone')).toHaveTextContent(
             'America/Los_Angeles',
         );
-        expect(screen.queryByTestId('calendar/timezone-select')).not.toBeInTheDocument();
+        expect(timezoneSelect()).not.toBeInTheDocument();
     });
 
     // ── allowClear ──
@@ -937,14 +954,14 @@ describe('Calendar', () => {
 
     it('applies the compact layout class', () => {
         const { container } = render(<Calendar compact presets={PRESETS} />);
-        expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
+        expect(container.querySelector('[data-oxobz-calendar]')?.className).toContain(
             'compact',
         );
     });
 
     it('applies the stacked layout class', () => {
         const { container } = render(<Calendar stacked presets={PRESETS} />);
-        expect(container.querySelector('[data-oxobz-calendar-popover]')?.className).toContain(
+        expect(container.querySelector('[data-oxobz-calendar]')?.className).toContain(
             'stacked',
         );
     });
@@ -1049,12 +1066,9 @@ describe('Calendar', () => {
 
     // ── size ──
 
-    it('reflects the size prop as data-size', () => {
+    it('reflects the size prop as the sizeSmall class', () => {
         const { container } = render(<Calendar size="small" />);
-        expect(container.querySelector('[data-oxobz-calendar-popover]')).toHaveAttribute(
-            'data-size',
-            'small',
-        );
+        expect(container.querySelector('[data-oxobz-calendar]')?.className).toContain('sizeSmall');
     });
 
     // ── disabled ──
@@ -1068,7 +1082,7 @@ describe('Calendar', () => {
 
     it('appends a custom className after the module class', () => {
         const { container } = render(<Calendar className="custom-pop" />);
-        const root = container.querySelector('[data-oxobz-calendar-popover]');
+        const root = container.querySelector('[data-oxobz-calendar]');
         expect(root?.className).toContain('calendar');
         expect(root?.className.endsWith('custom-pop')).toBe(true);
     });
@@ -1077,7 +1091,7 @@ describe('Calendar', () => {
         const ref = createRef<HTMLDivElement>();
         render(<Calendar ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-calendar-popover');
+        expect(ref.current).toHaveAttribute('data-oxobz-calendar');
     });
 
     it('has the correct displayName', () => {

@@ -1,13 +1,22 @@
 'use client';
 
-import { forwardRef, useMemo, useRef, type HTMLAttributes } from 'react';
-import { useButton, useCalendarCell, useCalendarGrid, useLocale, useRangeCalendar } from 'react-aria';
+import { forwardRef, useEffect, useId, useMemo, useRef, type HTMLAttributes } from 'react';
+import {
+    useButton,
+    useCalendarGrid,
+    useDateFormatter,
+    useLocale,
+    usePress,
+    useRangeCalendar,
+} from 'react-aria';
 import type { AriaButtonProps } from 'react-aria';
 import { useRangeCalendarState } from 'react-stately';
 import {
     CalendarDate,
     createCalendar,
     getWeeksInMonth,
+    isSameDay,
+    isToday as isTodayIntl,
     type DateValue as IntlDateValue,
 } from '@internationalized/date';
 import { ChevronLeft, ChevronRight } from '@oxobz/icons';
@@ -99,25 +108,185 @@ const WEEK_START = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 type CalendarState = ReturnType<typeof useRangeCalendarState>;
 
-function Cell({ state, date }: { state: CalendarState; date: CalendarDate }) {
+/*
+ * A single date cell.
+ *
+ * Production does NOT use react-aria's `useCalendarCell`. Proven across 15
+ * published @react-aria/calendar releases (3.0-3.10): every one emits the range
+ * prompt as a hidden `useDescription` <div> in the document body and only sets
+ * `aria-selected` when a date is actually selected. Production's DOM differs on
+ * all three points: `aria-selected` is ALWAYS on the <td> ("true"/"false"), the
+ * range prompt is appended to the focused cell's own aria-label (no body <div>),
+ * and adjacent-month days stay selectable. So the cell is built directly on
+ * `usePress` + the react-stately state, mirroring useCalendarCell's behaviour
+ * while producing production's exact DOM. The press handlers are ported from
+ * useCalendarCell so range selection, dragging, and keyboard behave the same.
+ */
+const RANGE_START_PROMPT = 'Click to start selecting date range';
+const RANGE_FINISH_PROMPT = 'Click to finish selecting date range';
+
+function Cell({
+    state,
+    date,
+    minValue,
+    maxValue,
+    calendarDisabled,
+}: {
+    state: CalendarState;
+    date: CalendarDate;
+    minValue?: CalendarDate;
+    maxValue?: CalendarDate;
+    calendarDisabled?: boolean;
+}) {
     const ref = useRef<HTMLSpanElement>(null);
-    const { cellProps, buttonProps, isSelected, isDisabled, isUnavailable, isOutsideVisibleRange, formattedDate } =
-        useCalendarCell({ date }, state, ref);
+
+    const dateFormatter = useDateFormatter({
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: state.timeZone,
+    });
+    const nativeDate = useMemo(() => date.toDate(state.timeZone), [date, state.timeZone]);
+
+    /*
+     * Production only disables cells truly out of range (min/max) or flagged
+     * unavailable; adjacent-month days stay selectable, unlike react-aria's
+     * default which disables everything outside the visible month.
+     */
+    const isUnavailable = state.isCellUnavailable(date);
+    const outOfRange =
+        (minValue != null && date.compare(minValue) < 0) ||
+        (maxValue != null && date.compare(maxValue) > 0);
+    const isDisabled = Boolean(calendarDisabled) || isUnavailable || outOfRange;
+    const isSelectable = !isDisabled;
+    const isSelected = state.isSelected(date) && isSelectable;
+    const isFocused = state.isCellFocused(date);
+    const isTodayCell = isTodayIntl(date, state.timeZone);
+    const isOutsideVisibleRange =
+        date.compare(state.visibleRange.start) < 0 || date.compare(state.visibleRange.end) > 0;
 
     const range = state.highlightedRange;
     const isStart = !!range && date.compare(range.start) === 0;
     const isEnd = !!range && date.compare(range.end) === 0;
     const isEndpoint = isStart || isEnd;
     const isMiddle = isSelected && !isEndpoint;
-
     const dow = toDate(date).getDay();
     const isWeekend = dow === 0 || dow === 6;
-    const isToday = isSameAsToday(date);
-    const blocked = isDisabled || isUnavailable;
+
+    /* aria-label mirrors useCalendarCell, except the range prompt is appended
+       inline (production) instead of living in a hidden body <div>. */
+    let label = dateFormatter.format(nativeDate);
+    if (isTodayCell) label = `Today, ${label}`;
+    else if (isSelected) label = `${label} selected`;
+    if (isFocused && !state.isReadOnly && isSelectable) {
+        label += state.anchorDate ? ` (${RANGE_FINISH_PROMPT})` : ` (${RANGE_START_PROMPT})`;
+    }
+
+    const isAnchorPressed = useRef(false);
+    const isRangeBoundaryPressed = useRef(false);
+    const touchDragTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    /*
+     * Press handlers ported verbatim from react-aria's useCalendarCell so range
+     * selection, dragging, keyboard, and touch behave identically. The mouse /
+     * touch branch only runs on the FIRST press of a range (`!anchorDate`); the
+     * second press and keyboard / virtual (click) presses are completed in
+     * onPressUp. Doing the mouse selection here but the virtual selection there
+     * is what keeps a single click from selecting twice.
+     */
+    const { pressProps } = usePress({
+        shouldCancelOnPointerExit: !!state.anchorDate,
+        preventFocusOnPress: true,
+        isDisabled: !isSelectable || state.isReadOnly,
+        onPressStart(e) {
+            if (state.isReadOnly) {
+                state.setFocusedDate(date);
+                state.setFocused(true);
+                return;
+            }
+            if (
+                !state.anchorDate &&
+                (e.pointerType === 'mouse' || e.pointerType === 'touch')
+            ) {
+                // Dragging the start or end of an existing range modifies it
+                // rather than starting a new selection.
+                if (state.highlightedRange) {
+                    if (isSameDay(date, state.highlightedRange.start)) {
+                        state.setAnchorDate(state.highlightedRange.end);
+                        state.setFocusedDate(date);
+                        state.setFocused(true);
+                        state.setDragging(true);
+                        isRangeBoundaryPressed.current = true;
+                        return;
+                    }
+                    if (isSameDay(date, state.highlightedRange.end)) {
+                        state.setAnchorDate(state.highlightedRange.start);
+                        state.setFocusedDate(date);
+                        state.setFocused(true);
+                        state.setDragging(true);
+                        isRangeBoundaryPressed.current = true;
+                        return;
+                    }
+                }
+                const startDragging = () => {
+                    state.setDragging(true);
+                    touchDragTimer.current = undefined;
+                    state.selectDate(date);
+                    state.setFocusedDate(date);
+                    state.setFocused(true);
+                    isAnchorPressed.current = true;
+                };
+                // On touch, delay to tell a tap from a scroll.
+                if (e.pointerType === 'touch') {
+                    touchDragTimer.current = setTimeout(startDragging, 200);
+                } else {
+                    startDragging();
+                }
+            }
+        },
+        onPressEnd() {
+            isRangeBoundaryPressed.current = false;
+            isAnchorPressed.current = false;
+            clearTimeout(touchDragTimer.current);
+            touchDragTimer.current = undefined;
+        },
+        onPressUp(e) {
+            if (state.isReadOnly) return;
+            // Quick touch tap before the drag timer fired: select on touch up.
+            if (state.anchorDate && touchDragTimer.current) {
+                state.selectDate(date);
+                state.setFocusedDate(date);
+                state.setFocused(true);
+            }
+            if (isRangeBoundaryPressed.current) {
+                state.setAnchorDate(date);
+            } else if (state.anchorDate && !isAnchorPressed.current) {
+                state.selectDate(date);
+                state.setFocusedDate(date);
+                state.setFocused(true);
+            } else if (e.pointerType === 'keyboard' && !state.anchorDate) {
+                state.selectDate(date);
+                state.focusNearestAvailableDate(date);
+            } else if (e.pointerType === 'virtual') {
+                state.selectDate(date);
+                state.setFocusedDate(date);
+                state.setFocused(true);
+            }
+        },
+    });
+
+    useEffect(() => {
+        if (isFocused && ref.current) ref.current.focus();
+    }, [isFocused]);
+
+    const tabIndex = isDisabled ? undefined : isSameDay(date, state.focusedDate) ? 0 : -1;
 
     return (
         <td
-            {...cellProps}
+            role="gridcell"
+            aria-selected={isSelected ? 'true' : 'false'}
+            aria-disabled={!isSelectable || undefined}
             className={cn(
                 styles.cell,
                 isStart && !isEnd && styles.firstInRange,
@@ -125,21 +294,34 @@ function Cell({ state, date }: { state: CalendarState; date: CalendarDate }) {
             )}
         >
             <span
-                {...buttonProps}
+                {...pressProps}
                 ref={ref}
-                data-date={date.toString()}
+                role="button"
+                tabIndex={tabIndex}
+                aria-label={label}
+                aria-disabled={!isSelectable || undefined}
+                data-react-aria-pressable="true"
                 data-testid={`calendar/cell/date-${date.day}`}
+                onFocus={() => {
+                    if (!isDisabled) {
+                        state.setFocusedDate(date);
+                        state.setFocused(true);
+                    }
+                }}
+                onPointerEnter={() => {
+                    if (isSelectable) state.highlightDate(date);
+                }}
                 className={cn(
                     styles.day,
                     isWeekend && styles.weekend,
                     isOutsideVisibleRange && styles.outsideMonth,
                     isMiddle && styles.inRange,
-                    isToday && !isEndpoint && styles.highlight,
+                    isTodayCell && !isEndpoint && styles.highlight,
                     isEndpoint && styles.selected,
-                    blocked && styles.disabled,
+                    isDisabled && styles.disabled,
                 )}
             >
-                {formattedDate}
+                {String(date.day)}
             </span>
         </td>
     );
@@ -160,7 +342,12 @@ function NavButton({
     ...props
 }: AriaButtonProps<'button'> & { label: string; className?: string; children: React.ReactNode }) {
     const ref = useRef<HTMLButtonElement>(null);
-    const { buttonProps } = useButton(props, ref);
+    /*
+     * useButton menyetel type="button"; produksi memakai type="submit" (bawaan
+     * Button Geist). type dilepas di sini agar `typeName="submit"` yang dipakai.
+     */
+    const { buttonProps: rawButtonProps } = useButton(props, ref);
+    const { type: _navType, ...buttonProps } = rawButtonProps;
     /*
      * Ini komponen Button, bukan <button> polos. Produksi memakainya dengan
      * `type="unstyled" shape="circle" svgOnly`, dan ukurannya lahir dari
@@ -172,7 +359,7 @@ function NavButton({
         <Button
             {...buttonProps}
             ref={ref}
-            typeName="button"
+            typeName="submit"
             variant="unstyled"
             shape="circle"
             svgOnly
@@ -182,12 +369,6 @@ function NavButton({
             {children}
         </Button>
     );
-}
-
-/** Today in the local zone, compared at day granularity. */
-function isSameAsToday(date: CalendarDate): boolean {
-    const n = new Date();
-    return date.year === n.getFullYear() && date.month === n.getMonth() + 1 && date.day === n.getDate();
 }
 
 /* ------------------------------------------------------------------ */
@@ -243,6 +424,10 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
     ) => {
         const { locale } = useLocale();
         const firstDayOfWeek = WEEK_START[weekStartsOn];
+        const gridLabelId = useId();
+        const captionId = useId();
+        const minCal = minValue ? toCal(minValue) : undefined;
+        const maxCal = maxValue ? toCal(maxValue) : undefined;
 
         const state = useRangeCalendarState({
             locale,
@@ -252,8 +437,8 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
             isDisabled,
             value: value === undefined ? undefined : toCalRange(value),
             defaultValue: toCalRange(defaultValue),
-            minValue: minValue ? toCal(minValue) : undefined,
-            maxValue: maxValue ? toCal(maxValue) : undefined,
+            minValue: minCal,
+            maxValue: maxCal,
             isDateUnavailable: isDateUnavailable
                 ? (d: IntlDateValue) => isDateUnavailable(toDate(d))
                 : undefined,
@@ -303,15 +488,33 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                  * supaya pohon aksesibilitasnya sama.
                  */
                 role={undefined}
-                className={cn(styles.contentWrapper, className)}
-                data-oxobz-calendar=""
-                data-version={dataVersion}
-                data-size={size}
+                /*
+                 * Produksi: pembungkus kisi POLOS, tanpa class dan tanpa id
+                 * (react-aria memberi id lewat calendarProps, jadi dilepas).
+                 * `position:relative` tak diperlukan: cincin/band jangkar ke sel.
+                 */
+                id={undefined}
+                aria-label={undefined}
+                className={className}
                 data-disabled={isDisabled || undefined}
             >
-                <div className={styles.header}>
-                    <div className={styles.monthTitleWrap}>
-                        <h2 className={styles.currentMonth}>{title}</h2>
+                <div className={styles.header} style={{ margin: '-3px 0' }}>
+                    {/* Produksi memberi pembungkus judul gaya inline tanpa kelas. */}
+                    <div
+                        style={{
+                            overflow: 'hidden',
+                            marginLeft: '-16px',
+                            paddingLeft: '16px',
+                            flex: '1 1 0%',
+                        }}
+                    >
+                        <h2
+                            id={gridLabelId}
+                            className={styles.currentMonth}
+                            style={{ whiteSpace: 'nowrap', opacity: 1, transform: 'none' }}
+                        >
+                            {title}
+                        </h2>
                     </div>
                     {/*
                      * Ukuran ikon kedua panah SENGAJA berbeda, persis produksi:
@@ -323,35 +526,66 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                         label="Previous"
                         className={cn(styles.caretButton, styles.caretButtonPrev)}
                     >
-                        <ChevronLeft size={14} />
+                        <ChevronLeft
+                            size={16}
+                            className={styles.navIconPrev}
+                            style={{ transform: 'translateX(0)' }}
+                        />
                     </NavButton>
                     <NavButton {...nextButtonProps} label="Next" className={styles.caretButton}>
-                        <ChevronRight size={16} style={{ transform: 'translateX(1px)' }} />
+                        <ChevronRight
+                            size={16}
+                            className={styles.navIcon}
+                            style={{ transform: 'translateX(1px)' }}
+                        />
                     </NavButton>
                 </div>
 
                 {/* Pemisah 8px; produksi memakai <span class="h-2 block"> di sini. */}
                 <span aria-hidden="true" className={styles.headerSpacer} />
 
-                <table {...gridProps} className={styles.table}>
-                    <caption className="oxobz-sr-only" />
-                    <thead {...headerProps}>
-                        <tr>
+                {/*
+                 * Produksi memberi label grid lewat `aria-labelledby` ke judul
+                 * bulan (H2), bukan `aria-label`+`id` seperti default react-aria.
+                 * Jadi aria-label dan id bawaan gridProps dilepas dan diganti
+                 * labelledby ke H2.
+                 */}
+                <table
+                    {...gridProps}
+                    aria-label={undefined}
+                    aria-labelledby={gridLabelId}
+                    id={undefined}
+                    className={styles.table}
+                >
+                    <caption id={captionId} className="oxobz-sr-only" />
+                    {/* Produksi tak menaruh aria-hidden di thead (react-aria menaruhnya). */}
+                    <thead {...headerProps} aria-hidden={undefined} className={styles.thead}>
+                        <tr className={styles.row}>
                             {weekDays.map((day, i) => (
-                                <th key={i} abbr={longWeekDays[i]} scope="col" className={styles.weekday}>
+                                <th key={i} abbr={longWeekDays[i]} className={styles.weekday}>
                                     {day}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody
+                        className={styles.tbody}
+                        style={{ opacity: 1, transform: 'none' }}
+                    >
                         {weeks.map((weekIndex) => (
-                            <tr key={weekIndex}>
+                            <tr key={weekIndex} className={styles.row}>
                                 {state
                                     .getDatesInWeek(weekIndex)
                                     .map((date, i) =>
                                         date ? (
-                                            <Cell key={date.toString()} state={state} date={date as CalendarDate} />
+                                            <Cell
+                                                key={date.toString()}
+                                                state={state}
+                                                date={date as CalendarDate}
+                                                minValue={minCal}
+                                                maxValue={maxCal}
+                                                calendarDisabled={isDisabled}
+                                            />
                                         ) : (
                                             <td key={i} />
                                         ),
