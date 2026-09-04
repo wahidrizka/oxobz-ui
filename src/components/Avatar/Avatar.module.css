@@ -75,10 +75,12 @@
     width: 100%;
     height: 100%;
     border-radius: 3.40282e38px; /* = utility rounded-full produksi (Tailwind v4) */
-    background-image: linear-gradient(to right,
-            var(--accents-1),
-            var(--accents-2),
-            var(--accents-1));
+    /* `in oklab` = interpolasi gradient bawaan Tailwind v4 (terukur di shimmer
+       placeholder produksi). Tanpa itu, computed value terbaca beda. */
+    background-image: linear-gradient(to right in oklab,
+            var(--accents-1) 0%,
+            var(--accents-2) 50%,
+            var(--accents-1) 100%);
     background-size: 400% 100%;
     animation: loading 8s ease-in-out infinite;
 }
@@ -105,9 +107,13 @@
     height: auto;
 }
 
-/* Fallback initials */
-.avatar span {
-    color: #fff;
+/* Fallback initials — produksi memasang kelas pada span ini:
+   `flex justify-center items-center h-full font-medium text-white opacity-50
+   bg-[var(--accents-6)]`. Diberi kelas sendiri (bukan selektor `.avatar span`)
+   supaya atribut class ADA seperti produksi; warna putih ditulis lab(100 0 0)
+   agar sama dengan notasi Tailwind text-white. */
+.avatarLetter {
+    color: lab(100 0 0);
     opacity: .5;
     background-color: var(--accents-6);
     justify-content: center;
@@ -194,54 +200,68 @@
 .iconWrapper {
     width: var(--size);
     height: var(--size);
+    flex-shrink: 0;
     position: relative;
 }
 
+/*
+ * Badge .icon — kelas produksi (terbaca dari halaman Avatar live):
+ *   absolute inline-flex aspect-square w-fit h-fit items-center justify-center
+ *   leading-none [&>svg]:block rounded-full overflow-hidden bg-white
+ *   border border-white dark-theme:border-black dark-theme:bg-black
+ *   data-[git-type=bitbucket]:bg-[#0052cc] data-[git-type=gitlab]:bg-[#6b4fbb]
+ *   data-[git-type=bitbucket]:text-white
+ *   [&[data-git-type=bitbucket]_svg]:scale-65 [&[data-git-type=gitlab]_svg]:scale-75
+ *   [&[data-git-type=github]_svg]:fill-black
+ * Nilai putih/hitam ditulis lab() supaya SAMA dengan notasi Tailwind produksi
+ * (bg-white/text-white -> lab(100 0 0); bg-black/fill-black -> lab(0 0 0)).
+ */
 .icon {
     aspect-ratio: 1;
-    display: flex;
+    width: fit-content;
+    height: fit-content;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     position: absolute;
 }
 
+.icon > svg {
+    display: block;
+}
+
 .icon[data-icon-background="true"] {
-    background-color: #fff;
-    border: 1px solid #fff;
-    border-radius: 100%;
-    justify-content: center;
-    align-items: center;
-    display: flex;
+    background-color: lab(100 0 0);
+    border: 1px solid lab(100 0 0);
+    border-radius: 2147483647px; /* = rounded-full produksi (Tailwind v4) */
     overflow: hidden;
 }
 
 :global(.dark-theme) .icon[data-icon-background="true"] {
-    background-color: #000;
-    border-color: #000;
+    background-color: lab(0 0 0);
+    border-color: lab(0 0 0);
 }
 
-/* Git-type — github */
-.icon[data-icon-background="true"][data-git-type="github"] {
-    background-color: #fff;
-}
-
-:global(.dark-theme) .icon[data-icon-background="true"][data-git-type="github"] {
-    background-color: #000;
-}
-
+/* Git-type — github: bg mengikuti base (putih/hitam); svg TIDAK diskalakan
+   (produksi scale:none), fill hitam (fill-black). */
 .icon[data-icon-background="true"][data-git-type="github"] svg {
-    scale: 1.15;
+    fill: lab(0 0 0);
 }
 
-/* Git-type — bitbucket */
+/* Git-type — bitbucket: bg biru, warna svg putih diset di WRAPPER (text-white)
+   sehingga merembet ke svg + gradient stops, persis produksi. */
 .icon[data-icon-background="true"][data-git-type="bitbucket"] {
     background-color: #0052cc;
+    color: lab(100 0 0);
 }
 
 .icon[data-icon-background="true"][data-git-type="bitbucket"] svg {
-    color: #fff;
     scale: 0.65;
 }
 
-/* Git-type — gitlab */
+/* Git-type — gitlab: bg ungu; warna putih svg diset inline di GitLabSvgIcon
+   (style color:white -> rgb, sama seperti produksi), jadi tidak di sini. */
 .icon[data-icon-background="true"][data-git-type="gitlab"] {
     background-color: #6b4fbb;
 }

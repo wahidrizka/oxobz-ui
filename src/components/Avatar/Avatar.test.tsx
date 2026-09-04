@@ -101,8 +101,15 @@ describe('Avatar', () => {
         expect(span?.getAttribute('aria-label')).toBe('Avatar for evilrabbit');
     });
 
-    it('renders a 1–2 letter avatar with the initials screen-reader label', () => {
+    // Measured live: a letter avatar that is ALSO placeholder labels
+    // "Placeholder Avatar" — placeholder wins over the initials label.
+    it('placeholder wins over letter for the screen-reader label', () => {
         render(<Avatar letter="SL" placeholder size={32} />);
+        expect(screen.getByRole('img', { name: 'Placeholder Avatar' })).not.toBeNull();
+    });
+
+    it('a non-placeholder letter avatar uses the initials label', () => {
+        render(<Avatar letter="SL" size={32} />);
         expect(screen.getByRole('img', { name: 'Avatar with initials: SL' })).not.toBeNull();
     });
 
@@ -242,7 +249,10 @@ describe('AvatarGroup', () => {
         expect((group.children[1] as HTMLElement).style.marginLeft).toBe('');
     });
 
-    it('reverse assigns ascending z-index so the LAST slot sits on top', () => {
+    // Production (bundle 3wum1c4xndz20.js): reverse mode uses `style: void 0`
+    // on every slot — no inline z-index at all. Natural DOM order then paints
+    // the LAST slot on top. (Non-reverse gets the descending zIndex above.)
+    it('reverse uses natural DOM order — no inline z-index on slots', () => {
         const members = [
             { username: 'a' },
             { username: 'b' },
@@ -250,10 +260,21 @@ describe('AvatarGroup', () => {
         ];
         const { container } = render(<AvatarGroup members={members} reverse />);
         const group = container.querySelector('div') as HTMLElement;
-        const slots = group.children;
-        const firstZ = Number((slots[0] as HTMLElement).style.zIndex);
-        const lastZ = Number((slots[slots.length - 1] as HTMLElement).style.zIndex);
-        expect(lastZ).toBeGreaterThan(firstZ);
+        for (const slot of Array.from(group.children)) {
+            expect((slot as HTMLElement).style.zIndex).toBe('');
+        }
+    });
+
+    // Auto overlap = Math.round(0.3 * size), verbatim from the production bundle.
+    // Measured live: 16->5, 24->7, 32->10, 48->14px.
+    it('auto overlap sets --avatar-overlap = round(0.3 * size)', () => {
+        const members = [{ username: 'a' }, { username: 'b' }];
+        for (const [size, px] of [[16, '5px'], [24, '7px'], [32, '10px'], [48, '14px']] as const) {
+            const { container, unmount } = render(<AvatarGroup members={members} size={size} />);
+            const group = container.querySelector('div') as HTMLElement;
+            expect(group.style.getPropertyValue('--avatar-overlap')).toBe(px);
+            unmount();
+        }
     });
 
     it('renders children mode when no members prop', () => {
@@ -384,12 +405,15 @@ describe('GitHubAvatar', () => {
         expect((svg as SVGElement).style.color).toBe('currentcolor');
     });
 
-    it('icon svg matches production dimensions (16px attrs, 14px inline style)', () => {
+    // Production github badge svg: 14x14 attrs + data-glyph="circular", no inline
+    // width/height style (measured live). Set via size={14} on LogoGithub, not a
+    // style override.
+    it('icon svg matches production dimensions (14px attrs + data-glyph)', () => {
         const { container } = render(<GitHubAvatar size={32} username="rauchg" />);
         const svg = container.querySelector('[data-git-type="github"] svg') as SVGElement;
-        expect(svg.getAttribute('width')).toBe('16');
-        expect(svg.getAttribute('height')).toBe('16');
-        expect(svg.style.width).toBe('14px');
-        expect(svg.style.height).toBe('14px');
+        expect(svg.getAttribute('width')).toBe('14');
+        expect(svg.getAttribute('height')).toBe('14');
+        expect(svg.getAttribute('data-glyph')).toBe('circular');
+        expect(svg.style.width).toBe('');
     });
 });

@@ -115,15 +115,17 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
             ? false
             : (resolved ?? Boolean(finalSrc));
 
-        // Derive label. `alt` overrides everything; then a letter avatar gets the
-        // Geist screen-reader prefix; then placeholder; then a name-based label.
+        // Derive label. `alt` overrides everything; then `placeholder` wins over
+        // `letter` (measured live: `<Avatar letter="SL" placeholder>` labels
+        // "Placeholder Avatar", not the initials); then a letter avatar gets the
+        // screen-reader prefix; then a name-based label.
         let label: string;
         if (alt !== undefined) {
             label = alt;
-        } else if (letter) {
-            label = `Avatar with initials: ${letter}`;
         } else if (placeholder) {
             label = 'Placeholder Avatar';
+        } else if (letter) {
+            label = `Avatar with initials: ${letter}`;
         } else if (effectiveName) {
             label = `Avatar for ${effectiveName}`;
         } else {
@@ -163,9 +165,9 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
                 ) : children ? (
                     children
                 ) : letter ? (
-                    <span>{letter}</span>
+                    <span className={styles.avatarLetter}>{letter}</span>
                 ) : initial ? (
-                    <span>{initial}</span>
+                    <span className={styles.avatarLetter}>{initial}</span>
                 ) : null}
             </span>
         );
@@ -216,18 +218,17 @@ export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
  * Overlap now flows through the wrapper's --avatar-overlap variable, not
  * per-slot margins.
  */
-function slotStyle(index: number, count: number, reverse: boolean): CSSProperties {
+function slotStyle(index: number, count: number, reverse: boolean): CSSProperties | undefined {
     /*
-     * Deretnya mulai dari NOL, bukan satu.
-     *
-     * Terukur di halaman Avatar live 30 Agu 2026: kelompok berisi tiga
-     * avatar memberi [2, 1, 0], yang berisi empat memberi [3, 2, 1, 0].
-     * Rumus lama menghasilkan [3, 2, 1] dan [4, 3, 2, 1].
-     *
-     * Untuk mode `reverse` halaman live tidak punya contohnya, jadi
-     * dipakai cerminan aturan yang sama (0 di depan, naik ke belakang).
+     * Terbaca dari bundel produksi (chunk 3wum1c4xndz20.js, AvatarGroup):
+     *   style: j ? { zIndex: u.length - t } : void 0   // j = !reverse
+     * Non-reverse: tiap slot ber-zIndex menurun (slot pertama tertinggi -> di
+     * atas tumpukan); note slot ber-zIndex 0. Dengan count = slotCount
+     * (normalCount+1), `count-1-index` menghasilkan deret yang sama.
+     * Reverse: TANPA gaya inline sama sekali (urutan DOM alami -> anggota
+     * terakhir di atas). Versi lama keliru memasang zIndex saat reverse.
      */
-    return { zIndex: reverse ? index : count - 1 - index };
+    return reverse ? undefined : { zIndex: count - 1 - index };
 }
 
 export function AvatarGroup({
@@ -256,13 +257,14 @@ export function AvatarGroup({
         const showBubble = noteCount >= 2;
         const slotCount = normalCount + 1;
 
-        // Wrapper carries the overlap variable (production: inline
-        // `--avatar-overlap: 10px` on the flex wrapper, consumed by the
-        // nth-child(n+2) negative margin in the CSS module).
-        const groupStyle =
-            typeof overlap === 'number'
-                ? ({ '--avatar-overlap': `${overlap}px` } as CSSProperties)
-                : undefined;
+        // Wrapper ALWAYS carries `--avatar-overlap` inline (production sets it
+        // even for `overlap="auto"`), consumed by the nth-child(n+2) negative
+        // margin in the CSS module. Auto value = Math.round(0.3 * size), read
+        // verbatim from the production bundle (chunk 3wum1c4xndz20.js):
+        //   f = "auto" === overlap ? Math.round(.3 * size) : overlap
+        // Measured live: size 16->5, 24->7, 32->10, 48->14px.
+        const overlapPx = overlap === 'auto' ? Math.round(0.3 * size) : overlap;
+        const groupStyle = { '--avatar-overlap': `${overlapPx}px` } as CSSProperties;
 
         return (
             <div className={cn(styles.group, className)} style={groupStyle} {...props}>
@@ -288,7 +290,7 @@ export function AvatarGroup({
                         size={size}
                     />
                     {showBubble && (
-                        <span className={cn(styles.noteText, 'dark-theme')} data-version="v1">
+                        <span className={cn(styles.noteText, 'dark-theme')}>
                             +{noteCount}
                         </span>
                     )}
@@ -299,10 +301,8 @@ export function AvatarGroup({
 
     /* Children mode — wrap each child in groupAvatar span */
     const childArray = Children.toArray(children);
-    const childGroupStyle =
-        typeof overlap === 'number'
-            ? ({ '--avatar-overlap': `${overlap}px` } as CSSProperties)
-            : undefined;
+    const childOverlapPx = overlap === 'auto' ? Math.round(0.3 * size) : overlap;
+    const childGroupStyle = { '--avatar-overlap': `${childOverlapPx}px` } as CSSProperties;
     return (
         <div className={cn(styles.group, className)} style={childGroupStyle} {...props}>
             {childArray.map((child, i) => (
@@ -385,9 +385,9 @@ function GitLabSvgIcon() {
     return (
         <svg aria-label="gitlab" height="14" viewBox="0 0 24 22" width="14" style={{ color: 'white' }}>
             <path d="M1.279 8.29L.044 12.294c-.117.367 0 .78.325 1.014l11.323 8.23-.009-.012-.03-.039L1.279 8.29zM22.992 13.308a.905.905 0 00.325-1.014L22.085 8.29 11.693 21.52l11.299-8.212z" fill="currentColor" />
-            <path d="M1.279 8.29l10.374 13.197.03.039.01-.006L22.085 8.29H1.28z" fill="currentColor" opacity=".4" />
-            <path d="M15.982 8.29l-4.299 13.236-.004.011.014-.017L22.085 8.29h-6.103zM7.376 8.29H1.279l10.374 13.197L7.376 8.29z" fill="currentColor" opacity=".6" />
-            <path d="M18.582.308l-2.6 7.982h6.103L19.48.308c-.133-.41-.764-.41-.897 0zM1.279 8.29L3.88.308c.133-.41.764-.41.897 0l2.6 7.982H1.279z" fill="currentColor" opacity=".4" />
+            <path d="M1.279 8.29l10.374 13.197.03.039.01-.006L22.085 8.29H1.28z" fill="currentColor" opacity="0.4" />
+            <path d="M15.982 8.29l-4.299 13.236-.004.011.014-.017L22.085 8.29h-6.103zM7.376 8.29H1.279l10.374 13.197L7.376 8.29z" fill="currentColor" opacity="0.6" />
+            <path d="M18.582.308l-2.6 7.982h6.103L19.48.308c-.133-.41-.764-.41-.897 0zM1.279 8.29L3.88.308c.133-.41.764-.41.897 0l2.6 7.982H1.279z" fill="currentColor" opacity="0.4" />
         </svg>
     );
 }
@@ -423,17 +423,19 @@ export interface GitAvatarProps extends Omit<AvatarWithIconProps, 'icon' | 'icon
  * - icon: GitHub SVG built-in
  *
  * Note: production markup carries a Tailwind class `text-[#000000]` on the
- * svg (an artifact of Vercel's docs site). This project has no Tailwind, so
- * the class is dead here and intentionally omitted — the icon color is
- * already handled by fill="currentColor" + the inline `color: currentcolor`
- * that LogoGithub sets by default.
+ * svg (an artifact of Vercel's docs site). Measured on the live Avatar page it
+ * is a DEAD class (computed color stays gray-900 rgb(23,23,23), same as ours),
+ * so it is intentionally omitted. The svg is 14x14 (production attrs are 14/14,
+ * via `size={14}` here — not a style override), and carries `data-glyph="circular"`
+ * from the icon source. Its computed `fill` is black; production writes it as
+ * Tailwind `fill-black` (lab(0 0 0)), matched in the CSS module.
  */
 export function GitHubAvatar({ username, size = 32, ...props }: GitAvatarProps) {
     return (
         <AvatarWithIcon
             src={`https://avatars.githubusercontent.com/${username}?s=${size * 2}`}
             size={size}
-            icon={<LogoGithub style={{ width: 14, height: 14 }} />}
+            icon={<LogoGithub size={14} />}
             iconBackground
             gitType="github"
             {...props}
