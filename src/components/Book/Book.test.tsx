@@ -186,23 +186,32 @@ describe('Book', () => {
             expect(texture.style.transform).toMatch(/^rotate\((0|180)deg\)$/);
         });
 
-        it('deret textured books bervariasi rotasinya (auto-alternate)', () => {
+        it('rotasi texture deterministik dari hash title (title sama -> rotasi sama)', () => {
+            // Produksi menurunkan rotasi dari hash 32-bit TITLE, bukan acak
+            // per-instance. Jadi dua Book dengan title sama harus identik
+            // rotasinya (dulu memakai useId yang bisa berbeda antar-instance).
+            const { container: c1 } = render(<Book title="Design Engineering at Vercel" textured />);
+            const { container: c2 } = render(<Book title="Design Engineering at Vercel" textured />);
+            const t1 = (c1.querySelector('[class*="texture"]') as HTMLElement).style.transform;
+            const t2 = (c2.querySelector('[class*="texture"]') as HTMLElement).style.transform;
+            expect(t1).toBe(t2);
+        });
+
+        it('title "Design Engineering at Vercel" -> rotate(180deg) (terukur di produksi)', () => {
+            // Nilai ground-truth dari halaman Book live: keenam demo textured
+            // (semua title ini) ter-render rotate(180deg). Hash-nya ganjil.
             const { container } = render(
-                <div>
-                    <Book title="A" textured />
-                    <Book title="B" textured />
-                    <Book title="C" textured />
-                    <Book title="D" textured />
-                </div>,
+                <Book title="Design Engineering at Vercel" textured />,
             );
-            const rotations = Array.from(
-                container.querySelectorAll('[class*="texture"]'),
-            )
-                .map((el) => (el as HTMLElement).style.transform)
-                .filter((t) => t.length > 0);
-            expect(rotations).toHaveLength(4);
-            // Production alternates the texture across a row; ensure not all identical.
-            expect(new Set(rotations).size).toBeGreaterThan(1);
+            const texture = container.querySelector('[class*="texture"]') as HTMLElement;
+            expect(texture.style.transform).toBe('rotate(180deg)');
+        });
+
+        it('title dengan hash genap -> rotate(0deg)', () => {
+            // "B".charCodeAt(0)=66; hash=66; 66&1=0 -> genap -> 0deg.
+            const { container } = render(<Book title="B" textured />);
+            const texture = container.querySelector('[class*="texture"]') as HTMLElement;
+            expect(texture.style.transform).toBe('rotate(0deg)');
         });
 
         it('pages mempunyai class textured jika textured=true', () => {
@@ -247,6 +256,17 @@ describe('Book', () => {
             const el = container.firstChild as HTMLElement;
             expect(el.hasAttribute('data-oxobz-book')).toBe(false);
             expect(el.hasAttribute('data-version')).toBe(false);
+        });
+
+        it('div dalam (book/stripe/body/content) TIDAK membawa data-version', () => {
+            // Terukur di halaman Book live: produksi memakai div flex biasa
+            // tanpa penanda apa pun. Struktur dulu memakai <Stack> yang
+            // memancarkan data-version="v1" + gaya inline --stack-*; keduanya
+            // dicabut agar identik. Test ini menangkap regresi kalau Stack
+            // dipasang kembali.
+            const { container } = render(<Book variant="stripe" title="Test" textured />);
+            const versioned = container.querySelectorAll('[data-version]');
+            expect(versioned.length).toBe(0);
         });
     });
 

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { forwardRef, useId, CSSProperties } from 'react';
+import React, { forwardRef, CSSProperties } from 'react';
 import { LogoVercel } from '@oxobz/icons';
-import { Stack } from '../Stack';
 import { cn } from '../../utils/cn';
 import { DefaultMark } from './DefaultMark';
 import styles from './Book.module.css';
@@ -124,16 +123,21 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
             color ?? (variant === 'stripe' ? 'var(--ds-amber-600)' : undefined);
         const hasColor = Boolean(effectiveColor);
 
-        // Auto-derived, deterministic per-instance texture rotation. Production
-        // alternates the texture overlay between 0deg and 180deg across a row of
-        // textured Books; deriving the angle from the stable per-instance id
-        // reproduces that visual variation without an extra prop.
-        const instanceId = useId();
-        let idHash = 0;
-        for (let i = 0; i < instanceId.length; i += 1) {
-            idHash += instanceId.charCodeAt(i);
+        // Texture rotation, derived EXACTLY as production does it. Read from the
+        // production bundle (chunk 3wum1c4xndz20.js, Book component):
+        //   d = textured && (() => { let t = 0;
+        //     for (const ch of title) { t = (t << 5) - t + ch.charCodeAt(0); t &= t; }
+        //     return (t & 1) === 1; })()
+        //   <div className={texture} style={{ transform: d ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+        // It is a 32-bit string hash of the TITLE: odd hash -> 180deg, even -> 0deg.
+        // This replaces an earlier useId-based guess. Verified on the live Book
+        // page: every textured demo (all share one title) renders rotate(180deg).
+        let titleHash = 0;
+        for (let i = 0; i < title.length; i += 1) {
+            titleHash = (titleHash << 5) - titleHash + title.charCodeAt(i);
+            titleHash &= titleHash;
         }
-        const textureRotation = idHash % 2 === 0 ? 0 : 180;
+        const textureRotation = textured && (titleHash & 1) === 1 ? 180 : 0;
 
         // Width vars live on the root .perspective element (matches production).
         const perspectiveStyle: CSSProperties = {
@@ -170,49 +174,33 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                     className={wrapperClasses}
                     style={hasWrapperStyle ? wrapperStyle : undefined}
                 >
-                    {/* ---- BOOK element ---- */}
-                    <Stack
-                        className={styles.book}
-                        direction="column"
-                        align="stretch"
-                        justify="flex-start"
-                        padding="0px"
-                        gap="0px"
-                    >
+                    {/*
+                      * ---- BOOK element ----
+                      *
+                      * Ini dulu memakai komponen <Stack>. Diganti div biasa
+                      * karena Stack memancarkan `data-version="v1"` dan gaya
+                      * inline `--stack-*` yang tidak ada di produksi (produksi
+                      * memakai div flex langsung), dan `.stack` memaksa
+                      * `gap: 0` sehingga `column-gap`/`row-gap` terhitung `0px`
+                      * padahal produksi `normal`. Properti flex dipindah ke
+                      * kelas CSS per-role dengan nilai terhitung produksi:
+                      * book/stripe/body pakai justify-content:flex-start, tapi
+                      * content TIDAK (produksi `normal`); gap hanya di stripe
+                      * (8px) dan content (calc), book/body tanpa gap.
+                      */}
+                    <div className={styles.book}>
                         {variant === 'stripe' && (
                             /* Stripe header (aria-hidden) */
-                            <Stack
-                                className={styles.stripe}
-                                aria-hidden="true"
-                                direction="row"
-                                align="stretch"
-                                justify="flex-start"
-                                padding="0px"
-                                gap="8px"
-                            >
+                            <div className={styles.stripe} aria-hidden="true">
                                 <div className={styles.illustration}>{illustration}</div>
                                 <div className={styles.bind} />
-                            </Stack>
+                            </div>
                         )}
 
                         {/* Body row */}
-                        <Stack
-                            className={styles.body}
-                            direction="row"
-                            align="stretch"
-                            justify="flex-start"
-                            padding="0px"
-                            gap="0px"
-                        >
+                        <div className={styles.body}>
                             <div aria-hidden="true" className={styles.bind} />
-                            <Stack
-                                className={styles.content}
-                                direction="column"
-                                align="stretch"
-                                justify="flex-start"
-                                padding="0px"
-                                gap="0px"
-                            >
+                            <div className={styles.content}>
                                 {/*
                                   * Title. Production renders a bare
                                   * <span class="text-heading-14 book-module__…__title">,
@@ -239,8 +227,8 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
 
                                 {variant === 'stripe' &&
                                     (icon !== undefined ? icon : <LogoVercel size={16} />)}
-                            </Stack>
-                        </Stack>
+                            </div>
+                        </div>
 
                         {/* Texture overlay (textured only) */}
                         {textured && (
@@ -250,7 +238,7 @@ export const Book = forwardRef<HTMLDivElement, BookProps>(
                                 style={{ transform: `rotate(${textureRotation}deg)` }}
                             />
                         )}
-                    </Stack>
+                    </div>
 
                     {/* Pages spine */}
                     <div

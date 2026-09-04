@@ -104,6 +104,13 @@
 }
 
 .rotateWrapper.stripe .stripe {
+    /* stripe = flex row, justify flex-start, align stretch, gap 8px
+       (terukur produksi). flex:1 memberi flex-grow:1. */
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 8px;
     background: var(--book-color);
     flex: 1;
     width: 100%;
@@ -162,6 +169,14 @@
 /* ---- BOOK base ---- */
 
 .book {
+    /* Flex config dulu dari komponen Stack; dipindah ke sini supaya div
+       biasa tanpa data-version/style inline. Nilai terukur di produksi:
+       book = flex column, justify-content flex-start, align stretch, TANPA
+       gap (column-gap/row-gap terhitung `normal`). */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
     width: calc(var(--book-width) * 1px);
     border-radius: var(--book-border-radius);
     background: var(--ds-background-200);
@@ -220,6 +235,12 @@
 }
 
 .book .content {
+    /* content = flex column, align stretch. CATATAN: TANPA justify-content
+       (produksi terhitung `normal`, bukan flex-start seperti book/stripe/
+       body). Gap diset terpisah per varian (24px stripe / 16px simple). */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
     padding: 6.1%;
     container-type: inline-size;
@@ -228,6 +249,17 @@
 .book .content .title {
     text-wrap: balance;
     color: var(--book-text-color);
+}
+
+/* ---- body ---- */
+
+.body {
+    /* body = flex row, justify flex-start, align stretch, TANPA gap
+       (terukur produksi). Varian simple menambah width/height 100% di atas. */
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
 }
 
 /* ---- body bind ---- */
