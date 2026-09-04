@@ -23,10 +23,13 @@ describe('Browser', () => {
             expect(header).not.toBeNull();
         });
 
-        it('render container query wrapper', () => {
+        it('render container query wrapper (inline style, seperti produksi)', () => {
+            // Produksi menulis `style="container-type:inline-size"` di div terluar,
+            // bukan kelas (terukur 31 Agu 2026). Div-nya juga tanpa kelas apa pun.
             const { container } = render(<Browser />);
             const el = container.firstChild as HTMLElement;
-            expect(el.className).toMatch(/containerQuery/);
+            expect(el.style.containerType).toBe('inline-size');
+            expect(el.getAttribute('class')).toBeNull();
         });
 
         it('render browser shell', () => {

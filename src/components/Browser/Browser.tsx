@@ -1,7 +1,6 @@
 'use client';
 
 import { forwardRef, useCallback, useRef, useState, type ReactNode } from 'react';
-import { cn } from '../../utils/cn';
 import { Button } from '../Button';
 import styles from './Browser.module.css';
 import { ArrowLeft, ArrowRight, RefreshClockwise, Copy, Check } from '@oxobz/icons';
@@ -33,7 +32,7 @@ function normalizeAddress(url: string): string {
  * Production equivalent of Geist's Browser component.
  */
 export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
-    ({ address, children, className, ...props }, ref) => {
+    ({ address, children, className, style, ...props }, ref) => {
         const [copied, setCopied] = useState(false);
         const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,7 +45,19 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
             });
         }, [address]);
         return (
-            <div ref={ref} className={cn(styles.containerQuery, className)} {...props}>
+            /*
+             * `container-type` disetel lewat inline style, bukan kelas. Produksi
+             * menulisnya `style="container-type:inline-size"` dan div terluarnya
+             * TIDAK membawa kelas apa pun (terukur 31 Agu 2026). `className`
+             * dikirim apa adanya supaya hilang saat konsumen tak mengirimnya,
+             * bukan lewat cn() yang akan menulis `class=""`.
+             */
+            <div
+                ref={ref}
+                className={className}
+                style={{ containerType: 'inline-size', ...style }}
+                {...props}
+            >
                 <div className={styles.browser}>
                     {/* Header bar */}
                     <div className={styles.header} data-oxobz-browser-header-root="true">
@@ -61,20 +72,12 @@ export const Browser = forwardRef<HTMLDivElement, BrowserProps>(
                                 <ArrowLeft size={14} color="gray-900" />
                                 <ArrowRight size={14} color="gray-900" />
                                 {/*
-                                  * `data-glyph="circular"` ada di ikon ini pada DOM produksi
-                                  * (diukur di halaman live 10 Agu 2026). Atribut itu penanda
-                                  * bentuk yang dipakai dua aturan CSS Geist untuk merapikan
-                                  * jarak ikon DI DALAM Badge; di kepala Browser tidak ada
-                                  * aturan yang cocok, jadi tidak ada efek visual. Ditulis di
-                                  * sini supaya DOM sama persis.
-                                  *
-                                  * Tempat yang benar sebenarnya di @oxobz/icons, karena di
-                                  * produksi penanda ini melekat pada ikonnya, bukan pada
-                                  * pemakainya. Pemetaan lengkapnya ada di paket privat Vercel
-                                  * dan baru satu yang bisa kita ukur, jadi keputusannya
-                                  * dicatat di tasks/todo.md.
+                                  * `data-glyph="circular"` kini melekat pada ikonnya sendiri
+                                  * (source `refresh-clockwise.svg`), persis seperti produksi
+                                  * yang menaruhnya intrinsik di ikon, bukan di pemakainya.
+                                  * Dulu dioper sebagai prop di sini; sekarang tidak perlu.
                                   */}
-                                <RefreshClockwise size={14} color="gray-900" data-glyph="circular" />
+                                <RefreshClockwise size={14} color="gray-900" />
                             </div>
                         </div>
 
