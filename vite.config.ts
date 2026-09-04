@@ -92,6 +92,10 @@ export default defineConfig({
                 // Calendar parses and formats typed dates through Luxon, the
                 // same library the Geist bundle uses for it.
                 'luxon',
+                // Kartu Feedback inline produksi adalah motion.div milik
+                // framer-motion, dengan variants dan transition yang dibaca
+                // langsung dari bundel Geist (30 Agu 2026).
+                'framer-motion',
             ],
             output: {
                 preserveModules: true,

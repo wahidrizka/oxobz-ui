@@ -69,10 +69,14 @@
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-popover": "^1.1.23",
         "cmdk": "^1.1.1",
+        "framer-motion": "^13.1.1",
         "luxon": "^3.7.2",
         "prism-react-renderer": "^2.4.1",
         "prismjs": "^1.30.0",
         "react-aria": "^3.50.0",
         "react-stately": "^3.49.0"
+    },
+    "overrides": {
+        "@radix-ui/react-popper": "1.2.7"
     }
 }
