@@ -88,8 +88,10 @@ function useAriaButtonStates(isDisabled: boolean): {
     const stateAttrs: Record<string, string> = {
         'data-react-aria-pressable': 'true',
     };
-    if (isHovered && !isDisabled) stateAttrs['data-hover'] = '';
-    if (isFocusVisible) stateAttrs['data-focus'] = '';
+    // Production renders these as the string "true" (React Aria's convention),
+    // not an empty string; the CSS keys off attribute presence either way.
+    if (isHovered && !isDisabled) stateAttrs['data-hover'] = 'true';
+    if (isFocusVisible) stateAttrs['data-focus'] = 'true';
 
     return {
         stateProps: mergeProps(hoverProps, pressProps, focusProps),
