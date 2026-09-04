@@ -3,9 +3,21 @@ import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { Feedback } from './Feedback';
 
-/** Selects the root wrapper div (the component root). */
+/**
+ * Selects the root wrapper div. The two variants are marked differently on
+ * purpose, because production marks them differently: the inline card's
+ * wrapper carries `data-feedback-inline` and nothing else, while the popover
+ * variant keeps the component marker.
+ */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-feedback]');
+    return container.querySelector('[data-feedback-inline],[data-oxobz-feedback]');
+}
+
+/** The inline card is "open" when a rating is picked — the same signal production exposes. */
+function isOpen() {
+    return screen
+        .getAllByRole('radio')
+        .some((tombol) => tombol.getAttribute('aria-checked') === 'true');
 }
 
 describe('Feedback', () => {
@@ -15,17 +27,21 @@ describe('Feedback', () => {
         expect(Feedback.displayName).toBe('Feedback');
     });
 
-    it('renders a root div with data-oxobz-feedback and data-version="v1" (inline)', () => {
+    /* Production's inline wrapper carries data-feedback-inline and NO
+       data-version, verified attribute-by-attribute on the live page. */
+    it('marks the inline wrapper with data-feedback-inline and no data-version', () => {
         const { container } = render(<Feedback type="inline" />);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
-        expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).toHaveAttribute('data-feedback-inline', '');
+        expect(root).not.toHaveAttribute('data-version');
+        expect(root).not.toHaveAttribute('data-oxobz-feedback');
         expect(root?.className).toContain('inlineWrapper');
     });
 
-    it('allows a custom data-version', () => {
-        const { container } = render(<Feedback type="inline" data-version="v2" />);
+    it('allows a custom data-version (default variant)', () => {
+        const { container } = render(<Feedback data-version="v2" />);
         expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
     });
 
@@ -41,7 +57,7 @@ describe('Feedback', () => {
         const ref = createRef<HTMLDivElement>();
         render(<Feedback type="inline" ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-feedback');
+        expect(ref.current).toHaveAttribute('data-feedback-inline');
     });
 
     it('forwards extra HTML attributes (id, aria-label)', () => {
@@ -84,40 +100,42 @@ describe('Feedback', () => {
             expect(screen.getByLabelText('Select Hate it emoji')).toHaveAttribute('aria-checked', 'false');
         });
 
-        it('opens the card (data-open) only after an emoji is picked', () => {
-            const { container } = render(<Feedback type="inline" />);
-            const card = container.querySelector('[data-oxobz-feedback] > div');
-            expect(card).not.toHaveAttribute('data-open');
+        /*
+         * The card no longer carries `data-open`: production has no such
+         * attribute, and the open geometry is written as inline style by
+         * framer-motion. Open state is read off the emoji radios instead,
+         * which is the signal production itself exposes.
+         */
+        it('opens the card only after an emoji is picked', () => {
+            render(<Feedback type="inline" />);
+            expect(isOpen()).toBe(false);
             fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
-            expect(card).toHaveAttribute('data-open');
+            expect(isOpen()).toBe(true);
         });
 
         it('collapses the card when clicking outside', () => {
-            const { container } = render(<Feedback type="inline" />);
-            const card = container.querySelector('[data-oxobz-feedback] > div');
+            render(<Feedback type="inline" />);
             fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
-            expect(card).toHaveAttribute('data-open');
+            expect(isOpen()).toBe(true);
             fireEvent.pointerDown(document.body);
-            expect(card).not.toHaveAttribute('data-open');
+            expect(isOpen()).toBe(false);
         });
 
         it('collapses the card on Escape', () => {
-            const { container } = render(<Feedback type="inline" />);
-            const card = container.querySelector('[data-oxobz-feedback] > div');
+            render(<Feedback type="inline" />);
             fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
-            expect(card).toHaveAttribute('data-open');
+            expect(isOpen()).toBe(true);
             fireEvent.keyDown(document, { key: 'Escape' });
-            expect(card).not.toHaveAttribute('data-open');
+            expect(isOpen()).toBe(false);
         });
 
         it('does not collapse when clicking inside the card', () => {
-            const { container } = render(<Feedback type="inline" />);
-            const card = container.querySelector('[data-oxobz-feedback] > div');
+            render(<Feedback type="inline" />);
             fireEvent.click(screen.getByLabelText('Select Hate it emoji'));
             fireEvent.pointerDown(
                 screen.getByPlaceholderText('Your feedback...'),
             );
-            expect(card).toHaveAttribute('data-open');
+            expect(isOpen()).toBe(true);
         });
 
         it('renders the feedback textarea with the fixed placeholder', () => {
@@ -153,7 +171,7 @@ describe('Feedback', () => {
             expect(onSubmit).not.toHaveBeenCalled();
         });
 
-        it('calls onSubmit with rating + message and shows the success view', () => {
+        it('calls onSubmit with rating + message and shows the success view', async () => {
             const onSubmit = vi.fn();
             const { container } = render(<Feedback type="inline" onSubmit={onSubmit} />);
             fireEvent.click(screen.getByLabelText('Select Love it! emoji'));
@@ -168,8 +186,14 @@ describe('Feedback', () => {
                 topic: undefined,
                 metadata: undefined,
             });
-            expect(screen.getByText('Thanks for the feedback!')).toBeInTheDocument();
-            expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
+            expect(screen.getByText('Your feedback has been received!')).toBeInTheDocument();
+            expect(screen.getByText('Thank you for your help.')).toBeInTheDocument();
+            /* The form does not vanish instantly: production fades it out
+               (`exit: {opacity:0, y:-4}`, 200ms) before AnimatePresence
+               unmounts it, so the Send button outlives the click by a frame. */
+            await waitFor(() => {
+                expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
+            });
         });
 
         it('forwards metadata to onSubmit', () => {
@@ -350,7 +374,7 @@ describe('Feedback', () => {
                 topic: undefined,
                 metadata,
             });
-            expect(within(screen.getByRole('dialog')).getByText('Thanks for the feedback!')).toBeInTheDocument();
+            expect(within(screen.getByRole('dialog')).getByText('Your feedback has been received!')).toBeInTheDocument();
         });
 
         it('accepts dryRun without throwing', () => {

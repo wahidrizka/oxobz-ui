@@ -68,59 +68,50 @@
     display: inline-flex;
 }
 
-/* ---- Root wrapper (feedback-module __inlineWrapper) ---- */
+/* ---- Root wrapper (production: `flex justify-center`) ----
+ * Flattened from the live class list. There is NO `align-items` here: the
+ * opened card clears a height-locked wrapper through framer-motion's
+ * `y: -200`, not through bottom alignment. Measured `align-items: normal`
+ * on both live instances, 30 Aug 2026.
+ */
 .inlineWrapper {
     display: flex;
     justify-content: center;
-    /* Kartu ditambatkan ke DASAR wrapper. Efeknya nol saat wrapper bebas
-       (tingginya mengikuti kartu), tapi menentukan saat konsumen mengunci
-       tinggi wrapper — mis. footer docs Geist memakai `h-12` (48px): di sana
-       form yang terbuka MELUAP KE ATAS, bukan mendorong layout, sehingga
-       halaman tidak bertambah tinggi dan tidak memunculkan scroll baru.
-       Diverifikasi di produksi: instance tanpa `h-12` ikut tumbuh (wrapper
-       243px, kartu tanpa transform), instance dengan `h-12` tetap 48px dan
-       kartunya diberi `translateY(-200px)` oleh JS Geist. */
-    align-items: flex-end;
 }
 
-/* ---- Card (feedback-module __inlineTriggerWrapper) ----
- * Collapsed: background var(--ds-background-100), box-shadow
- * var(--ds-shadow-border-small), width fit-content, overflow hidden,
- * border-radius 30px (snapshot inline style) — a "pill" shape.
+/* Production's `h-12` on the wrapper, paired with the `upwards` prop. */
+.inlineUpwards {
+    height: 48px;
+}
+
+/* ---- Card (production: the framer-motion `motion.div`) ----
+ * Flattened from `bg-[var(--ds-background-100)]
+ * shadow-[var(--ds-shadow-border-small)] transition-colors duration-200
+ * w-fit overflow-hidden`.
+ *
+ * NO width, height or border-radius here: framer-motion writes all three as
+ * inline style from the `variants` map, exactly as production does
+ * (`style="height:48px;width:274px;border-radius:30px"` while closed).
+ * NO display either — production's card computes to `display: block`.
  */
 .card {
-    display: flex;
-    flex-direction: column;
-    /* Lebar TETAP 274px, bukan fit-content. Diverifikasi di produksi Geist:
-       setiap instance inline membawa inline style `width:274px` — sama persis
-       walau teks prompt beda panjang ("Was this helpful?" vs "Give feedback"),
-       diukur di /geist/feedback (3 instance) dan /geist/introduction. Dengan
-       fit-content lebar kita jadi 255px (mengikuti teks) sehingga tidak pernah
-       cocok. */
-    width: 274px;
-    max-width: 100%;
+    width: fit-content;
     overflow: hidden;
     background: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border-small);
-    border-radius: 30px;
-    /* live: transition-colors duration-200 (cubic-bezier(.4,0,.2,1)) — animates
-       color/background/border only; border-radius snaps (not in the list). */
-    transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        /* Geist meng-animasi lebar bersamaan dengan tinggi saat form dibuka
-           (274px → 336px); di produksi nilainya dipasang inline oleh JS. */
-        width 0.2s ease;
+    /* `transition-colors duration-200` spelled out. The three
+       --tw-gradient-* entries are part of Tailwind v4's own colour list and
+       show up verbatim in the live computed value, so they are kept. */
+    transition-property: color, background-color, border-color, outline-color,
+        text-decoration-color, fill, stroke, --tw-gradient-from,
+        --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Expanded (form open / success shown): radius eases to 12px — the SAME
- * literal the feedback-module's `.popover` rule uses for this widget's
- * dialog rendering (--ds-radius-lg). */
-.card[data-open] {
-    border-radius: var(--ds-radius-lg);
-    /* Terbuka melebar ke 336px — juga konstanta, diukur dari inline style
-       Geist saat form terbuka (`width: 336px; border-radius: 12px`). */
-    width: 336px;
+/* Production's `w-full`, paired with the `fullWidth` prop. */
+.cardFullWidth {
+    width: 100%;
 }
 
 /* ---- Prompt row (feedback-module __trigger) ---- */
@@ -167,16 +158,24 @@
     /*
      * Lengkung waktunya cubic-bezier(.4,0,.2,1) (easing bawaan Tailwind),
      * bukan `ease` bawaan CSS. Diukur 18 Agu 2026 di halaman live.
+     *
+     * Ditulis sebagai longhand, BUKAN shorthand berdaftar. Produksi menulis
+     * `transition-[background,border-color] duration-200`, jadi durasinya
+     * satu nilai untuk dua properti. Bentuk shorthand membuat setiap
+     * longhand terbaca dua nilai (`0.2s, 0.2s`) dan tidak akan pernah cocok.
      */
-    transition:
-        background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition-property: background, border-color;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .emoji svg path {
-    /* live: [&_svg_path]:transition-all inherits duration-200 from the host
-       emoji button (--tw-duration .2s), ease cubic-bezier(.4,0,.2,1). */
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /*
+     * 0.15s, not 0.2s. `duration-200` on the button styles the BUTTON; the
+     * `[&_svg_path]:transition-all` variant keeps Tailwind's own default
+     * duration. Measured 0.15s on every live emoji path, 30 Aug 2026.
+     */
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .emoji[aria-checked='true'] {
@@ -204,20 +203,18 @@
     box-shadow: var(--ds-focus-ring);
 }
 
-/* ---- Collapse (inline variant open/close motion — see header note) ---- */
-.collapse {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.2s ease;
+/* ---- Form element (production: `class="h-full"` on the <form>) ----
+ * The old `.collapse` / `.collapseInner` pair is gone. Production never
+ * collapses the form: it stays at its natural 197px and the card clips it
+ * with `overflow: hidden` while framer-motion tweens the card's height.
+ */
+.form {
+    height: 100%;
 }
 
-.collapse[data-open] {
-    grid-template-rows: 1fr;
-}
-
-.collapseInner {
-    min-height: 0;
-    overflow: hidden;
+/* Production writes this as `className="h-[100px]"` on the textarea. */
+.messageField {
+    height: 100px;
 }
 
 /* ---- Form (feedback-module __formWrapper) ----
@@ -241,78 +238,72 @@
     color: var(--ds-gray-900);
 }
 
-.markdownMark {
-    display: inline-block !important;
-    /*
-     * Tanpa margin. Jarak ke tulisan datang dari `gap: 4px` milik induknya,
-     * sama seperti produksi; margin 8px di sini membuat jaraknya jadi dobel.
-     */
-    /* live: solid path fill var(--ds-gray-700), full opacity (was opacity .4 +
-       a dark-theme invert() hack). The gray-700 token flips with the theme. */
-    color: var(--ds-gray-700);
-}
+/* The markdown mark is a raw inline <svg> now (see MarkdownTip in the TSX):
+ * production hand-writes it instead of going through its icon component, so
+ * it needs no class of its own. */
 
 /* ---- Actions bar (feedback-module __actions) ----
  * Base rule is `justify-content: space-between` — confirmed by the popover
  * capture, which packs the emoji picker (left) + Send button (right) in
- * this exact row. `.actionsEnd` is the inline variant's override for its
- * single-button (Send-only) footer.
+ * this exact row. The inline variant's Send-only footer overrides it with an
+ * INLINE `justify-content: flex-end`, exactly as production does, so there
+ * is no `.actionsEnd` class any more.
  */
 .actions {
     display: flex;
     justify-content: space-between;
     padding: var(--oxobz-gap-half);
     background: var(--accents-1);
-    border-top: 1px solid var(--accents-2);
+    /*
+     * `border-t border-[var(--accents-2)]` mewarnai KEEMPAT sisi dan cuma
+     * memberi lebar pada sisi atas. Menulis `border-top: 1px solid ...`
+     * menyisakan tiga sisi lain memakai warna bawaan (terukur 235,235,235
+     * di kita lawan 234,234,234 di produksi). Lebarnya nol, jadi tak terlihat,
+     * tapi nilainya tetap terbaca beda.
+     */
+    border: 0 solid var(--accents-2);
+    border-top-width: 1px;
 }
 
-.actionsEnd {
-    justify-content: flex-end;
-}
-
-/* ---- Success (feedback-module __successWrapper + @keyframes appear) ---- */
+/* ---- Success (production: `flex flex-col justify-center items-center
+ *      gap-2 h-full`, children `opacity-0 translate-y-1
+ *      animate-feedbackAppear` + `animation-delay-200` / `-400`) ----
+ * No padding and no text-align: the live class list has neither.
+ */
 .successWrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 24px 16px;
-    text-align: center;
+    height: 100%;
 }
 
-.successWrapper svg,
-.successWrapper p {
+/* `translate`, not `transform`: Tailwind's translate-y-1 sets the standalone
+   property, which is why production's `transform` stays `none`. */
+.successAppear {
     opacity: 0;
-    transform: translateY(4px);
+    translate: 0 4px;
     animation: appear 0.5s forwards;
 }
 
-.successWrapper svg {
-    animation-delay: 0.1s;
+.successDelay200 {
+    animation-delay: 0.2s;
 }
 
-.successWrapper p:first-of-type {
-    animation-delay: 0.3s;
-}
-
-.successWrapper p:last-of-type {
+.successDelay400 {
     animation-delay: 0.4s;
-}
-
-.successDescription {
-    color: var(--ds-gray-900);
 }
 
 @keyframes appear {
     0% {
         opacity: 0;
-        transform: translateY(4px);
+        translate: 0 4px;
     }
 
     to {
         opacity: 1;
-        transform: none;
+        translate: none;
     }
 }
 

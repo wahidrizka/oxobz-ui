@@ -12,8 +12,14 @@ import {
     type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+/*
+ * The inline card is a framer-motion `motion.div` in production, animated
+ * through a `variants` map. Rebuilding it by hand would need a per-frame
+ * tween that the bundle already spells out, so this uses the same library.
+ * Reported as an added dependency on 30 Aug 2026.
+ */
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-    AcronymMarkdown,
     CheckCircleFill,
     FaceHappy,
     FaceSad,
@@ -42,6 +48,34 @@ const POPOVER_GAP = 8;
 const POPOVER_ENTER_MS = 100;
 /** --animate-feedbackFadeOut duration (chunk 20v_289ahbeyd.css). */
 const POPOVER_EXIT_MS = 200;
+
+/**
+ * Inline card motion, copied field-for-field from the production bundle
+ * (chunk `2lqodt92x3oso.js`, read 30 Aug 2026):
+ *
+ *   <motion.div initial="closed" animate={open ? variant : "closed"}
+ *               transition={{ duration: .15, ease: "easeOut" }} variants={...} />
+ *
+ * Cross-checked against three live recordings of the open animation: with
+ * `easeOut` (cubic-bezier(0,0,.58,1)) over 150ms the modelled height lands
+ * within 0.006 of the measured progress at every sampled frame.
+ */
+const INLINE_TRANSITION = { duration: 0.15, ease: 'easeOut' } as const;
+
+/** Inline success panel box — production writes these two values inline. */
+const SUCCESS_FIXED_BOX = { height: '75%', paddingTop: 48 } as const;
+
+/**
+ * Open height of the inline card, exactly as the bundle computes it:
+ * `showEmail && showTopics ? 341 : showEmail || showTopics ? 293 : 243`.
+ *
+ * `showEmail` is not implemented here yet (see tasks/todo.md), so the
+ * two-field branch is unreachable for now and the formula collapses to the
+ * two cases we can actually produce.
+ */
+function inlineOpenHeight(showTopics: boolean): number {
+    return showTopics ? 293 : 243;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -92,6 +126,20 @@ export interface FeedbackProps
 
     /** Adds a topic `<Select>` above the message field. */
     showTopics?: boolean;
+
+    /**
+     * Inline variant only. Pins the wrapper to 48px and lets the opened card
+     * grow UPWARDS out of it (`y: -200`) instead of pushing the page down.
+     * Production's own prop name and behaviour: it selects the
+     * `openFixedUpwards` variant and adds `h-12` to the wrapper.
+     */
+    upwards?: boolean;
+
+    /**
+     * Inline variant only. Stretches the card to its container's width; the
+     * closed variant then drops its fixed 274px width. Production's `fullWidth`.
+     */
+    fullWidth?: boolean;
 
     /**
      * Override the built-in topic list (used only with `showTopics`). NOT a
@@ -238,33 +286,72 @@ function EmojiPicker({ rating, onSelect }: EmojiPickerProps): ReactNode {
     );
 }
 
-/** "▤ supported." markdown hint — identical markup in both variants. */
-function MarkdownTip({ id }: { id: string }): ReactNode {
+/**
+ * "▤ supported." markdown hint — identical markup in both variants.
+ *
+ * The mark is a RAW inline `<svg>`, not the `AcronymMarkdown` icon component.
+ * Read straight off the production bundle (chunk `2lqodt92x3oso.js`,
+ * 30 Aug 2026): production hand-writes this one glyph with `fill="none"` on
+ * the `<svg>`, an explicit `xmlns`, no `data-slot`, no inline `color`, and
+ * the path filled with the `--ds-gray-700` token instead of `currentColor`.
+ * Going through the icon package emits four attributes production does not
+ * have, so this single glyph is the documented exception to the
+ * "icons always come from @oxobz/icons" rule.
+ *
+ * The hint carries NO `id`: production's textarea has no `aria-describedby`
+ * pointing at it (verified attribute-by-attribute on the live page).
+ */
+function MarkdownTip(): ReactNode {
     return (
-        <div className={cn('text-label-12', styles.markdownTip)} id={id}>
-            <AcronymMarkdown className={styles.markdownMark} size={14} />
+        <div className={cn('text-label-12', styles.markdownTip)}>
+            <svg fill="none" height="14" viewBox="0 0 22 14" width="22" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    clipRule="evenodd"
+                    d="M19.5 1.25H2.5C1.80964 1.25 1.25 1.80964 1.25 2.5V11.5C1.25 12.1904 1.80964 12.75 2.5 12.75H19.5C20.1904 12.75 20.75 12.1904 20.75 11.5V2.5C20.75 1.80964 20.1904 1.25 19.5 1.25ZM2.5 0C1.11929 0 0 1.11929 0 2.5V11.5C0 12.8807 1.11929 14 2.5 14H19.5C20.8807 14 22 12.8807 22 11.5V2.5C22 1.11929 20.8807 0 19.5 0H2.5ZM3 3.5H4H4.25H4.6899L4.98715 3.82428L7 6.02011L9.01285 3.82428L9.3101 3.5H9.75H10H11V4.5V10.5H9V6.79807L7.73715 8.17572L7 8.97989L6.26285 8.17572L5 6.79807V10.5H3V4.5V3.5ZM15 7V3.5H17V7H19.5L17 9.5L16 10.5L15 9.5L12.5 7H15Z"
+                    fill="var(--ds-gray-700)"
+                    fillRule="evenodd"
+                />
+            </svg>
             supported.
         </div>
     );
 }
 
 interface SuccessViewProps {
-    successMessage: string;
-    successDescription: string;
+    /**
+     * Inline variant only: production pins the success panel to 75% of the
+     * card and pads the top by 48px so it clears the prompt row. The popover
+     * renders the identical markup WITHOUT this inline style.
+     */
+    fixedHeight?: boolean;
 }
 
 /**
- * Post-submit view. No success state was ever captured in either snapshot
- * (both are pre-submit `dryRun` demos) — shape (flex column, gap 8px, two
- * `<p>` + `<svg>` staggered `appear` keyframes) comes from the CSS module;
- * the copy is invented, unchanged from the previous inline-only revision.
+ * Post-submit view, read verbatim from the production bundle (chunk
+ * `2lqodt92x3oso.js`, 30 Aug 2026). Both the inline card and the popover
+ * render the exact same three children and the exact same two sentences:
+ *
+ *   <div class="flex flex-col justify-center items-center gap-2 h-full">
+ *     <IconCheckCircleFill color="green-900" size={32}
+ *       class="checkmark opacity-0 translate-y-1 animate-feedbackAppear"/>
+ *     <p class="... animate-feedbackAppear animation-delay-200">Your feedback has been received!</p>
+ *     <p class="... animate-feedbackAppear animation-delay-400">Thank you for your help.</p>
+ *   </div>
+ *
+ * The previous copy here ("Thanks for the feedback!" / "We'll use it to
+ * improve the experience.") was invented when no success state had been
+ * captured. It is now replaced by the real strings.
  */
-function SuccessView({ successMessage, successDescription }: SuccessViewProps): ReactNode {
+function SuccessView({ fixedHeight = false }: SuccessViewProps): ReactNode {
     return (
-        <div className={styles.successWrapper}>
-            <CheckCircleFill color="blue-700" size={24} />
-            <p className="text-copy-14">{successMessage}</p>
-            <p className={cn('text-copy-13', styles.successDescription)}>{successDescription}</p>
+        <div className={styles.successWrapper} style={fixedHeight ? SUCCESS_FIXED_BOX : undefined}>
+            <CheckCircleFill className={styles.successAppear} color="green-900" size={32} />
+            <p className={cn('text-copy-14', styles.successAppear, styles.successDelay200)}>
+                Your feedback has been received!
+            </p>
+            <p className={cn('text-copy-14', styles.successAppear, styles.successDelay400)}>
+                Thank you for your help.
+            </p>
         </div>
     );
 }
@@ -350,6 +437,8 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
             type = 'default',
             prompt = 'Was this helpful?',
             showTopics = false,
+            upwards = false,
+            fullWidth = false,
             topics = DEFAULT_TOPICS,
             prefix,
             suffix,
@@ -380,7 +469,6 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
 
         const autoId = useId();
         const textareaId = `feedback-textarea-${autoId}`;
-        const hintId = `${textareaId}-hint`;
         const topicId = `feedback-topic-${autoId}`;
         const popoverId = `feedback-popover-${autoId}`;
 
@@ -487,12 +575,18 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
         ) : null;
 
         const messageField = (
+            /*
+             * No `aria-describedby`, and the 100px height rides on a class,
+             * not an inline style: both verified attribute-by-attribute
+             * against the live textarea, which carries only autocapitalize,
+             * autocomplete, autocorrect, spellcheck, placeholder and id.
+             * Production writes it as `className="h-[100px]"`.
+             */
             <Textarea
-                aria-describedby={hintId}
+                className={styles.messageField}
                 id={textareaId}
                 onChange={(event) => setMessage(event.target.value)}
                 placeholder="Your feedback..."
-                style={{ height: '100px' }}
                 value={message}
             />
         );
@@ -503,49 +597,93 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
 
         if (isInline) {
             const isOpen = rating !== null;
+            const tinggiTerbuka = inlineOpenHeight(showTopics);
+
+            /*
+             * Variants copied field-for-field from the production bundle
+             * (chunk `2lqodt92x3oso.js`, read 30 Aug 2026). The two "Error"
+             * variants and the auto-height `open` variant are omitted here
+             * because this build has no inline validation state yet; see
+             * tasks/todo.md.
+             */
+            const variants = {
+                closed: fullWidth
+                    ? { height: 48, borderRadius: 30 }
+                    : { height: 48, width: 274, borderRadius: 30 },
+                openFixed: { height: tinggiTerbuka, width: 336, borderRadius: 12 },
+                openFixedUpwards: {
+                    height: tinggiTerbuka + 2,
+                    width: 336,
+                    borderRadius: 12,
+                    y: -200,
+                },
+            };
 
             return (
+                /*
+                 * The wrapper carries `data-feedback-inline` and NOTHING else:
+                 * no component marker, no data-version. Verified on the live
+                 * page, where both instances read
+                 * `class="flex justify-center[ h-12]" data-feedback-inline=""`.
+                 */
                 <div
                     {...rest}
                     ref={ref}
-                    className={cn(styles.inlineWrapper, className)}
-                    data-oxobz-feedback=""
-                    data-version={dataVersion}
+                    className={cn(styles.inlineWrapper, upwards && styles.inlineUpwards, className)}
+                    data-feedback-inline=""
                 >
-                    <div
-                        className={styles.card}
-                        data-open={isOpen || undefined}
+                    <motion.div
+                        animate={isOpen ? (upwards ? 'openFixedUpwards' : 'openFixed') : 'closed'}
+                        className={cn(styles.card, fullWidth && styles.cardFullWidth)}
+                        initial="closed"
                         ref={inlineRef}
+                        transition={INLINE_TRANSITION}
+                        variants={variants}
                     >
                         <div className={styles.prompt}>
                             <p className={cn('text-copy-14', styles.promptText)}>{prompt}</p>
                             <EmojiPicker onSelect={handleSelectRating} rating={rating} />
                         </div>
 
-                        <div className={styles.collapse} data-open={isOpen || undefined}>
-                            <div className={styles.collapseInner}>
-                                {submitted ? (
-                                    <SuccessView
-                                        successDescription="We'll use it to improve the experience."
-                                        successMessage="Thanks for the feedback!"
-                                    />
-                                ) : (
-                                    <form onSubmit={handleSubmit}>
+                        {/*
+                         * No wrapper div and no collapse mechanism. The bare
+                         * `<div>` that shows up between the card and the form
+                         * on the live page IS this `motion.div` (it carries no
+                         * class, so it looks anonymous); the form keeps its
+                         * natural 197px height and the card clips it with
+                         * `overflow: hidden`. The old grid `0fr -> 1fr` trick
+                         * collapsed the form to zero and needed an extra
+                         * element production does not have.
+                         */}
+                        <AnimatePresence>
+                            {submitted ? (
+                                <SuccessView fixedHeight key="success" />
+                            ) : (
+                                <motion.div
+                                    exit={{ opacity: 0, y: -4 }}
+                                    key="form"
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <form className={styles.form} onSubmit={handleSubmit}>
                                         <div className={styles.formWrapper}>
                                             {topicSelect}
                                             {messageField}
-                                            <MarkdownTip id={hintId} />
+                                            <MarkdownTip />
                                         </div>
-                                        <div className={cn(styles.actions, styles.actionsEnd)}>
+                                        {/* Production writes this override inline, not as a class. */}
+                                        <div
+                                            className={styles.actions}
+                                            style={{ justifyContent: 'flex-end' }}
+                                        >
                                             <Button size="small" typeName="submit">
                                                 Send
                                             </Button>
                                         </div>
                                     </form>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
                 </div>
             );
         }
@@ -596,16 +734,14 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
                             tabIndex={-1}
                         >
                             {submitted ? (
-                                <SuccessView
-                                    successDescription="We'll use it to improve the experience."
-                                    successMessage="Thanks for the feedback!"
-                                />
+                                /* Same panel as the inline card, minus the inline 75% box. */
+                                <SuccessView />
                             ) : (
                                 <form className={styles.popoverForm} onSubmit={handleSubmit}>
                                     <div className={styles.formWrapper}>
                                         {topicSelect}
                                         {messageField}
-                                        <MarkdownTip id={hintId} />
+                                        <MarkdownTip />
                                     </div>
                                     <div className={styles.actions}>
                                         <EmojiPicker onSelect={handleSelectRating} rating={rating} />
