@@ -195,5 +195,12 @@
         text-overflow: clip;
         white-space: normal;
         max-width: none;
+        /*
+         * `min-width` ikut dikembalikan ke `auto`. Di produksi nilai 0 itu
+         * bagian dari kelompok `sm:` yang sama dengan truncate-nya, jadi di
+         * bawah 401px nilainya `auto`. Terukur di halaman live: 375px = auto,
+         * 900px dan 1400px = 0px.
+         */
+        min-width: auto;
     }
 }

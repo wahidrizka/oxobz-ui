@@ -103,7 +103,8 @@ describe('Breadcrumb', () => {
         expect(buttons).toHaveLength(2);
         buttons.forEach((button) => {
             expect(button.className).toContain('menuItem');
-            expect(button).toHaveAttribute('type', 'button');
+            /* Pil menu produksi TIDAK membawa atribut type (terukur 30 Agu 2026). */
+            expect(button).not.toHaveAttribute('type');
             // No separator icon in the menu variant.
             expect(button.querySelector('svg')).not.toBeInTheDocument();
         });

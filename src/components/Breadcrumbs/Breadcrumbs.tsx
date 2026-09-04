@@ -144,7 +144,9 @@ const BreadcrumbItem = forwardRef<HTMLElement, BreadcrumbItemProps>(
                             )}
                             disabled={disabled}
                             onClick={onClick}
-                            type="button"
+                            /* TANPA `type`: pil menu produksi tidak membawa
+                               atribut itu (terukur 30 Agu 2026). Aman karena
+                               pil ini tidak pernah berada di dalam <form>. */
                         >
                             {label}
                         </button>
@@ -234,9 +236,13 @@ const BreadcrumbRoot = forwardRef<HTMLElement, BreadcrumbProps>(
                     {...rest}
                     ref={ref}
                     aria-label="Breadcrumb"
-                    className={cn(className)}
                     /* TANPA penanda komponen: nav produksi cuma membawa
-                       aria-label dan kelasnya (terukur 30 Agu 2026). */
+                       aria-label (terukur 30 Agu 2026). `cn(className)`
+                       mengembalikan string kosong saat konsumen tidak
+                       mengirim className, dan React menuliskannya sebagai
+                       `class=""` — atribut yang produksi tidak punya sama
+                       sekali. Dikirim apa adanya supaya hilang saat kosong. */
+                    className={className}
                 >
                     <ol className={styles.ol}>{children}</ol>
                 </nav>
