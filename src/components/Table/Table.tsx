@@ -109,7 +109,11 @@ const TableCol = forwardRef<HTMLTableColElement, TableColProps>(
         <col
             {...rest}
             ref={ref}
-            className={cn(className)}
+            /* Dikirim apa adanya, bukan lewat cn(): dengan satu argumen yang
+               kosong cn() mengembalikan string kosong dan React menuliskannya
+               sebagai `class=""`, atribut yang tidak seharusnya ada. Kasus
+               yang sama sudah terbukti memunculkan beda di nav Breadcrumbs. */
+            className={className}
             data-oxobz-table-col=""
             data-version={dataVersion}
         />
