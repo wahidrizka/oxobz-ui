@@ -45,10 +45,24 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(
          * menunjuk `data-[slot=icon]`. Di luar badge, ikon tetap memakai
          * penanda bawaannya.
          */
+        /*
+         * Ikon badge produksi membawa `class="relative"` di svg-nya (terukur
+         * 31 Agu 2026, 51 svg di halaman Badge). Kelas itu ditambahkan saat
+         * clone, digabung dengan className yang mungkin sudah dibawa ikon.
+         * Posisi relative juga tetap diset lewat CSS module `.badge svg` supaya
+         * konsumen standalone (tanpa Tailwind) tetap benar.
+         */
         const ikonBadge = isValidElement(icon)
-            ? cloneElement(icon as ReactElement<{ 'data-slot'?: string }>, {
-                  'data-slot': 'icon',
-              })
+            ? cloneElement(
+                  icon as ReactElement<{ 'data-slot'?: string; className?: string }>,
+                  {
+                      'data-slot': 'icon',
+                      className: cn(
+                          'relative',
+                          (icon as ReactElement<{ className?: string }>).props.className,
+                      ),
+                  },
+              )
             : icon;
 
         const subtle = contrast === 'low';
@@ -65,8 +79,16 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(
                     styles[size],
                     className,
                 )}
-                data-oxobz-badge=""
-                data-version="v2"
+                /*
+                 * TANPA penanda komponen. Badge produksi TIDAK membawa
+                 * data-slot/data-version/penanda apa pun (murni kelas Tailwind,
+                 * terukur 31 Agu 2026 di 79 badge). CLAUDE.md sempat mencatat
+                 * "Badge satu-satunya v2 mengikuti versi produksi", tapi
+                 * ternyata produksi tak punya data-version sama sekali; jadi
+                 * "mengikuti versi produksi" = tanpa penanda. Ini perubahan
+                 * yang mematahkan API (penunjuk `[data-oxobz-badge]` berhenti
+                 * bekerja), masuk rilis 0.8.0.
+                 */
                 {...(href ? { href } : {})}
                 {...props}
             >
