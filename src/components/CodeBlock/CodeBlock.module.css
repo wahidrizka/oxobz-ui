@@ -10,44 +10,85 @@
  */
 
 /* ── Wrapper ────────────────────────────────────────────── */
+/* geistcn generation (live code-block, verified 3 Sep 2026): the wrapper is
+   borderless — `my-4 rounded-lg group/copy relative overflow-hidden`. The block
+   border now lives on the header + the inner .borderWrap. rounded-lg = 8px. */
 .wrapper {
-    border: 1px solid var(--ds-gray-400);
-    border-radius: 6px;
+    border-radius: 8px;
     margin: 16px 0;
     overflow: hidden;
     position: relative;
 }
 
 /* ── Header (visible when hasFileName) ──────────────────── */
+/* Live: `py-0 pl-4 rounded-t-lg h-(--ds-size-large) flex items-center border-*
+   border-gray-400 bg-background-200`. Border on ALL sides (left/right align with
+   .borderWrap below; bottom is the divider; top caps the block). Height 40px. */
 .header {
-    border-bottom: 1px solid var(--ds-gray-400);
+    border: 1px solid var(--ds-gray-400);
     background: var(--ds-background-200);
-    border-radius: 6px 6px 0 0;
+    border-radius: 8px 8px 0 0;
     align-items: center;
-    height: 48px;
-    padding: 0 12px 0 16px;
+    height: 40px;
+    padding: 0 5px 0 16px;
     display: flex;
+}
+
+/* ── Border wrapper around the code ─────────────────────── */
+/* No-filename: border on all sides, rounded top+bottom. With a header the top
+   border is dropped (the header caps it) and only the bottom is rounded. */
+.borderWrap {
+    border: 1px solid var(--ds-gray-400);
+    border-radius: 8px;
+}
+
+.hasFileName .borderWrap {
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
 }
 
 /* ── Copy button (shared base) ─────────────────────────── */
+/* geistcn Button chrome: rounded-md, gray-900 svg color, cubic-bezier(.4,0,.2,1)
+   150ms transitions. Header variant is size-7 (28px), floating is size-8 (32px). */
 .copyButton {
     all: unset;
+    box-sizing: border-box;
     cursor: pointer;
-    width: 32px;
-    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--oxobz-radius);
-    color: var(--ds-gray-900);
-    flex-shrink: 0;
-    position: relative;
-    transition: background 0.2s;
+    appearance: button;
+    max-width: 100%;
+    border-radius: 6px;
+    /* Border width 0; the 1px ring is drawn by box-shadow (themed-border =
+       gray-400). The invisible border-COLOR is gray-200 — identical to gray-400
+       in light (both 92%), but gray-200 in dark (matches production's button). */
+    border: 0 solid var(--ds-gray-200);
+    box-shadow: 0 0 0 1px var(--ds-gray-400);
+    color: var(--ds-gray-1000);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 21px;
+    text-align: center;
+    text-rendering: auto;
+    user-select: none;
+    touch-action: manipulation;
+    translate: 0px;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.copyButton:hover:not([data-active]) {
-    background: var(--ds-gray-200) !important;
+/* [&_svg]:text-gray-900! + [&_svg]:shrink-0 — icons a shade lighter than the
+   button's gray-1000 text colour, and never squeezed by flex. The `!important`
+   mirrors production's `!text-gray-900`: the icon sets `color: currentColor` as
+   an inline style, which a normal rule can't override. */
+.copyButton svg {
+    /* stylelint-disable-next-line declaration-no-important -- beats icon inline color */
     color: var(--ds-gray-900) !important;
+    flex-shrink: 0;
+}
+
+.copyButton:hover {
+    background: var(--ds-gray-100);
 }
 
 .copyButton:focus-visible {
@@ -55,34 +96,21 @@
     outline: none;
 }
 
-.copyButton svg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.copyButton svg:nth-child(2) {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
-}
-
-.copyButton.copyButtonCopied svg {
-    animation: 1.25s forwards hide;
-}
-
-.copyButton.copyButtonCopied svg:nth-child(2) {
-    animation: 1.25s 0.15s forwards show;
+/* Header variant: size-7 (28px), relative in the actions row. */
+.copyHeaderButton {
+    width: 28px;
+    height: 28px;
+    position: relative;
 }
 
 /* ── Floating copy button (no header variant) ──────────── */
+/* size-8 (32px), absolute, hidden until the block is hovered/focused. */
 .copyFloatingButton {
+    width: 32px;
+    height: 32px;
     opacity: 0;
     z-index: 1;
     background: var(--ds-background-200);
-    border-radius: var(--oxobz-radius);
-    border: 1px solid var(--ds-gray-400);
-    transition: opacity 0.1s, background 0.2s;
     position: absolute;
     top: min(16%, 16px);
     right: 16px;
@@ -94,6 +122,55 @@
 
 .wrapper:hover .copyFloatingButton {
     opacity: 1;
+}
+
+/* ── Copy button icon cross-fade ───────────────────────── */
+/* span.px-1.5 > div.size-4 > (div.absolute.transition-all)×2. At rest the Copy
+   layer is visible (opacity-1/scale-1), the Check layer hidden (opacity-0/
+   scale-.5); .copyButtonCopied swaps them over a 200ms ease-in-out transition. */
+.copyIconBox {
+    /* truncate = overflow:hidden + text-overflow:ellipsis + white-space:nowrap */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.copyIconInner {
+    position: relative;
+    width: 16px;
+    height: 16px;
+}
+
+.copyIconLayer {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.copyLayerCheck {
+    opacity: 0;
+    scale: 0.5;
+}
+
+.copyLayerCopy {
+    opacity: 1;
+    scale: 1;
+}
+
+.copyButtonCopied .copyLayerCheck {
+    opacity: 1;
+    scale: 1;
+}
+
+.copyButtonCopied .copyLayerCopy {
+    opacity: 0;
+    scale: 0.5;
 }
 
 /* ── fileName row ──────────────────────────────────────── */
@@ -156,9 +233,12 @@
 }
 
 .pre {
-    --padding: 20px;
+    /* geistcn generation: 16px vertical/horizontal padding (was 20px). Drives
+       line height footprint; verified 16px at 1400px on the live code-block. */
+    --padding: 16px;
     padding: var(--padding) 0;
     background: var(--ds-background-100);
+    border-radius: 8px;
     counter-reset: line;
 
     /* Shiki token color mapping */
@@ -176,12 +256,16 @@
 
     margin: 0;
     overflow-x: auto;
+    /* Thin gray-600 scrollbar (track transparent); scrollbar-color inherits down
+       to every token/line, scrollbar-width applies to the scroll container. */
+    scrollbar-color: var(--ds-gray-600) transparent;
+    scrollbar-width: thin;
 }
 
 /* ── Rounded bottom corners when a filename header is present ── */
 .hasFileName .pre {
     background: var(--ds-background-100);
-    border-radius: 0 0 6px 6px;
+    border-radius: 0 0 8px 8px;
 }
 
 /* ── Token base ────────────────────────────────────────── */
@@ -440,52 +524,3 @@
     }
 }
 
-/* ── Keyframe animations ───────────────────────────────── */
-@keyframes hide {
-    0% {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-
-    20% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-
-    80% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-}
-
-@keyframes show {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-
-    20% {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-
-    60% {
-        opacity: 1;
-        transform: translate(-50%, -50%);
-    }
-
-    80% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-}

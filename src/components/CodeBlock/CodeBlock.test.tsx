@@ -270,7 +270,7 @@ describe('CodeBlock', () => {
 
     it('renders a floating copy button when there is no filename', () => {
         render(<CodeBlock>{'x'}</CodeBlock>);
-        const button = screen.getByRole('button', { name: 'Copy code' });
+        const button = screen.getByRole('button', { name: 'Copy to clipboard' });
         expect(button.className).toContain('copyButton');
         expect(button.className).toContain('copyFloatingButton');
     });
@@ -279,7 +279,7 @@ describe('CodeBlock', () => {
         const { container } = render(
             <CodeBlock filename="app.tsx">{'x'}</CodeBlock>,
         );
-        const button = screen.getByRole('button', { name: 'Copy code' });
+        const button = screen.getByRole('button', { name: 'Copy to clipboard' });
         expect(button.className).toContain('copyButton');
         expect(button.className).not.toContain('copyFloatingButton');
         expect(container.querySelector('.header')).toContainElement(button);
@@ -290,7 +290,7 @@ describe('CodeBlock', () => {
         // async act flushes the clipboard promise so the copied-state update
         // does not fire outside act()
         await act(async () => {
-            fireEvent.click(screen.getByRole('button', { name: 'Copy code' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
         });
         expect(writeTextMock).toHaveBeenCalledTimes(1);
         expect(writeTextMock).toHaveBeenCalledWith(MULTILINE_CODE);
@@ -299,14 +299,14 @@ describe('CodeBlock', () => {
     it('copies the raw children string including trailing newline', async () => {
         render(<CodeBlock>{'line1\nline2\n'}</CodeBlock>);
         await act(async () => {
-            fireEvent.click(screen.getByRole('button', { name: 'Copy code' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
         });
         expect(writeTextMock).toHaveBeenCalledWith('line1\nline2\n');
     });
 
     it('applies copyButtonCopied class after a successful copy', async () => {
         render(<CodeBlock>{'x'}</CodeBlock>);
-        const button = screen.getByRole('button', { name: 'Copy code' });
+        const button = screen.getByRole('button', { name: 'Copy to clipboard' });
         await act(async () => {
             fireEvent.click(button);
         });

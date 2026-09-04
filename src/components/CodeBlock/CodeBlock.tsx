@@ -7,10 +7,12 @@ import {
     useMemo,
     useRef,
     useState,
+    type CSSProperties,
     type HTMLAttributes,
     type ReactNode,
 } from 'react';
 import { Highlight, type PrismTheme } from 'prism-react-renderer';
+import { mergeProps, useFocusRing, useHover, usePress } from 'react-aria';
 import { Copy, Check, ChevronDown } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import styles from './CodeBlock.module.css';
@@ -195,19 +197,56 @@ function CopyButton({ text, floating }: CopyButtonProps) {
         });
     }, [text]);
 
+    /*
+     * Production's copy button is the geistcn Button (react-aria pressable), so
+     * this uses the same hooks and renders the same markers: data-oxobz-button
+     * (pairs with production's data-ds-button), data-version, data-prefix/suffix,
+     * tabindex, an inline style, and data-react-aria-pressable (+ data-hover /
+     * data-focus while interacting). data-testid mirrors production's copy/button.
+     */
+    const { hoverProps, isHovered } = useHover({});
+    const { pressProps } = usePress({ onPress: handleCopy });
+    const { focusProps, isFocusVisible } = useFocusRing();
+    const stateAttrs: Record<string, string> = { 'data-react-aria-pressable': 'true' };
+    if (isHovered) stateAttrs['data-hover'] = '';
+    if (isFocusVisible) stateAttrs['data-focus'] = '';
+
     return (
         <button
-            aria-label="Copy code"
+            aria-label="Copy to clipboard"
+            data-testid="copy/button"
             className={cn(
                 styles.copyButton,
-                floating && styles.copyFloatingButton,
+                floating ? styles.copyFloatingButton : styles.copyHeaderButton,
                 copied && styles.copyButtonCopied,
             )}
             type="button"
-            onClick={handleCopy}
+            tabIndex={0}
+            data-oxobz-button=""
+            data-prefix="false"
+            data-suffix="false"
+            data-version="v1"
+            style={{ '--oxobz-icon-size': '16px' } as CSSProperties}
+            {...stateAttrs}
+            {...mergeProps(hoverProps, pressProps, focusProps)}
         >
-            <Copy size={16} aria-hidden />
-            <Check size={16} aria-hidden />
+            {/*
+             * Cross-fade icon stack, verbatim production structure:
+             * span.px-1.5 > div.size-4 > (div.absolute.transition-all)×2.
+             * Layer order matches the live resting state: first layer (Check)
+             * is opacity-0/scale-.5 at rest, second layer (Copy) is
+             * opacity-1/scale-1; the `copied` class swaps them.
+             */}
+            <span className={styles.copyIconBox}>
+                <div className={styles.copyIconInner}>
+                    <div className={cn(styles.copyIconLayer, styles.copyLayerCheck)}>
+                        <Check size={16} />
+                    </div>
+                    <div className={cn(styles.copyIconLayer, styles.copyLayerCopy)}>
+                        <Copy size={16} />
+                    </div>
+                </div>
+            </span>
         </button>
     );
 }
@@ -358,6 +397,11 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                 {/* Floating copy button (without filename) */}
                 {!hasFileName && <CopyButton text={codeText} floating />}
 
+                {/* Border wrapper around the code — production relocated the
+                    block border here (border-x + border-b, plus border-t only
+                    when there's no header), leaving the outer wrapper borderless
+                    with just rounded-lg + overflow-hidden. */}
+                <div className={styles.borderWrap} data-section="content">
                 {/* Code content — tokenized by prism-react-renderer */}
                 <Highlight
                     code={codeText.replace(/\n$/, '')}
@@ -366,7 +410,11 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                 >
                     {({ className: preClassName, tokens, getLineProps, getTokenProps }) => (
                         <pre className={cn(preClassName, styles.pre)}>
-                            <code className={styles.code} data-oxobz-code-block="true">
+                            <code
+                                className={styles.code}
+                                data-oxobz-code-block="true"
+                                style={{ fontFeatureSettings: '"liga" 0' }}
+                            >
                                 {tokens.map((line, i) => {
                                     const lineNum = i + 1;
                                     const lineId = `${blockId}-L${lineNum}`;
@@ -422,6 +470,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                         </pre>
                     )}
                 </Highlight>
+                </div>
             </div>
         );
     },
