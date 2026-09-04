@@ -33,7 +33,19 @@
     display: inline-flex;
     /* Snapshot: h-fit on the trigger span */
     height: fit-content;
-    /* oxobz positioning: anchor for the non-portaled popup proxy */
+}
+
+/*
+ * oxobz positioning: the popup is anchored INSIDE the trigger (not portaled),
+ * so the container only needs to become a positioning context WHILE OPEN. When
+ * closed there is no popup, so it stays `position: static` — exactly like the
+ * production trigger (which portals its popup and never anchors it). This closes
+ * the ~7 position diffs per trigger (position/top/left/right/bottom/inset) that
+ * a permanent `position: relative` produced in the resting state. The full
+ * portal rebuild (matching the OPEN-state DOM too) remains separate behaviour
+ * work (todo B16).
+ */
+.container[data-state="delayed-open"] {
     position: relative;
 }
 
