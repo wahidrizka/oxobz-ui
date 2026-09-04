@@ -80,9 +80,23 @@
     visibility: hidden;
 }
 
-/* When NOT indeterminate, hide the dash line */
+/*
+ * When NOT indeterminate, hide the dash line.
+ *
+ * Strokenya dipaku ke gray-700, tidak mengikuti `--checkbox-color`. Di
+ * produksi `--checkbox-color` disetel tetap gray-700 pada span ikon dan
+ * tidak pernah diubah per keadaan; border dan background yang diubah
+ * langsung. Kita justru mengubah `--checkbox-color` per keadaan (cara yang
+ * lebih ringkas untuk border+bg), sehingga garis yang tersembunyi ini ikut
+ * berubah jadi gray-1000/600/500 dan terbaca beda dari produksi yang selalu
+ * gray-700. Garis ini tak terlihat, jadi tidak ada dampak visual; paku ini
+ * cuma menyamakan nilai terukurnya. Garis indeterminate yang TERLIHAT tetap
+ * mengikuti `--checkbox-color` (.garis), yang sudah memberi gray-700 saat
+ * aktif dan gray-500 saat disabled, persis produksi (terukur 31 Agu 2026).
+ */
 .icon:not(:global(.indeterminate)) svg line {
     visibility: hidden;
+    stroke: var(--ds-gray-700);
 }
 
 /* ---- Inverted variant ---- */
