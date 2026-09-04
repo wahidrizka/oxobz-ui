@@ -57,19 +57,26 @@ export interface ChoiceboxGroupItemProps
 /*  SVG Icons (from Checkbox)                                          */
 /* ------------------------------------------------------------------ */
 
-/** Internal SVG used inside the checkbox icon — checkmark + dash */
+/*
+ * Internal SVG used inside the checkbox icon — checkmark + dash.
+ *
+ * Warna coretan lewat KELAS (checkboxStyles.tanda / .garis), bukan atribut
+ * `stroke` di markup — persis produksi (dan komponen Checkbox berdiri sendiri),
+ * yang path/line-nya membawa kelas `stroke-[...]` dan tanpa atribut stroke.
+ * .tanda = stroke var(--oxobz-background); .garis = stroke var(--checkbox-color).
+ */
 function CheckboxSvg() {
     return (
         <svg fill="none" height="16" viewBox="0 0 20 20" width="16">
             <path
+                className={checkboxStyles.tanda}
                 d="M14 7L8.5 12.5L6 10"
-                stroke="var(--oxobz-background)"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
             />
             <line
-                stroke="var(--checkbox-color)"
+                className={checkboxStyles.garis}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
@@ -117,11 +124,13 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
         // unconditionally (before the guard) to satisfy the rules of hooks.
         const checkboxId = `checkbox-${useId()}`;
         /*
-         * Produksi menautkan input ke judul pilihannya lewat
-         * aria-labelledby="choicebox-title-<id>". Tanpa itu pembaca layar hanya
+         * Produksi menautkan input ke judul DAN keterangan pilihannya lewat
+         * aria-labelledby="choicebox-title-<id> choicebox-desc-<id>" (dua
+         * sasaran, terukur di halaman live). Tanpa itu pembaca layar hanya
          * mendengar nilai mentahnya.
          */
         const titleId = `choicebox-title-${useId()}`;
+        const descId = `choicebox-desc-${useId()}`;
         if (!ctx) {
             throw new Error('ChoiceboxGroup.Item must be used within a ChoiceboxGroup');
         }
@@ -188,19 +197,25 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                             {title}
                         </span>
                         {description && (
-                            <span className={styles.description}>{description}</span>
+                            <span className={styles.description} id={descId}>
+                                {description}
+                            </span>
                         )}
                     </span>
 
                     {/* Radio / Checkbox indicator */}
                     {type === 'radio' ? (
-                        <span
-                            className={cn(
-                                radioStyles.check,
-                                isDisabled && radioStyles.disabled,
-                                styles.radio,
-                            )}
-                        >
+                        /*
+                         * Wrapper hanya membawa styles.radio, BUKAN radioStyles.check.
+                         * styles.radio sudah menyalin seluruh chrome wrapper
+                         * (flex/align/margin/padding/cursor/--radio-color), dan tanpa
+                         * .check aturan warna keadaan milik Radio (checked -> gray-1000
+                         * dst.) tidak ikut menyala, sehingga override warna khas
+                         * choicebox (unchecked gray-500, checked blue-900) menang tanpa
+                         * perang spesifisitas. Bentuk lingkaran + titik tetap dari
+                         * radioStyles.icon lewat komposisi kelas .input/.icon.
+                         */
+                        <span className={styles.radio}>
                             <input
                                 className={cn(
                                     radioStyles.input,
@@ -208,7 +223,9 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                                     styles.input,
                                 )}
                                 type="radio"
-                                aria-labelledby={titleId}
+                                aria-labelledby={
+                                    description ? `${titleId} ${descId}` : titleId
+                                }
                                 value={value}
                                 checked={isChecked}
                                 disabled={isDisabled}
@@ -238,7 +255,9 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                                     )}
                                     id={checkboxId}
                                     type="checkbox"
-                                    aria-labelledby={titleId}
+                                    aria-labelledby={
+                                        description ? `${titleId} ${descId}` : titleId
+                                    }
                                     value={value}
                                     checked={isChecked}
                                     disabled={isDisabled}
@@ -375,15 +394,16 @@ function ChoiceboxGroupRoot({
             >
                 {showLabel && label && (
                     /*
-                     * a11y fix: the group's aria-labelledby must reference a real
-                     * element, so the label carries id={labelId}. Production Geist
-                     * renders only for={labelId} (dangling reference) — we keep the
-                     * for= attribute for fidelity and add the id to make the
-                     * accessible name resolve.
+                     * Parity 100% (keputusan pengguna 3 Sep 2026): produksi Geist
+                     * memasang for={labelId} pada label DAN aria-labelledby={labelId}
+                     * pada grup, sedangkan TIDAK ada elemen ber-id={labelId} —
+                     * keduanya referensi menggantung (bug a11y asli Geist). Kita
+                     * meniru persis: label tanpa id, sehingga referensinya ikut
+                     * menggantung dan tidak me-resolve nama aksesibel grup.
                      */
                     /* Tanpa kapitalisasi: label grup di halaman live tampil apa
                        adanya ("Choicebox group disabled"), bukan Title Case. */
-                    <Label id={labelId} htmlFor={labelId} data-version="v1" bypassCasing>
+                    <Label htmlFor={labelId} data-version="v1" bypassCasing>
                         {label}
                     </Label>
                 )}

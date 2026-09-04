@@ -102,6 +102,14 @@
     cursor: not-allowed;
 }
 
+/* Produksi memasang cursor:not-allowed pada SELURUH isi pilihan yang disabled.
+   Cukup memasangnya di <label>: option, titleWrapper, title, dan description
+   tidak menyetel cursor sendiri, jadi mewarisinya. Radio/checkbox punya aturan
+   not-allowed sendiri. */
+.choicebox.disabled .label {
+    cursor: not-allowed;
+}
+
 /* ── Option row ───────────────────────────────────────── */
 .option {
     display: flex;
@@ -132,8 +140,15 @@
     background: var(--ds-blue-200);
 }
 
+/* Produksi memakai `border-blue-600` (warna DI SEMUA sisi) + `border-b` (hanya
+   sisi bawah yang berlebar 1px). Jadi keempat border-color = blue-600 walau
+   cuma bawah yang tampak. Menyetel border-bottom saja menyisakan tiga sisi
+   lain berwarna default. */
 .choicebox.checked:not(.disabled).hasContent .option {
     border-bottom: 1px solid var(--ds-blue-600);
+    border-top-color: var(--ds-blue-600);
+    border-left-color: var(--ds-blue-600);
+    border-right-color: var(--ds-blue-600);
 }
 
 /* ── Title / description ──────────────────────────────── */
@@ -177,11 +192,15 @@
 }
 
 /* ── Embedded radio control ───────────────────────────── */
-/* Wrapper mirrors the standalone Radio (-m-0.5 p-0.5 flex items-center);
-   the circle itself reuses Radio.module.css via composition in the TSX.
-   Only the choicebox-specific color overrides live here. */
+/* Wrapper mirrors the standalone Radio (-m-0.5 p-0.5 flex items-center) and,
+   because the TSX no longer applies radioStyles.check, is the SOLE owner of the
+   wrapper chrome + colors. The circle/dot shape still reuses Radio.module.css
+   via composition in the TSX.
+   Unchecked color is gray-500 (choicebox deviates from the standalone radio's
+   gray-700) — terukur di halaman live pada radio unchecked BAIK yang aktif
+   maupun yang disabled (rgb(201,201,201)). */
 .radio {
-    --radio-color: var(--ds-gray-700);
+    --radio-color: var(--ds-gray-500);
     display: flex;
     align-items: center;
     margin: -2px;
@@ -190,8 +209,18 @@
 }
 
 .choicebox.disabled .radio {
-    --radio-color: var(--ds-gray-500);
+    /* Warna currentColor keluarga (color/caret/fill/…) pada wrapper radio yang
+       disabled = gray-500 (terukur live). Diwariskan ke input, icon, titik, dan
+       ::placeholder. Dulu datang dari .check.disabled milik Radio; karena
+       radioStyles.check tidak lagi dipasang, dipulihkan di sini. */
+    color: var(--ds-gray-500);
     cursor: not-allowed;
+}
+
+/* Icon radio yang disabled berlatar gray-100 (pudar), beda dari radio berdiri
+   sendiri yang tetap putih. Terukur di halaman live pada 2 radio disabled. */
+.choicebox.disabled .radio .icon {
+    background-color: var(--ds-gray-100);
 }
 
 /* checked → blue-900 (choicebox deviates from the standalone radio's gray-1000) */
@@ -204,12 +233,22 @@
 }
 
 /* ── Embedded checkbox control (type="checkbox") ──────── */
+/* Tanpa -m-0.5 p-0.5: pembungkus checkbox di choicebox berukuran 16x16 pas
+   (terukur di halaman live), beda dari checkbox berdiri sendiri yang memakai
+   margin/padding negatif. Menambah padding membuatnya jadi 20x20. */
 .checkbox {
     display: flex;
     align-items: center;
-    margin: -2px;
-    padding: 2px;
     cursor: pointer;
+}
+
+/* Unchecked checkbox border/icon color = gray-500 (choicebox deviates from the
+   standalone checkbox's gray-700), terukur di halaman live. Diset di .icon
+   karena Checkbox.module.css memasang --checkbox-color langsung di span ikon,
+   jadi nilai warisan dari wrapper akan kalah. Keadaan checked (blue-900) dan
+   disabled (gray-500/gray-600 dari Checkbox.module.css) tetap menang. */
+.checkbox .icon {
+    --checkbox-color: var(--ds-gray-500);
 }
 
 .checkbox .input:checked + .icon {

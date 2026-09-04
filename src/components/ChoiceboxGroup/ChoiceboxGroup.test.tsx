@@ -274,7 +274,12 @@ describe('ChoiceboxGroup — label & showLabel', () => {
         expect(screen.getByRole('radiogroup')).not.toHaveAttribute('aria-label');
     });
 
-    it('with showLabel, aria-labelledby points to the rendered label element', () => {
+    it('with showLabel, renders a visible label but leaves aria-labelledby dangling (matches production Geist)', () => {
+        // Parity 100% (user decision 3 Sep 2026): production Geist sets both
+        // aria-labelledby (on the group) and for (on the label) to an id that
+        // has no matching element — a dangling reference we mirror exactly. The
+        // label is visible and carries `for`, but no `id`, so the ref never
+        // resolves.
         render(
             <ChoiceboxGroup label="Select a plan" showLabel>
                 {twoItems}
@@ -283,21 +288,24 @@ describe('ChoiceboxGroup — label & showLabel', () => {
         const group = screen.getByRole('radiogroup');
         const labelledBy = group.getAttribute('aria-labelledby');
         expect(labelledBy).toBeTruthy();
-        const labelEl = document.getElementById(labelledBy as string);
+        expect(document.getElementById(labelledBy as string)).toBeNull();
+        const labelEl = screen.getByText('Select a plan').closest('label') as HTMLElement;
         expect(labelEl).not.toBeNull();
-        expect(labelEl?.tagName).toBe('LABEL');
-        expect(labelEl).toHaveTextContent('Select a plan');
+        expect(labelEl.getAttribute('for')).toBe(labelledBy);
+        expect(labelEl.getAttribute('id')).toBeNull();
     });
 
-    it('with showLabel, the group gets its accessible name from the label', () => {
+    it('with showLabel, the dangling reference gives the group no accessible name (matches production)', () => {
         render(
             <ChoiceboxGroup label="Select a plan" showLabel>
                 {twoItems}
             </ChoiceboxGroup>,
         );
+        // aria-labelledby dangles, so no accessible name resolves — exactly
+        // production Geist's (buggy) behavior.
         expect(
-            screen.getByRole('radiogroup', { name: 'Select a plan' }),
-        ).toBeInTheDocument();
+            screen.queryByRole('radiogroup', { name: 'Select a plan' }),
+        ).toBeNull();
     });
 
     it('showLabel without label renders no visible label element', () => {
@@ -351,10 +359,13 @@ describe('ChoiceboxGroup — disabled', () => {
         }
     });
 
-    it('disabled radio marks its check span with the Radio disabled class', () => {
-        // Regression: the radio indicator must receive the Radio module's
-        // `disabled` class so --radio-color resolves to gray-500 (matches
-        // production), otherwise it falls back to gray-700.
+    it('disabled radio: the choicebox li carries the disabled class', () => {
+        // The radio wrapper no longer pulls in Radio.module's .check/.disabled.
+        // styles.radio owns the wrapper (and its gray-500 --radio-color base),
+        // while the disabled deltas (gray-500 color, gray-100 icon bg,
+        // not-allowed cursor) come from `.choicebox.disabled .radio` on the
+        // ancestor <li>. So the wrapper stays plain `radio` and the <li> is
+        // what carries `disabled`.
         const { container } = render(
             <ChoiceboxGroup label="plan" disabled>
                 {twoItems}
@@ -363,7 +374,9 @@ describe('ChoiceboxGroup — disabled', () => {
         const radioInput = container.querySelector('input[value="pro"]') as HTMLInputElement;
         const checkSpan = radioInput.parentElement as HTMLElement;
         expect(checkSpan.className).toContain('radio');
-        expect(checkSpan.className).toContain('disabled');
+        expect(checkSpan.className).not.toContain('disabled');
+        const li = checkSpan.closest('li') as HTMLElement;
+        expect(li.className).toContain('disabled');
     });
 
     it('enabled radio check span has no disabled class', () => {
