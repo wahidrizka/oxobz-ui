@@ -51,7 +51,13 @@
         calc(-90deg + var(--gap-percent) * var(--offset-factor) * var(--percent-to-deg))
     );
     transform-origin: calc(var(--circle-size) / 2) calc(var(--circle-size) / 2);
-    transition-property: stroke-dasharray, transform;
+    /*
+     * transition-property dibiarkan dari shorthand di atas = `all, stroke`
+     * (segmen pertama tanpa nama properti -> `all`). Terukur di halaman Colors
+     * live: circle arc = `all, stroke`. Baris `transition-property:
+     * stroke-dasharray, transform` yang dulu ada di sini menimpanya jadi beda
+     * dari produksi, jadi dicabut.
+     */
 }
 
 .animate .arcSecondary {
