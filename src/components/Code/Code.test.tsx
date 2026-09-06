@@ -5,31 +5,26 @@ import { Code } from './Code';
 
 /** Selects the root pre element (the component root). */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-code]');
+    return container.querySelector('pre');
 }
 
 /** Selects the inner code element. */
 function getCode(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-code] > code');
+    return container.querySelector('pre > code');
 }
 
 describe('Code', () => {
     // ── Rendering ──
 
-    it('renders a root pre with data-oxobz-code and data-version="v1"', () => {
+    it('renders a root pre with the module class and no marker attributes', () => {
         const { container } = render(<Code>const a = 1;</Code>);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('PRE');
-        expect(root).toHaveAttribute('data-version', 'v1');
         expect(root?.className).toContain('pre');
-    });
-
-    it('allows a custom data-version', () => {
-        const { container } = render(
-            <Code data-version="v2">const a = 1;</Code>,
-        );
-        expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
+        // Production's pre carries no data marker (measured live 6 Sep 2026).
+        expect(root).not.toHaveAttribute('data-oxobz-code');
+        expect(root).not.toHaveAttribute('data-version');
     });
 
     it('renders the children inside a code element', () => {
@@ -81,7 +76,6 @@ describe('Code', () => {
         const ref = createRef<HTMLPreElement>();
         render(<Code ref={ref}>const a = 1;</Code>);
         expect(ref.current).toBeInstanceOf(HTMLPreElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-code');
     });
 
     // ── Prop forwarding ──

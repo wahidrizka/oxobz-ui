@@ -41,7 +41,13 @@
     margin: 32px 0;
     white-space: pre;
     touch-action: pan-y;
-    color: var(--oxobz-foreground);
+    /*
+     * Live memakai `color-[var(--geist-foreground)]`, yaitu foreground = gray-1000
+     * (terukur di code page: dark = rgb(237,237,237)). Token --oxobz-foreground
+     * kita ternyata BUKAN gray-1000 (terukur putih rgb(255,255,255) di gelap),
+     * jadi dipakai --ds-gray-1000 langsung supaya cocok live.
+     */
+    color: var(--ds-gray-1000);
 }
 
 /* ---- Code text (syntax-theme-module __code, base rule only) ---- */
