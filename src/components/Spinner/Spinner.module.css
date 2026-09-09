@@ -26,7 +26,21 @@
     display: inline-block;
     aspect-ratio: 1 / 1;
     transform: translateZ(0);
-    color: var(--spinner-color, var(--ds-gray-700));
+}
+
+/*
+ * Default color in @layer components so a Tailwind text-color utility passed
+ * through className (docs: `<Spinner className="text-red-700" />`) overrides
+ * it — utilities live in a later layer and win. This mirrors live geistcn,
+ * whose spinner uses a `text-gray-700` utility that twMerge drops when a color
+ * className is passed. Standalone (no Tailwind) the layered rule still applies
+ * with nothing above it, and the `color` prop sets an inline color that beats
+ * both. Bars read this via `background: currentColor`.
+ */
+@layer components {
+    .spinner {
+        color: var(--spinner-color, var(--ds-gray-700));
+    }
 }
 
 /* ---- Individual bar ----

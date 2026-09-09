@@ -13,7 +13,8 @@ export type SpinnerSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
 export interface SpinnerProps extends HTMLAttributes<HTMLDivElement> {
     /**
      * Spinner size. Accepts a named Geist token (`sm`…`4xl`) or a raw pixel
-     * number. Defaults to `20` (equivalent to the `lg` token).
+     * number. Defaults to `16` (the `md` token), matching the live geistcn
+     * Spinner default (`<Spinner />` renders `size-4` / 16px).
      */
     size?: SpinnerSize | number;
     /**
@@ -99,11 +100,12 @@ function getBarParams(px: number): BarParams {
  * the official Geist API (named tokens `sm`…`4xl`) while remaining
  * backward-compatible with raw pixel numbers.
  *
- * Data attributes (oxobz branding of Geist's `data-geist-spinner`):
- * data-oxobz-spinner, data-version="v1".
+ * Data attributes: the live geistcn spinner carries `role="status"`,
+ * `aria-label="Loading"`, `data-glyph="circular"`, and `data-testid`
+ * (kept verbatim) — and NO `data-geist-spinner` / `data-version` marker.
  */
 export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
-    ({ size = 20, color, className, style, ...props }, ref) => {
+    ({ size = 16, color, className, style, ...props }, ref) => {
         const px = typeof size === 'number' ? size : SIZE_MAP[size];
         /*
          * Ukuran baku dipasang lewat kelas supaya elemennya tidak membawa
@@ -124,8 +126,9 @@ export const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
         for (let i = 0; i < barCount; i++) {
             const rotation = step * i;
             // Stagger measured from the capture: first bar -900ms … last 0ms
-            // at 10 bars/1000ms, i.e. -(duration) + slot*(i+1).
-            const delay = -duration + (duration / barCount) * (i + 1);
+            // at 10 bars/1000ms, i.e. -(duration) + slot*(i+1). Rounded to
+            // whole ms to match live (e.g. 4xl: 1300/18 slot -> -1228ms).
+            const delay = Math.round(-duration + (duration / barCount) * (i + 1));
 
             bars.push(
                 <div

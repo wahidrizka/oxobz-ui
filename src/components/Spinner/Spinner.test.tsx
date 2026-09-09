@@ -52,7 +52,8 @@ describe('Spinner', () => {
         const { container } = render(<Spinner />);
         const root = rootOf(container);
         expect(root.getAttribute('style')).toBeNull();
-        expect(root.className).toContain('s20');
+        // Default is the md token (16px / size-4), matching live geistcn.
+        expect(root.className).toContain('s16');
     });
 
     it('masih memakai gaya inline untuk ukuran bebas', () => {
