@@ -5,66 +5,37 @@ import { Separator } from './Separator';
 
 /** Selects the separator root div. */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-separator]');
+    return container.querySelector('[data-testid="geistcn/separator"]');
 }
 
 describe('Separator', () => {
     // ── Rendering ──
 
-    it('renders a root div with data-oxobz-separator and data-version="v1"', () => {
+    it('renders a root div with the geistcn test id and slot, no marker attributes', () => {
         const { container } = render(<Separator />);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
-        expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).toHaveAttribute('data-slot', 'separator');
         expect(root?.className).toContain('root');
+        expect(root).not.toHaveAttribute('data-oxobz-separator');
+        expect(root).not.toHaveAttribute('data-version');
     });
 
-    it('allows a custom data-version', () => {
-        const { container } = render(<Separator data-version="v2" />);
-        expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
-    });
+    // ── Orientation + role + aria ──
 
-    // ── Orientation ──
-
-    it('defaults to horizontal orientation', () => {
-        const { container } = render(<Separator />);
-        expect(getRoot(container)).toHaveAttribute('data-orientation', 'horizontal');
-    });
-
-    it('applies vertical orientation', () => {
-        const { container } = render(<Separator orientation="vertical" />);
-        expect(getRoot(container)).toHaveAttribute('data-orientation', 'vertical');
-    });
-
-    // ── Decorative / semantic (role + aria-orientation) ──
-
-    it('is decorative by default: role="none", no aria-orientation', () => {
+    it('defaults to horizontal: role="separator", aria-orientation="horizontal"', () => {
         const { container } = render(<Separator />);
         const root = getRoot(container);
-        expect(root).toHaveAttribute('role', 'none');
-        expect(root).not.toHaveAttribute('aria-orientation');
-    });
-
-    it('decorative vertical: role="none", no aria-orientation', () => {
-        const { container } = render(<Separator orientation="vertical" />);
-        const root = getRoot(container);
-        expect(root).toHaveAttribute('role', 'none');
-        expect(root).not.toHaveAttribute('aria-orientation');
-    });
-
-    it('semantic horizontal (decorative=false): role="separator", no aria-orientation', () => {
-        const { container } = render(<Separator decorative={false} />);
-        const root = getRoot(container);
+        expect(root).toHaveAttribute('data-orientation', 'horizontal');
         expect(root).toHaveAttribute('role', 'separator');
-        expect(root).not.toHaveAttribute('aria-orientation');
+        expect(root).toHaveAttribute('aria-orientation', 'horizontal');
     });
 
-    it('semantic vertical (decorative=false): role="separator", aria-orientation="vertical"', () => {
-        const { container } = render(
-            <Separator decorative={false} orientation="vertical" />,
-        );
+    it('applies vertical: role="separator", aria-orientation="vertical"', () => {
+        const { container } = render(<Separator orientation="vertical" />);
         const root = getRoot(container);
+        expect(root).toHaveAttribute('data-orientation', 'vertical');
         expect(root).toHaveAttribute('role', 'separator');
         expect(root).toHaveAttribute('aria-orientation', 'vertical');
     });
@@ -85,7 +56,7 @@ describe('Separator', () => {
         const ref = createRef<HTMLDivElement>();
         render(<Separator ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-separator');
+        expect(ref.current).toHaveAttribute('data-testid', 'geistcn/separator');
     });
 
     // ── Prop forwarding ──

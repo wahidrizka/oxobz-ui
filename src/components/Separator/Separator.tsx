@@ -12,18 +12,6 @@ export type SeparatorOrientation = 'horizontal' | 'vertical';
 export interface SeparatorProps extends HTMLAttributes<HTMLDivElement> {
     /** Axis of the divider line (default: 'horizontal'). */
     orientation?: SeparatorOrientation;
-
-    /**
-     * Whether the separator is purely visual (default: true). Decorative
-     * separators are hidden from the accessibility tree (`role="none"`).
-     * Set to `false` when the separator carries semantic meaning between
-     * distinct content sections (`role="separator"`), per the "Accessibility
-     * Variants" example in the snapshot.
-     */
-    decorative?: boolean;
-
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -34,50 +22,35 @@ export interface SeparatorProps extends HTMLAttributes<HTMLDivElement> {
  * A visual divider that separates content into distinct sections, with
  * support for horizontal and vertical orientations.
  *
- * Rendered DOM (Geist production / geistcn structure):
+ * Rendered DOM matches the live geistcn output measured at
+ * vercel.com/geist/separator (9 Sep 2026):
  * ```html
- * <div data-orientation="horizontal" role="none"
- *      data-oxobz-separator="" data-version="v1"
- *      class="root"></div>
+ * <div data-orientation="horizontal" role="separator"
+ *      aria-orientation="horizontal" data-slot="separator"
+ *      data-testid="geistcn/separator"
+ *      class="bg-gray-200 shrink-0 h-px w-full"></div>
  * ```
  *
- * `decorative` (default `true`) mirrors the Radix Separator primitive the
- * snapshot is built on: decorative separators get `role="none"` and no
- * `aria-orientation`; semantic separators (`decorative={false}`) get
- * `role="separator"` and `aria-orientation="vertical"` only when vertical
- * (horizontal is the ARIA default for the separator role, so it is omitted).
+ * Every separator is semantic: `role="separator"` and an `aria-orientation`
+ * that always matches `orientation` (production emits it for horizontal too,
+ * unlike raw Radix which omits it there). The public API is just
+ * `orientation` — the documented Geist API exposes nothing else, so there is
+ * no `decorative` prop and no `data-oxobz-*`/`data-version` markers (the live
+ * div carries none).
  */
 const Separator = forwardRef<HTMLDivElement, SeparatorProps>(
-    (
-        {
-            orientation = 'horizontal',
-            decorative = true,
-            className,
-            'data-version': dataVersion = 'v1',
-            ...rest
-        },
-        ref,
-    ) => {
-        const semanticProps = decorative
-            ? { role: 'none' as const }
-            : {
-                  role: 'separator' as const,
-                  'aria-orientation':
-                      orientation === 'vertical' ? ('vertical' as const) : undefined,
-              };
-
-        return (
-            <div
-                {...rest}
-                {...semanticProps}
-                className={cn(styles.root, className)}
-                data-orientation={orientation}
-                data-oxobz-separator=""
-                data-version={dataVersion}
-                ref={ref}
-            />
-        );
-    },
+    ({ orientation = 'horizontal', className, ...rest }, ref) => (
+        <div
+            {...rest}
+            ref={ref}
+            role="separator"
+            aria-orientation={orientation}
+            data-orientation={orientation}
+            data-slot="separator"
+            data-testid="geistcn/separator"
+            className={cn(styles.root, className)}
+        />
+    ),
 );
 
 Separator.displayName = 'Separator';
