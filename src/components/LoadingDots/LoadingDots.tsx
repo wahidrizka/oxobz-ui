@@ -1,8 +1,4 @@
-import {
-    forwardRef,
-    type CSSProperties,
-    type HTMLAttributes,
-} from 'react';
+import { forwardRef, type HTMLAttributes } from 'react';
 import { cn } from '../../utils/cn';
 import styles from './LoadingDots.module.css';
 
@@ -12,30 +8,20 @@ import styles from './LoadingDots.module.css';
 
 /**
  * Dot diameter preset (matches the geistcn LoadingDots `size` prop).
- * The docs examples pass `size="sm" | "md" | "lg"`.
+ * The docs examples pass `size="sm" | "md" | "lg"` = 2 / 3 / 4px.
  */
 export type LoadingDotsSize = 'sm' | 'md' | 'lg';
 
-/**
- * Dot diameter in px per size, verified from the loading-dots.html snapshot:
- * sm → `size-0.5` (2px), md → `size-[3px]` (3px), lg → `size-1` (4px).
- * The default (size omitted) resolves to the CSS `--loading-dots-size: 2px`.
- */
-const DOT_DIAMETER_PX: Record<LoadingDotsSize, number> = {
-    sm: 2,
-    md: 3,
-    lg: 4,
-};
-
 export interface LoadingDotsProps extends HTMLAttributes<HTMLSpanElement> {
     /**
-     * Dot diameter preset. Omit to use the production default (2px).
-     * `sm` = 2px, `md` = 3px, `lg` = 4px.
+     * Dot diameter preset. `sm` = 2px, `md` = 3px, `lg` = 4px.
+     *
+     * Default is `sm` (the smallest). Note: the live docs never render a
+     * size-less example, so the default is not verifiable from the reference;
+     * `sm` preserves the previous behavior (2px) and every demo passes `size`
+     * explicitly anyway.
      */
     size?: LoadingDotsSize;
-
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -43,62 +29,47 @@ export interface LoadingDotsProps extends HTMLAttributes<HTMLSpanElement> {
 /* ------------------------------------------------------------------ */
 
 /**
- * Indicate an action running in the background. The three dots blink in a
- * staggered loop; an optional trailing label (via `children`) is rendered
- * before the dots inside a spacer.
+ * Indicate an action running in the background. Three dots blink together
+ * (opacity 0.2 -> 1 -> 0.2, 1.4s loop); an optional trailing label (via
+ * `children`) is rendered before the dots.
  *
- * Rendered DOM (Geist production structure):
+ * Rendered DOM measured live at vercel.com/geist/loading-dots (9 Sep 2026),
+ * geistcn generation:
  * ```html
- * <span class="loading" data-oxobz-loading-dots="" data-version="v1"
- *       aria-label="Loading" style="--loading-dots-size: 3px">
- *   <div class="spacer">{children}</div>   <!-- only when children present -->
- *   <span></span>
- *   <span></span>
- *   <span></span>
+ * <span class="inline-flex items-center" aria-label="Loading"
+ *       data-testid="geistcn/loading-dots">
+ *   <div class="mr-2">{children}</div>            <!-- only with children -->
+ *   <span class="... animate-blink size-[3px]"></span> x3
  * </span>
  * ```
+ * No `data-oxobz-*` / `data-version` marker and no `aria-live`. The dots are
+ * staggered (dot 2 = 0.2s, dot 3 = 0.4s): the dots carry no delay class, but
+ * their computed animation-delay is 0.2s / 0.4s (measured live), so the CSS
+ * module applies it via nth-of-type.
  */
 const LoadingDots = forwardRef<HTMLSpanElement, LoadingDotsProps>(
     (
         {
             children,
             className,
-            size,
-            style,
+            size = 'sm',
             'aria-label': ariaLabel = 'Loading',
-            'aria-live': ariaLive = 'polite',
-            'data-version': dataVersion = 'v1',
             ...rest
         },
         ref,
     ) => {
-        // Dot size is driven by the --loading-dots-size custom property, exactly
-        // like the loading-dots-module. Left unset (CSS default 2px) when the
-        // size prop is omitted; the explicit prop wins over a user-set value.
-        const rootStyle: CSSProperties & Record<string, string | number> = {
-            ...style,
-        };
-        if (size) {
-            rootStyle['--loading-dots-size'] = `${DOT_DIAMETER_PX[size]}px`;
-        }
-
         return (
             <span
                 {...rest}
-                aria-label={ariaLabel}
-                aria-live={ariaLive}
-                className={cn(styles.loading, className)}
-                data-oxobz-loading-dots=""
-                data-version={dataVersion}
                 ref={ref}
-                style={rootStyle}
+                aria-label={ariaLabel}
+                data-testid="geistcn/loading-dots"
+                className={cn(styles.root, className)}
             >
-                {children != null && (
-                    <div className={styles.spacer}>{children}</div>
-                )}
-                <span />
-                <span />
-                <span />
+                {children != null && <div className={styles.label}>{children}</div>}
+                <span className={cn(styles.dot, styles[size])} />
+                <span className={cn(styles.dot, styles[size])} />
+                <span className={cn(styles.dot, styles[size])} />
             </span>
         );
     },

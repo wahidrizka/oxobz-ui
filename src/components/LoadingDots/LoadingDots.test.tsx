@@ -3,99 +3,79 @@ import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
 import { LoadingDots, type LoadingDotsSize } from './LoadingDots';
 
+/** Selects the root span (the component root). */
+function getRoot(container: HTMLElement) {
+    return container.querySelector('[data-testid="geistcn/loading-dots"]');
+}
+
 describe('LoadingDots', () => {
     // ── Rendering ──
 
-    it('renders a wrapper span with data-oxobz-loading-dots and data-version="v1"', () => {
+    it('renders a root span with the geistcn test id and no marker attributes', () => {
         const { container } = render(<LoadingDots />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
+        const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('SPAN');
-        expect(root).toHaveAttribute('data-version', 'v1');
-        expect(root?.className).toContain('loading');
+        expect(root?.className).toContain('root');
+        // Production carries no data marker and no aria-live (measured live).
+        expect(root).not.toHaveAttribute('data-oxobz-loading-dots');
+        expect(root).not.toHaveAttribute('data-version');
+        expect(root).not.toHaveAttribute('aria-live');
     });
 
-    it('renders exactly three dot spans as direct children', () => {
+    it('renders exactly three dot spans', () => {
         const { container } = render(<LoadingDots />);
-        const dots = container.querySelectorAll(
-            '[data-oxobz-loading-dots] > span',
-        );
+        const dots = container.querySelectorAll('[data-testid="geistcn/loading-dots"] > span');
         expect(dots).toHaveLength(3);
-    });
-
-    it('allows a custom data-version', () => {
-        const { container } = render(<LoadingDots data-version="v2" />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        expect(root).toHaveAttribute('data-version', 'v2');
     });
 
     // ── Accessibility ──
 
-    it('defaults aria-label to "Loading" on the wrapper', () => {
+    it('defaults aria-label to "Loading" on the root', () => {
         const { container } = render(<LoadingDots />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        expect(root).toHaveAttribute('aria-label', 'Loading');
+        expect(getRoot(container)).toHaveAttribute('aria-label', 'Loading');
     });
 
     it('allows overriding aria-label', () => {
         const { container } = render(<LoadingDots aria-label="Saving" />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        expect(root).toHaveAttribute('aria-label', 'Saving');
-    });
-
-    it('defaults aria-live to "polite" so screen readers announce progress', () => {
-        const { container } = render(<LoadingDots />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        expect(root).toHaveAttribute('aria-live', 'polite');
-    });
-
-    it('allows overriding aria-live', () => {
-        const { container } = render(<LoadingDots aria-live="assertive" />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        expect(root).toHaveAttribute('aria-live', 'assertive');
+        expect(getRoot(container)).toHaveAttribute('aria-label', 'Saving');
     });
 
     // ── Sizes ──
 
     const sizes: Array<[LoadingDotsSize, string]> = [
-        ['sm', '2px'],
-        ['md', '3px'],
-        ['lg', '4px'],
+        ['sm', 'sm'],
+        ['md', 'md'],
+        ['lg', 'lg'],
     ];
 
-    it.each(sizes)(
-        'sets --loading-dots-size for size="%s"',
-        (size, expected) => {
-            const { container } = render(<LoadingDots size={size} />);
-            const root = container.querySelector<HTMLSpanElement>(
-                '[data-oxobz-loading-dots]',
-            );
-            expect(root?.style.getPropertyValue('--loading-dots-size')).toBe(
-                expected,
-            );
-        },
-    );
-
-    it('leaves --loading-dots-size unset when size is omitted (CSS default)', () => {
-        const { container } = render(<LoadingDots />);
-        const root = container.querySelector<HTMLSpanElement>(
-            '[data-oxobz-loading-dots]',
-        );
-        expect(root?.style.getPropertyValue('--loading-dots-size')).toBe('');
+    it.each(sizes)('applies the %s size class to each dot', (size, cls) => {
+        const { container } = render(<LoadingDots size={size} />);
+        const dots = container.querySelectorAll('[data-testid="geistcn/loading-dots"] > span');
+        dots.forEach((dot) => {
+            expect(dot.className).toContain('dot');
+            expect(dot.className).toContain(cls);
+        });
     });
 
-    // ── Trailing label (spacer) ──
+    it('defaults to the sm size when size is omitted', () => {
+        const { container } = render(<LoadingDots />);
+        const dot = container.querySelector('[data-testid="geistcn/loading-dots"] > span');
+        expect(dot?.className).toContain('sm');
+    });
 
-    it('renders children inside a leading spacer div before the dots', () => {
+    // ── Trailing label ──
+
+    it('renders children inside a leading label div before the dots', () => {
         const { container } = render(<LoadingDots>Loading</LoadingDots>);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        const spacer = root?.firstElementChild;
-        expect(spacer?.tagName).toBe('DIV');
-        expect(spacer?.className).toContain('spacer');
-        expect(spacer?.textContent).toBe('Loading');
-        // The three dots still render after the spacer.
+        const root = getRoot(container);
+        const label = root?.firstElementChild;
+        expect(label?.tagName).toBe('DIV');
+        expect(label?.className).toContain('label');
+        expect(label?.textContent).toBe('Loading');
+        // The three dots still render after the label.
         expect(
-            container.querySelectorAll('[data-oxobz-loading-dots] > span'),
+            container.querySelectorAll('[data-testid="geistcn/loading-dots"] > span'),
         ).toHaveLength(3);
     });
 
@@ -108,45 +88,37 @@ describe('LoadingDots', () => {
         expect(screen.getByText('Loading').tagName).toBe('P');
     });
 
-    it('renders no spacer div when no children are provided', () => {
+    it('renders no label div when no children are provided', () => {
         const { container } = render(<LoadingDots />);
-        const spacer = container.querySelector(
-            '[data-oxobz-loading-dots] > div',
-        );
-        expect(spacer).toBeNull();
+        expect(container.querySelector('[data-testid="geistcn/loading-dots"] > div')).toBeNull();
     });
 
     // ── Custom className ──
 
     it('appends custom className after the module classes', () => {
         const { container } = render(<LoadingDots className="custom-dots" />);
-        const root = container.querySelector('[data-oxobz-loading-dots]');
-        expect(root?.className).toContain('loading');
+        const root = getRoot(container);
+        expect(root?.className).toContain('root');
         expect(root?.className).toContain('custom-dots');
         expect(root?.className.endsWith('custom-dots')).toBe(true);
     });
 
     // ── Ref forwarding ──
 
-    it('forwards ref to the wrapper span', () => {
+    it('forwards ref to the root span', () => {
         const ref = createRef<HTMLSpanElement>();
         render(<LoadingDots ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLSpanElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-loading-dots');
+        expect(ref.current).toHaveAttribute('data-testid', 'geistcn/loading-dots');
     });
 
     // ── Prop forwarding ──
 
-    it('forwards extra HTML attributes and merges inline style with the size var', () => {
-        const { container } = render(
-            <LoadingDots id="dots-1" size="lg" style={{ opacity: 0.5 }} />,
-        );
-        const root = container.querySelector<HTMLSpanElement>(
-            '[data-oxobz-loading-dots]',
-        );
+    it('forwards extra HTML attributes (id, style)', () => {
+        const { container } = render(<LoadingDots id="dots-1" style={{ opacity: 0.5 }} />);
+        const root = getRoot(container);
         expect(root).toHaveAttribute('id', 'dots-1');
         expect(root).toHaveStyle({ opacity: '0.5' });
-        expect(root?.style.getPropertyValue('--loading-dots-size')).toBe('4px');
     });
 
     // ── displayName ──
