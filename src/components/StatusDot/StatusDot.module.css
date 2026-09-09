@@ -1,59 +1,35 @@
 /**
  * StatusDot — CSS Module
  *
- * Production sources:
- * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
- *   Module: status-dot-module__WmQFOa — .wrapper, .status, .ready, .error,
- *   .building, .status-label.
- * - _nextstatic/component-inspect-element/status-dot.html
- *   geistcn/Tailwind snapshot (source of truth on conflicts): dot is
- *   `inline-block size-2.5 rounded-full bg-[color]` (10px, fully round);
- *   label is `text-label-14 ml-2 leading-[16px]` (14px / 16px / 8px gap).
- *   Snapshot and chunk agree on every value except radius (chunk 5px vs
- *   snapshot rounded-full — snapshot wins, folded to 50% for a 10px dot).
+ * Flatten of the live geistcn markup measured at vercel.com/geist/status-dot
+ * (9 Sep 2026):
+ * - wrapper `inline-flex items-center`
+ * - dot     `inline-block size-2.5 rounded-full bg-[color]` (10px, fully round)
+ * - label   `text-label-14 ml-2 leading-[16px]` (font from the global
+ *           text-label-14 class; this module only adds the 8px gap + 16px line)
  *
- * Var mapping (Geist legacy palette → oxobz): --geist-warning →
- * --oxobz-warning, --geist-error → --oxobz-error, --geist-cyan →
- * --oxobz-cyan. --accents-2 kept as-is (the default gray dot).
+ * Dot colors per state: QUEUED / CANCELED / DELETED = var(--accents-2) (gray),
+ * BUILDING = --geist-warning, ERROR = --geist-error, READY = --geist-cyan.
+ * Var mapping (Geist legacy palette -> oxobz): --geist-warning -> --oxobz-warning,
+ * --geist-error -> --oxobz-error, --geist-cyan -> --oxobz-cyan.
  *
- * No .dark-theme override exists in the chunk — the legacy palette tokens
- * (--accents-2, --oxobz-*) already flip with the theme automatically.
+ * The dot does NOT animate in this generation (no animation class on any live
+ * dot). rounded-full is Tailwind v4 calc(infinity * 1px) = 3.40282e38px.
  */
 
-/* ---- Wrapper (status-dot-module __wrapper) ---- */
+/* ---- Wrapper (inline-flex items-center) ---- */
 .wrapper {
     display: inline-flex;
     align-items: center;
 }
 
-/* ---- Dot (status-dot-module __status) ---- */
+/* ---- Dot (inline-block size-2.5 rounded-full) ---- */
 .status {
     display: inline-block;
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: 3.40282e38px;
     background: var(--accents-2);
-}
-
-/*
- * Animated states (BUILDING / QUEUED). The dot blinks — opacity 0.2 → 1 → 0.2
- * over 1.4s, looping — per the status-dot.html "Behavior" prose and the
- * `--animate-blink: blink 1.4s infinite both` token in chunk 20v_289ahbeyd.css.
- */
-.animated {
-    animation: blink 1.4s infinite both;
-}
-
-@keyframes blink {
-    0% {
-        opacity: 0.2;
-    }
-    20% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.2;
-    }
 }
 
 /* Colored states; QUEUED / CANCELED / DELETED keep the default gray dot. */
@@ -69,9 +45,8 @@
     background: var(--oxobz-warning);
 }
 
-/* ---- Label (status-dot-module __status-label) ---- */
+/* ---- Label (text-label-14 ml-2 leading-[16px]) ---- */
 .statusLabel {
     margin-left: 8px;
-    font-size: 14px;
     line-height: 16px;
 }

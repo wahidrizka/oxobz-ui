@@ -35,9 +35,6 @@ export interface StatusDotProps extends HTMLAttributes<HTMLSpanElement> {
      * pass the entity (e.g. `"vercel-site production"`).
      */
     titlePrefix?: string;
-
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -45,14 +42,14 @@ export interface StatusDotProps extends HTMLAttributes<HTMLSpanElement> {
 /* ------------------------------------------------------------------ */
 
 /**
- * Verified against status-dot.html:
+ * Measured live at vercel.com/geist/status-dot (9 Sep 2026):
  *  - name    → aria-label and the optional visible label (sentence-cased)
  *  - message → appended to titlePrefix to form the title
- *  - color   → dot color class; omitted states keep the default gray dot
- *              (var(--accents-2)): QUEUED, CANCELED, DELETED.
+ *  - color   → dot color class; QUEUED / CANCELED / DELETED keep the default
+ *              gray dot (var(--accents-2)).
  *
- * DELETED belongs to the documented state vocabulary but is absent from the
- * snapshot; its message follows the "was <past-tense>." pattern of CANCELED.
+ * DELETED is in the documented vocabulary but absent from the live demo; its
+ * message follows the "was <past-tense>." pattern of CANCELED.
  */
 const STATE_CONFIG: Record<
     StatusDotState,
@@ -73,20 +70,18 @@ const STATE_CONFIG: Record<
 /**
  * Display an indicator of deployment status.
  *
- * Rendered DOM (Geist production / geistcn structure):
+ * Rendered DOM measured live (geistcn):
  * ```html
- * <span class="wrapper" aria-label="Queued"
- *       title="This deployment is queued."
- *       data-oxobz-status-dot="" data-version="v1">
- *   <span class="status"></span>
- *   <span class="statusLabel">Queued</span>   <!-- only when label -->
+ * <span aria-label="Queued" class="inline-flex items-center"
+ *       title="This deployment is queued." data-testid="geistcn/status-dot">
+ *   <span class="inline-block size-2.5 rounded-full bg-[var(--accents-2)]"></span>
+ *   <span class="text-label-14 ml-2 leading-[16px]">Queued</span>  <!-- only with label -->
  * </span>
  * ```
- *
- * Note: the snapshot renders every state statically, but its "Behavior" prose
- * states the dot animates while BUILDING or QUEUED and goes static at a
- * terminal state. The blink keyframe (`blink 1.4s infinite both`) is now in the
- * geistcn chunk, so the pulse is applied to those two states via `.animated`.
+ * No `data-oxobz-*` / `data-version` marker. The dot does NOT animate: the live
+ * dots carry only `inline-block size-2.5 rounded-full bg-[...]` with no
+ * animation class for any state (the docs "Behavior" prose still mentions a
+ * pulse, but the current geistcn dot is static). data-testid kept verbatim.
  */
 const StatusDot = forwardRef<HTMLSpanElement, StatusDotProps>(
     (
@@ -95,34 +90,25 @@ const StatusDot = forwardRef<HTMLSpanElement, StatusDotProps>(
             label = false,
             titlePrefix = 'This deployment',
             className,
-            'data-version': dataVersion = 'v1',
             ...rest
         },
         ref,
     ) => {
         const { name, message, color } = STATE_CONFIG[state];
-        // status-dot.html prose: "the dot animates while BUILDING or QUEUED and
-        // goes static once the deployment reaches a terminal state."
-        const animated = state === 'BUILDING' || state === 'QUEUED';
 
         return (
             <span
                 {...rest}
-                className={cn(styles.wrapper, className)}
+                ref={ref}
                 aria-label={name}
                 title={`${titlePrefix} ${message}`}
-                data-oxobz-status-dot=""
-                data-version={dataVersion}
-                ref={ref}
+                data-testid="geistcn/status-dot"
+                className={cn(styles.wrapper, className)}
             >
-                <span
-                    className={cn(
-                        styles.status,
-                        color && styles[color],
-                        animated && styles.animated,
-                    )}
-                />
-                {label && <span className={styles.statusLabel}>{name}</span>}
+                <span className={cn(styles.status, color && styles[color])} />
+                {label && (
+                    <span className={cn('text-label-14', styles.statusLabel)}>{name}</span>
+                )}
             </span>
         );
     },
