@@ -1,4 +1,12 @@
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+'use client';
+
+import {
+    forwardRef,
+    useEffect,
+    useState,
+    type HTMLAttributes,
+    type ReactNode,
+} from 'react';
 import { cn } from '../../utils/cn';
 import styles from './Kbd.module.css';
 
@@ -40,15 +48,25 @@ export interface KbdProps extends HTMLAttributes<HTMLElement> {
 /* ------------------------------------------------------------------ */
 
 /**
- * True on Apple platforms (macOS / iOS). Used to decide whether the `meta`
- * modifier shows `⌘` (Apple) or `Ctrl` (Windows / Linux). Falls back to
- * non-Apple when `navigator` is unavailable (server render).
+ * Whether the current platform is Apple (macOS / iOS), decided on the CLIENT
+ * after mount. Returns `null` until then.
+ *
+ * Detection runs in an effect (not during render) so the server render and the
+ * first client render agree — both see `null`, which the component paints as a
+ * ` ` placeholder in the meta span. This mirrors the live geistcn Kbd,
+ * which SSRs ` ` and fills `⌘` / `Ctrl` client-side, and it avoids the
+ * hydration mismatch that render-time detection causes on Apple devices
+ * (server has no `navigator`, so it would disagree with the client).
  */
-function isApplePlatform(): boolean {
-    if (typeof navigator === 'undefined') return false;
-    const platform = navigator.platform || '';
-    const userAgent = navigator.userAgent || '';
-    return /mac|iphone|ipod|ipad/i.test(platform || userAgent);
+function useIsApplePlatform(): boolean | null {
+    const [isApple, setIsApple] = useState<boolean | null>(null);
+    useEffect(() => {
+        if (typeof navigator === 'undefined') return;
+        const platform = navigator.platform || '';
+        const userAgent = navigator.userAgent || '';
+        setIsApple(/mac|iphone|ipod|ipad/i.test(platform || userAgent));
+    }, []);
+    return isApple;
 }
 
 /* ------------------------------------------------------------------ */
@@ -87,19 +105,23 @@ const Kbd = forwardRef<HTMLElement, KbdProps>(
         },
         ref,
     ) => {
-        const isApple = isApplePlatform();
+        const isApple = useIsApplePlatform();
 
         const parts: ReactNode[] = [];
 
         if (meta) {
-            // Only the meta span carries an explicit min-width so the `⌘` / `Ctrl`
-            // glyph keeps a consistent footprint across platforms (snapshot parity).
+            // Platform-dependent glyph: a non-breaking-space placeholder until
+            // the platform is detected on the client, then `⌘` (Apple) /
+            // `Ctrl` (Windows / Linux). The explicit min-width keeps the
+            // footprint stable across that swap. Matches the live geistcn Kbd.
+            const metaGlyph =
+                isApple === null ? ' ' : isApple ? '⌘' : 'Ctrl';
             parts.push(
                 <span
                     key="meta"
                     style={{ minWidth: '1em', display: 'inline-block' }}
                 >
-                    {isApple ? '⌘' : 'Ctrl'}
+                    {metaGlyph}
                 </span>,
             );
         }

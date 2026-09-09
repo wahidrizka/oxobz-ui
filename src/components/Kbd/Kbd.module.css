@@ -52,17 +52,18 @@
     justify-content: center;
 }
 
-/* chunk: `.kbd span { font-size: .875rem }`
-   snapshot: `[&>span]:font-inherit` → font-family inherited by each part span */
+/* live: `[&>span]:font-inherit` → font-family inherited by each part span */
 .kbd span {
     font-size: 0.875rem;
     font-family: inherit;
 }
 
-/* chunk: `.kbd span + span { margin-left: 4px }` — gap between stacked parts */
-.kbd span + span {
-    margin-left: 4px;
-}
+/*
+ * No inter-span margin. The old kbd-module chunk had `.kbd span + span
+ * { margin-left: 4px }`, but the current live geistcn Kbd has 0px between
+ * stacked parts (measured: `<Kbd meta shift />` ⇧ span margin-left = 0).
+ * Separation comes only from the meta span's own min-width: 1em.
+ */
 
 /* ---- Small (kbd-module __small; snapshot overrides win) ---- */
 .kbd.small {
@@ -78,8 +79,4 @@
 .kbd.small span {
     font-size: 0.75rem;
     line-height: 1.7em;
-}
-
-.kbd.small span + span {
-    margin-left: 2px;
 }
