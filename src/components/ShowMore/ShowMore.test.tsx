@@ -3,31 +3,28 @@ import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { ShowMore } from './ShowMore';
 
-/** Selects the root row (the component root). */
+/** Selects the root row (the component root). Live carries no marker, so the
+ *  root is found by its module class. */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-show-more]');
+    return container.querySelector('[class*="expandToggle"]');
 }
 
-/** Selects the trigger button. */
+/** Selects the trigger button (the only button ShowMore renders). */
 function getTrigger(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-show-more-trigger]');
+    return container.querySelector('button');
 }
 
 describe('ShowMore', () => {
     // ── Rendering ──
 
-    it('renders a root div with data-oxobz-show-more and data-version="v1"', () => {
+    it('renders a root div with no marker attributes', () => {
         const { container } = render(<ShowMore />);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
-        expect(root).toHaveAttribute('data-version', 'v1');
         expect(root?.className).toContain('expandToggle');
-    });
-
-    it('allows a custom data-version', () => {
-        const { container } = render(<ShowMore data-version="v2" />);
-        expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
+        expect(root).not.toHaveAttribute('data-oxobz-show-more');
+        expect(root).not.toHaveAttribute('data-version');
     });
 
     it('renders two divider lines flanking the button container', () => {
@@ -37,27 +34,25 @@ describe('ShowMore', () => {
         lines.forEach((line) => expect(line.className).toContain('line'));
     });
 
-    it('renders a trigger button of type="button"', () => {
+    it('renders a trigger button of type="button" without aria-expanded', () => {
         const { container } = render(<ShowMore />);
         const trigger = getTrigger(container);
         expect(trigger).toBeInTheDocument();
         expect(trigger?.tagName).toBe('BUTTON');
         expect(trigger).toHaveAttribute('type', 'button');
+        // Live geistcn trigger has no aria-expanded — state is label + chevron.
+        expect(trigger).not.toHaveAttribute('aria-expanded');
     });
 
     // ── expanded (default false → "Show More") ──
 
-    it('shows "Show More" and aria-expanded="false" by default', () => {
-        const { container } = render(<ShowMore />);
-        const trigger = getTrigger(container);
-        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    it('shows "Show More" by default', () => {
+        render(<ShowMore />);
         expect(screen.getByText('Show More')).toBeInTheDocument();
     });
 
-    it('shows "Show Less" and aria-expanded="true" when expanded', () => {
-        const { container } = render(<ShowMore expanded />);
-        const trigger = getTrigger(container);
-        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    it('shows "Show Less" when expanded', () => {
+        render(<ShowMore expanded />);
         expect(screen.getByText('Show Less')).toBeInTheDocument();
     });
 
@@ -75,14 +70,12 @@ describe('ShowMore', () => {
 
     it('applies the noBorder modifier class to the root when set', () => {
         const { container } = render(<ShowMore noBorder />);
-        const root = getRoot(container);
-        expect(root?.className).toContain('noBorder');
+        expect(getRoot(container)?.className).toContain('noBorder');
     });
 
     it('does not apply noBorder by default', () => {
         const { container } = render(<ShowMore />);
-        const root = getRoot(container);
-        expect(root?.className).not.toContain('noBorder');
+        expect(getRoot(container)?.className).not.toContain('noBorder');
     });
 
     // ── onClick ──
@@ -90,8 +83,7 @@ describe('ShowMore', () => {
     it('calls onClick when the trigger button is clicked', () => {
         const handleClick = vi.fn();
         const { container } = render(<ShowMore onClick={handleClick} />);
-        const trigger = getTrigger(container);
-        fireEvent.click(trigger as Element);
+        fireEvent.click(getTrigger(container) as Element);
         expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
@@ -111,7 +103,7 @@ describe('ShowMore', () => {
         const ref = createRef<HTMLDivElement>();
         render(<ShowMore ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-show-more');
+        expect(ref.current?.className).toContain('expandToggle');
     });
 
     // ── Prop forwarding ──

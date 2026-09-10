@@ -25,9 +25,9 @@
  * line running behind it.
  *
  * The trigger button itself is NOT reimplemented here — ShowMore.tsx reuses
- * the existing Button component (variant="default" size="small"
- * shape="rounded"), which already matches the snapshot's
- * [--x-padding:6px] [--height:32px] !rounded-full themed button exactly.
+ * the existing Button component (variant="secondary" size="small"
+ * shape="rounded"), which already matches live's white/ghost themed pill
+ * (bg-transparent, box-shadow 0 0 0 1px gray-400, text gray-1000) exactly.
  * Only the label row layout (production inline
  * style="display:flex;align-items:center") is folded into `.label` here,
  * per this codebase's "no inline styles for static values" convention.
@@ -36,26 +36,34 @@
  * --ds-background-100 already flip with the theme automatically.
  */
 
-/* ---- Root row (show-more-module __expandToggle) ---- */
+/* ---- Root row (show-more-module __expandToggle) ----
+ * NOTE: live writes `w-[calc(100% - 40px)]` with literal SPACES, which the
+ * browser tokenizes into three junk classes (`w-[calc(100%`, `-`, `40px)]`),
+ * so NO width utility actually applies and the row falls back to auto width
+ * (= container content minus the 20px left margin, measured 792px at 1400).
+ * We match that rendered result: auto width (no `width` rule), not
+ * calc(100% - 40px) which would render 20px narrower. */
 .expandToggle {
     display: flex;
     align-items: center;
-    width: calc(100% - 40px);
     min-height: 30px;
     margin-top: 20px;
     margin-left: 20px;
 }
 
-/* ---- Divider lines (show-more-module __line) ---- */
+/* ---- Divider lines (live: h-px grow -translate-x-px / last:translate-x-px) ----
+ * Tailwind v4 translate utilities use the `translate` CSS property (not
+ * `transform`); live's lines therefore have `translate: -1px` and
+ * `transform: none`. Measured 10 Sep 2026. */
 .line {
     flex-grow: 1;
     height: 1px;
     background-color: var(--ds-gray-alpha-400);
-    transform: translate(-1px);
+    translate: -1px;
 }
 
 .line:last-of-type {
-    transform: translate(1px);
+    translate: 1px;
 }
 
 /* ---- noBorder modifier — hides both lines, keeps the row's layout ---- */
@@ -63,25 +71,35 @@
     opacity: 0;
 }
 
-/* ---- Button wrapper (show-more-module __buttonContainer) ---- */
+/* ---- Button wrapper (show-more-module __buttonContainer) ----
+ * Live uses --geist-background (pure white in light, pure BLACK in dark) to
+ * "erase" the divider line behind the pill. oxobz has no single pure token:
+ * --ds-background-100 is white / near-black (#0a0a0a), --ds-background-200 is
+ * off-white (#fafafa) / pure black. So background-100 in light (white, matches
+ * live rgb(255,255,255)) and override to background-200 in dark (matches live
+ * rgb(0,0,0)). Measured 10 Sep 2026. */
 .buttonContainer {
     background: var(--ds-background-100);
     border-radius: 99px;
 }
 
-/* ---- Label row (production inline style, folded into a class) ---- */
-.label {
-    display: flex;
-    align-items: center;
+:global(.dark-theme) .buttonContainer {
+    background: var(--ds-background-200);
 }
 
-/* ---- Chevron (show-more-module __chevron) ---- */
+/* The label row is `<div style="display:flex;align-items:center">` inline in
+ * ShowMore.tsx, verbatim from live (not a class), so no `.label` rule here. */
+
+/* ---- Chevron (live: inline-flex ml-1 transform duration-200 ease-in-out) ----
+ * Live sets only duration + timing (no transition-property utility), so
+ * transition-property computes to `all`. Rotation uses the Tailwind v4
+ * `rotate` CSS property (rotate-180), not `transform`. Measured 10 Sep 2026. */
 .chevron {
     display: inline-flex;
     margin-left: 4px;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chevron.expanded {
-    transform: rotate(180deg);
+    rotate: 180deg;
 }

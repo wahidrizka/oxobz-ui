@@ -12,24 +12,24 @@ export interface ShowMoreProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onC
     /**
      * Whether the collapsed content is currently expanded. ShowMore keeps no
      * internal state of its own — flip this prop yourself from `onClick`
-     * (show-more.html Show-code: `expanded={expanded}
+     * (live Show-code: `expanded={expanded}
      * onClick={() => setExpanded(!expanded)}`). Drives the label
-     * ("Show More" / "Show Less"), `aria-expanded`, and the chevron
-     * rotation. Default false.
+     * ("Show More" / "Show Less") and the chevron rotation. Default false.
+     *
+     * Note: the live geistcn trigger carries NO `aria-expanded` (measured
+     * 10 Sep 2026); state is conveyed by the label text + chevron only, so
+     * this component matches that and does not set it.
      */
     expanded?: boolean;
 
     /**
      * Hide the flanking divider lines while keeping the row's layout
-     * (show-more.html Show-code: `<ShowMore noBorder />`). Default false.
+     * (live Show-code: `<ShowMore noBorder />`). Default false.
      */
     noBorder?: boolean;
 
     /** Called when the trigger button is clicked. */
     onClick?: MouseEventHandler<HTMLButtonElement>;
-
-    /** data-version attribute matching Geist production output. */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -45,15 +45,17 @@ export interface ShowMoreProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onC
  * manage the collapsible content itself — the consumer owns `expanded`
  * state and decides what to reveal alongside it.
  *
- * Rendered DOM (Geist production / geistcn structure, show-more.html):
+ * Rendered DOM (live geistcn structure, measured 10 Sep 2026):
  * ```html
- * <div class="expandToggle" data-oxobz-show-more="" data-version="v1">
+ * <div class="expandToggle">                    (root: no marker in live)
  *   <div class="line" data-line="true"></div>
  *   <div class="buttonContainer">
- *     <button type="button" aria-expanded="{expanded}" data-oxobz-button="">
- *       <span class="label">
- *         Show More | Show Less
- *         <span class="chevron"><ChevronDownSmall /></span>
+ *     <button type="button" data-geist-button …>  (reused Button; no aria-expanded)
+ *       <span class="…truncate…">                  (Button's own content wrapper)
+ *         <div style="display:flex;align-items:center">
+ *           Show More | Show Less
+ *           <span class="chevron"><ChevronDownSmall /></span>
+ *         </div>
  *       </span>
  *     </button>
  *   </div>
@@ -61,47 +63,36 @@ export interface ShowMoreProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onC
  * </div>
  * ```
  *
- * The trigger reuses the existing `Button` (variant="default" size="small"
+ * The trigger reuses the existing `Button` (variant="secondary" size="small"
  * shape="rounded") instead of reimplementing its styling — it already
- * matches the snapshot's pill button exactly (see ShowMore.module.css header).
+ * matches the live pill button exactly (white bg, gray-400 ring, dark text).
+ * The
+ * label row is a `<div style="display:flex;align-items:center">`, verbatim
+ * from live (an inline style, not a class).
  */
 const ShowMore = forwardRef<HTMLDivElement, ShowMoreProps>(
-    (
-        {
-            expanded = false,
-            noBorder = false,
-            onClick,
-            className,
-            'data-version': dataVersion = 'v1',
-            ...rest
-        },
-        ref,
-    ) => {
+    ({ expanded = false, noBorder = false, onClick, className, ...rest }, ref) => {
         return (
             <div
                 {...rest}
                 ref={ref}
                 className={cn(styles.expandToggle, noBorder && styles.noBorder, className)}
-                data-oxobz-show-more=""
-                data-version={dataVersion}
             >
                 <div className={styles.line} data-line="true" />
                 <div className={styles.buttonContainer}>
                     <Button
                         typeName="button"
-                        variant="default"
+                        variant="secondary"
                         size="small"
                         shape="rounded"
-                        aria-expanded={expanded}
                         onClick={onClick}
-                        data-oxobz-show-more-trigger=""
                     >
-                        <span className={styles.label}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                             {expanded ? 'Show Less' : 'Show More'}
                             <span className={cn(styles.chevron, expanded && styles.expanded)}>
                                 <ChevronDownSmall size={16} />
                             </span>
-                        </span>
+                        </div>
                     </Button>
                 </div>
                 <div className={styles.line} data-line="true" />
