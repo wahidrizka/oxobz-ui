@@ -176,15 +176,22 @@
 }
 
 /*
- * Placeholder pada keadaan normal TIDAK diwarnai.
+ * Placeholder = gray-700 (normal), accents-3 (disabled).
  *
- * Chunk lama menyebut gray-700, tapi halaman hidup berkata lain: daftar kelas
- * input produksi cuma memuat `disabled:placeholder:text-[var(--accents-3)]`,
- * yaitu khusus keadaan disabled. Terukur pada keempat input halaman Clearable
- * Input (30 Agu 2026): warna ::placeholder-nya bawaan peramban
- * `oklab(0 0 0 / 0.5)`, sedangkan punya kita rgb(143, 143, 143). Warnanya
- * memang mirip, tapi tetap beda.
+ * RE-UKUR 10 Sep 2026 (Playwright getComputedStyle ::placeholder) di DUA
+ * halaman live: Clearable Input DAN Label sama-sama rgb(143,143,143) =
+ * gray-700. Catatan 30 Agu ("bawaan peramban oklab(0 0 0 / .5)") kini USANG:
+ * Geist mengubahnya (atau ukurannya dulu kurang lengkap). Tanpa aturan ini
+ * ::placeholder kita jatuh ke default peramban (oklab 0 0 0 / .5) dan beda
+ * dari live di SEMUA input.
  */
+.input::placeholder {
+    color: var(--ds-gray-700);
+}
+
+.input:disabled::placeholder {
+    color: var(--accents-3);
+}
 
 .input[readonly] {
     background: var(--ds-background-200);

@@ -150,7 +150,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         ref,
     ) => {
         const autoId = useId();
-        const inputId = idProp ?? `input-${autoId}`;
+        /*
+         * Live geistcn suffixes the input id with a generated id even when an
+         * `id` prop is given (measured 10 Sep 2026: <Input id="test-input"/> ->
+         * id="test-input-<reactId>"), so an external <Label for="test-input">
+         * intentionally dangles. Match that: suffix idProp with useId (and keep
+         * the "input-" fallback when no id prop is passed). All internal
+         * references (label for, aria-describedby error id) use this same
+         * inputId, so they stay consistent.
+         */
+        const inputId = idProp ? `${idProp}-${autoId}` : `input-${autoId}`;
         const errorId = `${inputId}-error`;
         const hasError = error != null && error !== '';
         const hasPrefix = prefix != null;

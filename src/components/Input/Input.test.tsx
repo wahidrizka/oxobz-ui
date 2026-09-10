@@ -43,11 +43,14 @@ describe('Input', () => {
         expect(input).toHaveAttribute('aria-invalid', 'false');
     });
 
-    it('generates an id with the input- prefix and accepts a custom id', () => {
+    it('generates an id with the input- prefix and suffixes a custom id', () => {
         const { rerender } = render(<Input aria-labelledby="Demo input" />);
         expect(screen.getByRole('textbox').id).toMatch(/^input-/);
+        // Live geistcn suffixes the id prop with a generated id (e.g.
+        // id="my-domain" -> "my-domain-<reactId>"), so an external for/
+        // aria-labelledby to the bare id intentionally dangles.
         rerender(<Input aria-labelledby="Demo input" id="my-domain" />);
-        expect(screen.getByRole('textbox').id).toBe('my-domain');
+        expect(screen.getByRole('textbox').id).toMatch(/^my-domain-/);
     });
 
     it('forwards placeholder and native props (Default docs example)', () => {
