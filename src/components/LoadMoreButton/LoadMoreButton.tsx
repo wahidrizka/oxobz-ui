@@ -43,9 +43,11 @@ export interface LoadMoreButtonProps
  * default) — loading state, spinner, and disabled behavior all come from
  * Button itself; LoadMoreButton only adds the full-width/gap/radius layout.
  *
- * Rendered DOM (Geist production / geistcn structure, load-more-button.html):
+ * Rendered DOM (live geistcn structure, measured 10 Sep 2026): a plain
+ * secondary Button (medium) with only Button's own `data-geist-button` marker
+ * — NO load-more-specific marker — plus `mt-4 w-full` layout:
  * ```html
- * <button data-oxobz-button="" data-oxobz-load-more-button="" data-version="v1"
+ * <button data-oxobz-button="" data-version="v1"
  *         class="… secondary … loadMoreButton">
  *   <span class="content">Load More</span>
  * </button>
@@ -70,7 +72,6 @@ const LoadMoreButton = forwardRef<HTMLButtonElement, LoadMoreButtonProps>(
                 ref={ref}
                 variant="secondary"
                 loading={loading}
-                data-oxobz-load-more-button=""
                 data-version={dataVersion}
                 className={cn(
                     styles.loadMoreButton,

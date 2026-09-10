@@ -3,21 +3,24 @@ import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
 import { LoadMoreButton } from './LoadMoreButton';
 
-/** Selects the root button (the component root). */
+/** Selects the root button (the component root — it is the underlying Button,
+ *  carrying only Button's own data-oxobz-button marker, like live). */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-load-more-button]');
+    return container.querySelector('button');
 }
 
 describe('LoadMoreButton', () => {
     // ── Rendering ──
 
-    it('renders a root button with data-oxobz-load-more-button and data-version="v1"', () => {
+    it('renders the underlying Button (data-oxobz-button, no load-more marker) with data-version="v1"', () => {
         const { container } = render(<LoadMoreButton>Load More</LoadMoreButton>);
         const root = getRoot(container);
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('BUTTON');
         expect(root).toHaveAttribute('data-version', 'v1');
         expect(root).toHaveAttribute('data-oxobz-button', '');
+        // Live has no load-more-specific marker — only data-geist-button.
+        expect(root).not.toHaveAttribute('data-oxobz-load-more-button');
         expect(root?.className).toContain('loadMoreButton');
         expect(screen.getByText('Load More')).toBeInTheDocument();
     });
@@ -113,7 +116,7 @@ describe('LoadMoreButton', () => {
         const ref = createRef<HTMLButtonElement>();
         render(<LoadMoreButton ref={ref}>Load More</LoadMoreButton>);
         expect(ref.current).toBeInstanceOf(HTMLButtonElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-load-more-button');
+        expect(ref.current).toHaveAttribute('data-oxobz-button');
     });
 
     // ── Prop forwarding ──
