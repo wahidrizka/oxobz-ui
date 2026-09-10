@@ -57,6 +57,8 @@ const Label = forwardRef<HTMLLabelElement, LabelProps>(
             className,
             withInput = false,
             bypassCasing = false,
+            id,
+            htmlFor,
             'data-version': dataVersion = 'v1',
             ...rest
         },
@@ -65,14 +67,18 @@ const Label = forwardRef<HTMLLabelElement, LabelProps>(
         /*
          * Elemen <label>-nya POLOS; seluruh gayanya ada di <div> di dalamnya.
          *
-         * Terukur di dua halaman live (Calendar dan Choicebox): produksi
+         * Terukur di halaman live Label + Calendar + Choicebox: produksi
          * menulis <label data-version="v1" for="..."><div class="block
-         * text-[13px] max-w-full text-gray-900 mb-2 cursor-text">teks</div>
-         * </label>. Label luarnya tanpa kelas, sehingga ukuran hurufnya ikut
-         * warisan (16px) dan display-nya inline.
+         * text-[13px] max-w-full text-gray-900 mb-2 cursor-text[ capitalize]">
+         * teks</div></label>. Label luarnya tanpa kelas + tanpa id.
+         *
+         * API Geist: prop `id` = id kontrol yang ditautkan, DIRENDER sebagai
+         * `for` (htmlFor), BUKAN id milik label (live: `<Label id="test-input"/>`
+         * -> `<label for="test-input">`). `htmlFor` eksplisit tetap didukung dan
+         * menang bila keduanya diberikan.
          */
         return (
-            <label {...rest} data-version={dataVersion} ref={ref}>
+            <label {...rest} htmlFor={htmlFor ?? id} data-version={dataVersion} ref={ref}>
                 <div
                     className={cn(
                         styles.label,

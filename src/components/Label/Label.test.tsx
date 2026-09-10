@@ -47,22 +47,26 @@ describe('Label', () => {
 
     // ── id / htmlFor pass-through ──
 
-    it('passes id through (docs pattern: referenced via aria-labelledby)', () => {
+    it('renders the id prop as the for attribute (Geist API), not a label id', () => {
+        // Live: <Label id="test-input" /> -> <label for="test-input"> (no id).
         const { container } = render(<Label id="test-input" value="Email" />);
         const label = container.querySelector('label');
-        expect(label).toHaveAttribute('id', 'test-input');
+        expect(label).toHaveAttribute('for', 'test-input');
+        expect(label).not.toHaveAttribute('id');
     });
 
-    it('passes htmlFor through to the for attribute', () => {
+    it('passes htmlFor through to the for attribute (and it wins over id)', () => {
         // getByText kini mengembalikan <div> di dalamnya, jadi atributnya
         // diperiksa pada <label> pembungkusnya.
-        const { container } = render(<Label htmlFor="email-field" value="Email" />);
+        const { container } = render(
+            <Label htmlFor="email-field" id="ignored" value="Email" />,
+        );
         expect(container.querySelector('label')).toHaveAttribute('for', 'email-field');
     });
 
-    it('does not have a for attribute when htmlFor is omitted', () => {
+    it('does not have a for attribute when both htmlFor and id are omitted', () => {
         render(<Label value="No for" />);
-        const label = screen.getByText('No for');
+        const label = screen.getByText('No for').closest('label');
         expect(label).not.toHaveAttribute('for');
     });
 
@@ -132,10 +136,10 @@ describe('Label', () => {
 
     // ── Prop forwarding ──
 
-    it('forwards additional HTML label attributes', () => {
+    it('forwards additional HTML label attributes (id maps to for)', () => {
         const { container } = render(<Label id="my-label" title="tooltip" value="Attrs" />);
         const label = container.querySelector('label');
-        expect(label).toHaveAttribute('id', 'my-label');
+        expect(label).toHaveAttribute('for', 'my-label');
         expect(label).toHaveAttribute('title', 'tooltip');
     });
 
