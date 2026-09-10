@@ -38,6 +38,18 @@
     width: unset !important;
 }
 
+/*
+ * Loaded mode keeps live's base `after:animate-loading-skeleton`: an empty
+ * ::after that still animates (content: '' + animation) but has no gradient,
+ * box, or positioning. Measured 10 Sep 2026: the live loaded skeleton has this
+ * ::after while ours generated none. `.button::after` still adds the -1px
+ * offsets on top when the `button` prop is set, matching live.
+ */
+.skeleton.loaded::after {
+    content: '';
+    animation: 1.5s ease-in-out infinite reverse loading;
+}
+
 /* ---- Hidden when not shown and not wrapping children ---- */
 .skeleton:not(.wrapper):not(.show) {
     display: none;
@@ -52,10 +64,10 @@
 .skeleton:not(.wrapper):not(.loaded)::after {
     content: '';
     background: linear-gradient(
-            90deg,
-            var(--ds-gray-100),
-            var(--ds-gray-200),
-            var(--ds-gray-100)
+            to right in oklab,
+            var(--ds-gray-100) 0%,
+            var(--ds-gray-200) 50%,
+            var(--ds-gray-100) 100%
         )
         0 0 / 50% 100%;
     animation: 1.5s ease-in-out infinite reverse loading;
@@ -100,10 +112,10 @@
 .wrapper::after {
     content: '';
     background: linear-gradient(
-            90deg,
-            var(--ds-gray-100),
-            var(--ds-gray-200),
-            var(--ds-gray-100)
+            to right in oklab,
+            var(--ds-gray-100) 0%,
+            var(--ds-gray-200) 50%,
+            var(--ds-gray-100) 100%
         )
         0 0 / 50% 100%;
     visibility: visible;
@@ -123,20 +135,26 @@
     display: inline-block !important;
 }
 
-/* ---- Shapes (skeleton-module __pill / __squared / __rounded) ---- */
+/* ---- Shapes (skeleton-module __pill / __squared / __rounded) ----
+ * Live geistcn measured 10 Sep 2026: `pill` AND `rounded` both compute to
+ * `rounded-full` (calc(infinity * 1px), clamped to 3.35544e7px), on the
+ * element AND its ::after (class `rounded-full after:rounded-full`). The
+ * pill-vs-circle look comes from the box dimensions, not the radius. `squared`
+ * is rounded-none (0). The ::after radius is set unconditionally (plain +
+ * wrapper), matching live's `after:rounded-*`. */
 .pill,
-.pill.wrapper::after {
-    border-radius: 9999px;
+.pill::after {
+    border-radius: 3.40282e38px;
 }
 
 .squared,
-.squared.wrapper::after {
+.squared::after {
     border-radius: 0;
 }
 
 .rounded,
-.rounded.wrapper::after {
-    border-radius: 50%;
+.rounded::after {
+    border-radius: 3.40282e38px;
 }
 
 /* ---- Button: extend the shimmer 1px past the button border ----
