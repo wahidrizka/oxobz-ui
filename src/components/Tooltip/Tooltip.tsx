@@ -181,22 +181,24 @@ const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(
             <span
                 {...rest}
                 aria-describedby={visible ? tooltipId : undefined}
-                className={cn(styles.container, className)}
+                className={cn(styles.container, visible && styles.open, className)}
                 /*
-                 * Atribut pemicu disamakan dengan produksi, terukur di halaman
-                 * Colors live 30 Agu 2026 (92 pemicu, semuanya sama):
-                 *   data-testid="legacy/tooltip-trigger"
-                 *   data-version="v1"
-                 *   style="-webkit-touch-callout:none"
-                 *   tabindex="0"
-                 *   data-state="closed" | "delayed-open"
-                 * Tidak ada penanda `data-geist-tooltip` di sana, jadi
-                 * `data-oxobz-tooltip` milik kita dihapus.
+                 * Atribut pemicu (re-ukur 10 Sep 2026, DUA konteks berbeda):
+                 *   - Standalone (mis. Description): span HANYA punya
+                 *     data-testid="legacy/tooltip-trigger" + data-version +
+                 *     tabindex. TANPA data-state, TANPA style.
+                 *   - Dibungkus context-menu (mis. swatch Colors): Radix
+                 *     ContextMenu.Trigger asChild yang MENYUNTIKKAN data-state
+                 *     ("closed"/"open") + style -webkit-touch-callout lewat
+                 *     {...rest}/style, BUKAN tooltip ini.
+                 * Jadi tooltip TIDAK lagi meng-hardcode data-state/callout
+                 * (dulu keliru dipasang di semua konteks). Posisi popup saat
+                 * terbuka dipicu kelas `.open` (dari `visible`), bukan
+                 * data-state, supaya lepas dari data-state milik Radix.
                  */
-                data-state={visible ? 'delayed-open' : 'closed'}
                 data-testid="legacy/tooltip-trigger"
                 data-version={dataVersion}
-                style={{ WebkitTouchCallout: 'none', ...style }}
+                style={style}
                 onBlur={handleBlur}
                 onFocus={handleFocus}
                 onMouseEnter={handleMouseEnter}

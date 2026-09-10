@@ -17,8 +17,11 @@ function getTrigger(container: HTMLElement): HTMLElement {
 describe('Tooltip', () => {
     // ── Rendering ──
 
-    /* Penanda pemicu mengikuti produksi: data-testid legacy/tooltip-trigger
-       plus data-state, TANPA data-oxobz-tooltip (terukur 30 Agu 2026). */
+    /* Penanda pemicu mengikuti produksi (re-ukur 10 Sep 2026): data-testid
+       legacy/tooltip-trigger + data-version + tabindex. Standalone TANPA
+       data-state / style / data-oxobz-tooltip — data-state & callout hanya
+       muncul kalau tooltip dibungkus context-menu Radix (mis. swatch Colors),
+       disuntik Radix, bukan oleh tooltip ini. */
     it('renders a trigger span with the production markers and tabindex="0"', () => {
         const { container } = render(
             <Tooltip text="The Evil Rabbit Jumped over the Fence">
@@ -29,7 +32,10 @@ describe('Tooltip', () => {
         expect(trigger.tagName).toBe('SPAN');
         expect(trigger).toHaveAttribute('data-version', 'v1');
         expect(trigger).toHaveAttribute('tabindex', '0');
-        expect(trigger).toHaveAttribute('data-state', 'closed');
+        // Standalone tooltip: no data-state (Radix owns it when wrapped) and no
+        // inline style (no hardcoded -webkit-touch-callout anymore).
+        expect(trigger).not.toHaveAttribute('data-state');
+        expect(trigger).not.toHaveAttribute('style');
         expect(trigger).not.toHaveAttribute('data-oxobz-tooltip');
         expect(trigger.classList.contains('container')).toBe(true);
         expect(screen.getByText('Top')).toBeInTheDocument();

@@ -41,11 +41,15 @@
  * closed there is no popup, so it stays `position: static` — exactly like the
  * production trigger (which portals its popup and never anchors it). This closes
  * the ~7 position diffs per trigger (position/top/left/right/bottom/inset) that
- * a permanent `position: relative` produced in the resting state. The full
+ * a permanent `position: relative` produced in the resting state.
+ *
+ * Triggered by the internal `.open` class (from `visible`), NOT `data-state`:
+ * when the tooltip is wrapped in a Radix context-menu (Colors swatch), Radix
+ * owns `data-state` (closed/open), so the tooltip must not reuse it. The full
  * portal rebuild (matching the OPEN-state DOM too) remains separate behaviour
  * work (todo B16).
  */
-.container[data-state="delayed-open"] {
+.container.open {
     position: relative;
 }
 
