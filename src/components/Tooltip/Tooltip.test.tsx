@@ -85,18 +85,23 @@ describe('Tooltip', () => {
         expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 
-    it('renders the production element chain absolute > relative > tooltip + triangle', () => {
+    it('portals the popup to <body> (wrapper div > tooltip + triangle), not inside the trigger', () => {
         const { container } = render(
             <Tooltip text="Tip">
                 <span>Trigger</span>
             </Tooltip>,
         );
-        fireEvent.mouseEnter(getTrigger(container));
+        const trigger = getTrigger(container);
+        fireEvent.mouseEnter(trigger);
         const tooltip = screen.getByRole('tooltip');
-        const relative = tooltip.parentElement;
-        const absolute = relative?.parentElement;
-        expect(relative?.classList.contains('relative')).toBe(true);
-        expect(absolute?.classList.contains('absolute')).toBe(true);
+        // Portaled: the popup is NOT a descendant of the trigger.
+        expect(trigger.contains(tooltip)).toBe(false);
+        // Chain: <body> > wrapper <div> > tooltip.
+        const wrapper = tooltip.parentElement;
+        expect(wrapper?.tagName).toBe('DIV');
+        expect(wrapper?.parentElement).toBe(document.body);
+        // The tooltip carries the module class and holds the triangle.
+        expect(tooltip.classList.contains('tooltip')).toBe(true);
         const triangle = tooltip.querySelector('span[aria-hidden="true"]');
         expect(triangle?.classList.contains('triangle')).toBe(true);
     });
