@@ -15,14 +15,17 @@
  *   ellipsis/truncate (`.ellipsis` added on <dl>).
  */
 
-/* ---- Root <dl> + reset (description-module __description) ---- */
+/* ---- Root <dl> + reset (description-module __description) ----
+ * Live gives <dt>/<dd> their own class attributes (flattened Tailwind), so we
+ * carry .title / .content classes on them (measured: live dt/dd HAVE a class,
+ * so an unstyled dt/dd would flag "class hanya di live"). */
 .description,
-.description dt,
-.description dd {
+.title,
+.content {
     margin: 0;
 }
 
-.description dt {
+.title {
     text-transform: capitalize;
     white-space: nowrap;
     min-height: 14px;
@@ -32,18 +35,21 @@
     line-height: 14px;
 }
 
-.description dd {
+.content {
     color: var(--ds-gray-1000);
     font-size: 14px;
     font-weight: 500;
     line-height: 16px;
 }
 
-/* ---- Tooltip icon wrapper (description-module __icon) ---- */
+/* ---- Tooltip icon wrapper (live: inline-block align-[-2px] ml-1 s-[14px]) ----
+ * NOTE: live's `s-[14px]` is not a real Tailwind class (the size utility is
+ * `size-[14px]`), so it is a no-op and the wrapper is AUTO height (measured
+ * 16px), which makes the <dt> 16px tall. We match that: no explicit width/
+ * height, just inline-block + vertical-align + margin-left. Measured 10 Sep
+ * 2026. The inner svg stays 14px via the icon component's size prop. */
 .icon {
     vertical-align: -2px;
-    width: 14px;
-    height: 14px;
     margin-left: 4px;
     display: inline-block;
 }

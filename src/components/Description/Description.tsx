@@ -48,17 +48,19 @@ export interface DescriptionProps
  * pair as a definition — do not wrap it in extra paragraphs that would
  * break the list semantics (Best Practices, description.html).
  *
- * Rendered DOM (Geist production / snapshot structure):
+ * Rendered DOM (live geistcn structure, measured 10 Sep 2026):
  * ```html
- * <dl class="description [right] [ellipsis]"
- *     data-oxobz-description="" data-version="v1">
+ * <dl class="description [right] [ellipsis]" data-version="v1">
  *   <dt data-oxobz-description-title="">
  *     {title}
  *     <span class="icon">…tooltip trigger…</span>   <!-- only when tooltip -->
  *   </dt>
- *   <dd data-oxobz-description-content="">{children}</dd>
+ *   <dd data-oxobz-description-content="">{content}</dd>
  * </dl>
  * ```
+ * The live `<dl>` carries `data-version` but NO name-marker (no
+ * `data-geist-description`), so this root emits only `data-version` — the
+ * `<dt>`/`<dd>` keep their markers, which live has.
  */
 const Description = forwardRef<HTMLDListElement, DescriptionProps>(
     (
@@ -83,11 +85,10 @@ const Description = forwardRef<HTMLDListElement, DescriptionProps>(
                     ellipsis && styles.ellipsis,
                     className,
                 )}
-                data-oxobz-description=""
                 data-version={dataVersion}
                 ref={ref}
             >
-                <dt data-oxobz-description-title="">
+                <dt className={styles.title} data-oxobz-description-title="">
                     {title}
                     {tooltip != null && (
                         <span className={styles.icon}>
@@ -97,7 +98,9 @@ const Description = forwardRef<HTMLDListElement, DescriptionProps>(
                         </span>
                     )}
                 </dt>
-                <dd data-oxobz-description-content="">{content}</dd>
+                <dd className={styles.content} data-oxobz-description-content="">
+                    {content}
+                </dd>
             </dl>
         );
     },

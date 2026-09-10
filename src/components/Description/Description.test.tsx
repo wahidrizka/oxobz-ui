@@ -3,15 +3,15 @@ import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
 import { Description } from './Description';
 
-/** Selects the root <dl> (the component root). */
+/** Selects the root <dl> (the component root — live carries no name-marker). */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-description]');
+    return container.querySelector('dl');
 }
 
 describe('Description', () => {
     // ── Rendering ──
 
-    it('renders a root dl with data-oxobz-description and data-version="v1"', () => {
+    it('renders a root dl with data-version="v1" and no name-marker', () => {
         const { container } = render(
             <Description content="Data about this section." title="Section Title" />,
         );
@@ -19,6 +19,7 @@ describe('Description', () => {
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DL');
         expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).not.toHaveAttribute('data-oxobz-description');
         expect(root?.className).toContain('description');
     });
 
@@ -135,7 +136,7 @@ describe('Description', () => {
             <Description content="Value" ref={ref} title="Section Title" />,
         );
         expect(ref.current).toBeInstanceOf(HTMLDListElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-description');
+        expect(ref.current).toHaveAttribute('data-version', 'v1');
     });
 
     // ── Prop forwarding ──
