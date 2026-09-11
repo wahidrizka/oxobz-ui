@@ -18,23 +18,18 @@ export interface ErrorCardProps
     /**
      * Supplementary error detail (Geist `message` prop).
      *
-     * NOTE (0% assumption, disclosed): in the captured production snapshot
-     * (`error-card.html`, `<ErrorCard message="Lorem ipsum..." title="No
-     * credits left" />`) this prop produces NO visible trace anywhere in the
-     * rendered DOM — no text node, no `title` HTML attribute, no
-     * `aria-label`/`aria-describedby`. Only the icon + `title` are ever
-     * rendered. Rather than silently dropping consumer-supplied content or
-     * inventing a visible placement that contradicts the verified snapshot,
-     * `message` is exposed as visually-hidden (`oxobz-sr-only`) text after
-     * the title so it stays available to assistive tech. See the
-     * `needsRecapture` note in this component's task report — recapture the
-     * real card with devtools open (including any hover/expanded state) to
-     * confirm the true rendering and correct this if it differs.
+     * Production accepts it and renders nothing for it. Re-confirmed against
+     * the live page on 11 Sep 2026, which passes `message="Lorem ipsum…"` and
+     * renders only the icon and the title: the string appears in the page
+     * exactly once, inside the "Show code" block, and never in the card. No
+     * text node, no `title` attribute, no `aria-label`/`aria-describedby`.
+     *
+     * An earlier build exposed it as visually-hidden text so it would at
+     * least reach assistive tech. That added an element production does not
+     * have, so it is gone: the prop is kept for API parity and has no DOM
+     * footprint, the same way `label` behaves on Feedback.
      */
     message?: ReactNode;
-
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -45,44 +40,28 @@ export interface ErrorCardProps
  * A card used to communicate an error state with a title and message
  * (Geist docs: "Error Card").
  *
- * Rendered DOM (Geist production / geistcn structure, geist→oxobz rename):
+ * Rendered DOM, measured off the live page on 11 Sep 2026. The root carries
+ * NO component marker and NO data-version, and the icon carries no
+ * `aria-hidden` — all three were in an older build and none exist in
+ * production:
  * ```html
- * <div class="root" data-oxobz-error-card="" data-version="v1">
+ * <div class="root">
  *   <div class="content">
- *     <svg aria-hidden="true">...</svg>
- *     <h3 class="title">No credits left</h3>
- *     <span class="oxobz-sr-only">{message}</span>   <!-- see message note -->
+ *     <svg data-slot="oxobz-icon">...</svg>
+ *     <h3 class="text-copy-16 title">No credits left</h3>
  *   </div>
  * </div>
  * ```
  */
 const ErrorCard = forwardRef<HTMLDivElement, ErrorCardProps>(
-    (
-        {
-            className,
-            message,
-            title,
-            'data-version': dataVersion = 'v1',
-            ...rest
-        },
-        ref,
-    ) => {
+    ({ className, message: _message, title, ...rest }, ref) => {
         return (
-            <div
-                {...rest}
-                className={cn(styles.root, className)}
-                data-oxobz-error-card=""
-                data-version={dataVersion}
-                ref={ref}
-            >
+            <div {...rest} className={cn(styles.root, className)} ref={ref}>
                 <div className={styles.content}>
-                    <Stop aria-hidden="true" size={16} />
+                    <Stop size={16} />
                     <h3 className={cn('text-copy-16', styles.title)}>
                         {title}
                     </h3>
-                    {message != null && (
-                        <span className="oxobz-sr-only">{message}</span>
-                    )}
                 </div>
             </div>
         );
