@@ -84,7 +84,12 @@ export interface ToastControls {
 /** Imperative API returned by {@link useToasts}. */
 export interface ToastsApi {
     /** Enqueue a fully-configured toast. */
-    message: (options: ToastOptions) => ToastControls;
+    /**
+     * Show a toast. Accepts the full options object or, as production does
+     * (`toasts.message('Deployment canceled')`, and the copy controls' success
+     * message), a plain string used as the text.
+     */
+    message: (options: string | ToastOptions) => ToastControls;
     /** Shorthand for a blue success toast. */
     success: (text: ReactNode) => ToastControls;
     /** Shorthand for an amber warning toast. */
@@ -264,7 +269,8 @@ const ToastArea = forwardRef<HTMLDivElement, ToastAreaProps>(
 
         const api = useMemo<ToastsApi>(
             () => ({
-                message: (options) => enqueue(options),
+                message: (options) =>
+                    enqueue(typeof options === 'string' ? { text: options } : options),
                 success: (text) => enqueue({ text, type: 'success' }),
                 warning: (text) => enqueue({ text, type: 'warning' }),
                 error: (text) => enqueue({ text, type: 'error' }),

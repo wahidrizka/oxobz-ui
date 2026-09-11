@@ -7,10 +7,15 @@ import {
     useRef,
     useState,
     type ButtonHTMLAttributes,
+    type CSSProperties,
+    type ElementType,
     type MouseEventHandler,
 } from 'react';
 import { Check, Copy } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
+import { Swap } from '../../utils/phase';
+import { useToasts } from '../Toast';
+import { Tooltip } from '../Tooltip';
 import styles from './TextWithCopyButton.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -18,59 +23,41 @@ import styles from './TextWithCopyButton.module.css';
 /* ------------------------------------------------------------------ */
 
 export interface TextWithCopyButtonProps
-    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onCopy'> {
+    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'style'> {
     /** String written to the clipboard when the button is clicked. */
     textToCopy: string;
 
-    /** Visible label shown before the button is clicked. */
+    /** Visible label. It never changes: the copied feedback is the icon swap plus a toast. */
     textLabel: string;
 
-    /** Label shown in place of `textLabel` while the copied feedback is active. */
+    /** Text of the toast shown once the clipboard write succeeds. */
     successMessage: string;
 
     /**
-     * Truncate `textLabel`/`successMessage` with an ellipsis instead of
-     * letting it overflow the button (geist-ellipsis: text-overflow
-     * ellipsis, white-space nowrap, max-width 100%). Both captured Geist
-     * examples ("Default", "With Small and Tertiary") pass this — there is
-     * no captured example of the un-truncated look, but the prop clearly
-     * gates the `geist-ellipsis` class, so it defaults to false here
-     * (opt-in) rather than assuming it is always on.
+     * Truncate the label with an ellipsis instead of letting it overflow
+     * (production's global `geist-ellipsis` class). Off by default.
      */
     ellipsis?: boolean;
 
-    /**
-     * Controlled copied state. When provided, the label/icon feedback is
-     * driven by this prop instead of the internal 2s timer (same
-     * controlled/uncontrolled split as CopyButton and Snippet).
-     */
-    copied?: boolean;
+    /** Element rendered for the label. Default `p`. */
+    as?: ElementType;
 
-    /** Called with the copied string after a successful copy. */
-    onCopy?: (text: string) => void;
+    /** Show `textToCopy` in a tooltip while hovering. Off by default. */
+    showTooltip?: boolean;
 
-    /** data-version attribute matching Geist production output */
-    'data-version'?: string;
+    /** Inline style for the LABEL: production puts `style` there, not on the button. */
+    style?: CSSProperties;
 }
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-/** Auto-revert delay of the internal (uncontrolled) copied state. */
-const COPIED_RESET_MS = 2000;
+/** How long the check icon stays before swapping back (production: 1e3). */
+const COPIED_MS = 1000;
 
-/**
- * Resolve the animation class for one icon layer — identical scheme to
- * CopyButton's `getLayerClassName` (copy-button-module__8qN89q timing),
- * reused here for consistency across every copy-feedback control in this
- * package: `.initial` before any interaction (no entrance animation on
- * mount), `.visible`/`.hidden` afterwards.
- */
-function getLayerClassName(isShown: boolean, hasInteracted: boolean): string | undefined {
-    if (isShown) return hasInteracted ? styles.visible : undefined;
-    return hasInteracted ? styles.hidden : styles.initial;
-}
+/** Swap exit fallback when no transition event arrives (production: 400). */
+const EXIT_FALLBACK_MS = 400;
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -79,33 +66,30 @@ function getLayerClassName(isShown: boolean, hasInteracted: boolean): string | u
 /**
  * Display text alongside a button that copies the text to the clipboard.
  *
- * Rendered DOM (Geist production / geistcn structure,
- * text-with-copy-button.html — plain Tailwind utility classes, no
- * `*-module__hash` component module exists for this control):
+ * Rebuilt 12 Sep 2026 from the production source (chunk 0jv75r7jllo1w) and
+ * the live page, which disagree with the old build on three counts:
+ *
+ * - `successMessage` is NOT swapped into the label. The label stays put and
+ *   the message goes to `toasts.message(...)`; a failed write toasts
+ *   "Failed to copy to clipboard".
+ * - The icons are not two stacked layers cross-fading. A `Swap` keeps ONE
+ *   layer in the DOM: the copy icon exits (150ms, scale .5 + fade), then the
+ *   check icon mounts and enters from that same starting style. It swaps
+ *   back after 1s.
+ * - The root carries no component marker and no data-version.
+ *
+ * Rendered DOM at rest:
  * ```html
- * <button type="button" data-oxobz-text-with-copy-button="" data-version="v1">
- *   <span class="content">
- *     <p class="label [ellipsis]">Copy</p>
- *     <span class="iconWrap">
- *       <span class="icon …"><Copy/></span>
- *       <span class="icon …"><Check/></span>
- *     </span>
- *   </span>
+ * <button type="button" class="button">
+ *   <div class="row">
+ *     <p class="[ellipsis] label">Copy</p>
+ *     <div class="swap"><div class="state" data-phase="entered"><svg/></div></div>
+ *   </div>
  * </button>
  * ```
- *
- * Ground truth: the snapshot only ever captures the pre-click ("Copy" +
- * Copy-icon, opacity:1/transform:none) resting state — no mid-click frame
- * was ever captured, so the icon cross-fade timing/easing is NOT verified
- * for this specific control. It is modelled on the sibling CopyButton /
- * Snippet controls (0.15s ease-out fade, same `.initial/.visible/.hidden`
- * scheme) for consistency, minus the scale keyframe those use — the
- * snapshot's resolved `transform: none` (no scale listed) rules out a
- * scale component here, so this component fades opacity only.
- *
- * The label swap (`textLabel` -> `successMessage` while copied) has no
- * captured animation either; it is a plain text swap, no transition
- * invented for it.
+ * With `showTooltip`, production wraps the row in its Tooltip. That path has
+ * no live example (both docs demos leave it off, and the tooltip then renders
+ * no wrapper at all), so the enabled look is unverified against production.
  */
 const TextWithCopyButton = forwardRef<HTMLButtonElement, TextWithCopyButtonProps>(
     (
@@ -114,19 +98,17 @@ const TextWithCopyButton = forwardRef<HTMLButtonElement, TextWithCopyButtonProps
             textLabel,
             successMessage,
             ellipsis = false,
-            copied,
-            onCopy,
+            as: Label = 'p',
+            showTooltip = false,
+            style,
             className,
             onClick,
-            'data-version': dataVersion = 'v1',
             ...rest
         },
         ref,
     ) => {
-        const isControlled = copied !== undefined;
-        const [internalCopied, setInternalCopied] = useState(false);
-        const [hasInteracted, setHasInteracted] = useState(false);
-        const showCopied = isControlled ? copied : internalCopied;
+        const toasts = useToasts();
+        const [copied, setCopied] = useState(false);
 
         const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
         useEffect(
@@ -139,50 +121,49 @@ const TextWithCopyButton = forwardRef<HTMLButtonElement, TextWithCopyButtonProps
         const handleClick = useCallback<MouseEventHandler<HTMLButtonElement>>(
             (event) => {
                 onClick?.(event);
-                if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                    void navigator.clipboard.writeText(textToCopy);
-                }
-                onCopy?.(textToCopy);
-                setHasInteracted(true);
-                if (!isControlled) {
-                    setInternalCopied(true);
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                    timeoutRef.current = setTimeout(
-                        () => setInternalCopied(false),
-                        COPIED_RESET_MS,
-                    );
-                }
+                if (!textToCopy) return;
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                setCopied(true);
+                /*
+                 * Production calls navigator.clipboard.writeText unguarded. The
+                 * guard here only routes a missing Clipboard API (insecure
+                 * context, jsdom) into the same failure toast instead of a
+                 * TypeError; in a browser the two behave identically.
+                 */
+                const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+                const write = clipboard
+                    ? clipboard.writeText(textToCopy)
+                    : Promise.reject(new Error('Clipboard API unavailable'));
+                write
+                    .then(() => toasts.message(successMessage))
+                    .catch(() => toasts.error('Failed to copy to clipboard'));
+                timeoutRef.current = setTimeout(() => setCopied(false), COPIED_MS);
             },
-            [onClick, textToCopy, onCopy, isControlled],
+            [onClick, textToCopy, toasts, successMessage],
+        );
+
+        // Production renders nothing without something to copy.
+        if (!textToCopy) return null;
+
+        const row = (
+            <div className={styles.row}>
+                <Label className={cn(ellipsis && styles.ellipsis, styles.label)} style={style}>
+                    {textLabel}
+                </Label>
+                <Swap active={copied ? 'check' : 'copy'} className={styles.swap} exitDuration={EXIT_FALLBACK_MS}>
+                    <Swap.State className={styles.state} id="copy">
+                        <Copy size={16} />
+                    </Swap.State>
+                    <Swap.State className={styles.state} id="check">
+                        <Check size={16} />
+                    </Swap.State>
+                </Swap>
+            </div>
         );
 
         return (
-            <button
-                {...rest}
-                ref={ref}
-                type="button"
-                className={cn(styles.button, className)}
-                data-oxobz-text-with-copy-button=""
-                data-version={dataVersion}
-                onClick={handleClick}
-            >
-                <span className={styles.content}>
-                    <p className={cn(styles.label, ellipsis && styles.labelEllipsis)}>
-                        {showCopied ? successMessage : textLabel}
-                    </p>
-                    <span className={styles.iconWrap}>
-                        <span
-                            className={cn(styles.icon, getLayerClassName(!showCopied, hasInteracted))}
-                        >
-                            <Copy size={16} />
-                        </span>
-                        <span
-                            className={cn(styles.icon, getLayerClassName(showCopied, hasInteracted))}
-                        >
-                            <Check size={16} />
-                        </span>
-                    </span>
-                </span>
+            <button {...rest} ref={ref} className={cn(styles.button, className)} onClick={handleClick} type="button">
+                {showTooltip ? <Tooltip text={textToCopy}>{row}</Tooltip> : row}
             </button>
         );
     },

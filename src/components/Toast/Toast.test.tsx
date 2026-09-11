@@ -294,4 +294,22 @@ describe('Toast', () => {
             'fullBleed',
         );
     });
+
+    it('message() also accepts a plain string, as production does', async () => {
+        function Probe() {
+            const toasts = useToasts();
+            return (
+                <button onClick={() => toasts.message('Copied to clipboard')} type="button">
+                    go
+                </button>
+            );
+        }
+        render(
+            <ToastArea>
+                <Probe />
+            </ToastArea>,
+        );
+        fireEvent.click(screen.getByText('go'));
+        expect(await screen.findByText('Copied to clipboard')).toBeInTheDocument();
+    });
 });

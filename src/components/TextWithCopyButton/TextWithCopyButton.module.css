@@ -1,42 +1,29 @@
 /**
- * TextWithCopyButton — CSS Module (geistcn Tailwind from snapshot)
+ * TextWithCopyButton — CSS Module
  *
- * Production sources:
- * - _nextstatic/component-inspect-element/text-with-copy-button.html
- *   Both captured examples ("Default", "With Small and Tertiary") render
- *   the IDENTICAL button classes below — no `*-module__hash` component
- *   module exists for this control; it is built entirely from Tailwind
- *   utility classes, so this file's source of truth is that class list,
- *   not a `-module` chunk:
- *     button: `cursor-pointer w-full transition-colors duration-100
- *       ease-in-out p-0 items-center justify-start flex outline-0
- *       border-none bg-none text-[var(--accents-7)]
- *       hover:text-[var(--geist-foreground)]
- *       hover:[&_svg]:!text-[var(--geist-foreground)]
- *       [&_svg]:!text-[var(--accents-5)] [&_svg]:transition-colors
- *       [&_svg]:duration-100 [&_svg]:ease-in-out`
- *     content row: `w-full [&_svg]:min-w-4 flex items-center gap-1.5`
- *     label: `geist-ellipsis text-inherit whitespace-nowrap` (only present
- *       in both captures, which both pass `ellipsis` — see `.labelEllipsis`)
- *     icon box: `relative` sized 16x16 inline; inner layer `absolute inset-0`.
- * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   `.geist-ellipsis{text-overflow:ellipsis;white-space:nowrap;
- *   word-wrap:normal;min-width:0;max-width:100%;display:inline-block;
- *   overflow:hidden}` — reproduced verbatim as `.labelEllipsis`.
- * - Colors: `--accents-7` (label default) / `--accents-5` (icon default) /
- *   `--geist-foreground` (both, on hover) resolved from the same chunk's
- *   `:root`/dark-theme values; already present in this package as
- *   `--accents-7`, `--accents-5`, `--oxobz-foreground` (geist-foreground ->
- *   oxobz-foreground per the standard token rename) — no new tokens needed.
+ * Source: production bundle (chunk 0jv75r7jllo1w, read 12 Sep 2026) plus the
+ * computed styles of the live page. No `*-module__hash` module exists for
+ * this control; it is Tailwind utilities, flattened here class by class:
  *
- * Icon cross-fade (`.icon`/`.initial`/`.visible`/`.hidden`): NOT verified
- * for this control — the snapshot only ever captures the pre-click resting
- * frame (`opacity:1; transform:none`, no scale listed). Reused from
- * CopyButton's `copy-button-module__8qN89q` timing (0.15s ease-out) for
- * consistency across this package's copy-feedback controls, but WITHOUT
- * the scale keyframe CopyButton uses — the absence of a `scale` value in
- * the captured resting frame rules that out here, so this fades opacity
- * only (documented deviation, not a literal chunk value).
+ *   button : cursor-pointer w-full transition-colors duration-100 ease-in-out
+ *            p-0 items-center justify-start flex outline-0 border-none bg-none
+ *            text-[var(--accents-7)] hover:text-[var(--geist-foreground)]
+ *            hover:[&_svg]:!text-[var(--geist-foreground)]
+ *            [&_svg]:!text-[var(--accents-5)] [&_svg]:transition-colors
+ *            [&_svg]:duration-100 [&_svg]:ease-in-out
+ *   row    : w-full [&_svg]:min-w-4 flex items-center gap-1.5
+ *   label  : [geist-ellipsis] text-inherit whitespace-nowrap
+ *   swap   : relative size-4
+ *   state  : absolute inset-0 transition-[opacity,scale] duration-150
+ *            ease-in-out data-[enter=animate]:starting:scale-50
+ *            data-[enter=animate]:starting:opacity-0
+ *            data-[phase=exiting]:scale-50 data-[phase=exiting]:opacity-0
+ *
+ * Measured live (light): button color rgb(51,51,51) = --accents-7, hover
+ * rgb(0,0,0); svg color rgb(102,102,102) = --accents-5, hover rgb(0,0,0);
+ * `outline-0` computes to outline-style solid + width 0 (Tailwind v4 keeps
+ * the style); text-align stays the UA `center` (nothing resets it); the row,
+ * label and swap box have NO transition of their own.
  */
 
 /* ---- Root button ---- */
@@ -46,97 +33,90 @@
     justify-content: flex-start;
     width: 100%;
     padding: 0;
-    border: none;
-    outline: 0;
+    border-style: none;
+    outline-style: solid;
+    outline-width: 0;
     background: none;
     cursor: pointer;
     font: inherit;
-    text-align: left;
 
     color: var(--accents-7);
-    transition: color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.1s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button:hover {
     color: var(--oxobz-foreground);
 }
 
-/* ---- Content row (label + icon) ---- */
-.content {
+/* `[&_svg]:!text-...`: the `!` beats the icon's own inline `color: currentColor`. */
+.button svg {
+    color: var(--accents-5) !important;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.1s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button:hover svg {
+    color: var(--oxobz-foreground) !important;
+}
+
+/* ---- Content row (label + swap) ---- */
+.row {
     display: flex;
     align-items: center;
     gap: 6px;
     width: 100%;
 }
 
+.row svg {
+    min-width: 16px;
+}
+
 /* ---- Label ---- */
 .label {
     color: inherit;
     white-space: nowrap;
-    margin: 0;
 }
 
-/* geist-ellipsis (chunk 1c419a75d7e589ae.css), applied only when `ellipsis` is set */
-.labelEllipsis {
+/* Production's global `geist-ellipsis`, applied only when `ellipsis` is set. */
+.ellipsis {
     display: inline-block;
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     word-wrap: normal;
 }
 
-/* ---- Icon box (snapshot: "relative", inline style width/height 16px) ---- */
-.iconWrap {
+/* ---- Swap box: one 16px icon layer at a time ---- */
+.swap {
     position: relative;
-    flex-shrink: 0;
     width: 16px;
     height: 16px;
-    color: var(--accents-5);
-    transition: color 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.button:hover .iconWrap {
-    color: var(--oxobz-foreground);
-}
-
-/* ---- Icon layer (absolutely stacked Copy/Check, cross-faded) ---- */
-.icon {
+.state {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition-property: opacity, scale;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Resting hidden state before any interaction — no entrance animation
-   plays on mount (matches CopyButton's convention). */
-.initial {
+.state[data-phase='exiting'] {
+    scale: 0.5;
     opacity: 0;
 }
 
-.visible {
-    animation: 0.15s ease-out forwards fadeIn;
-}
-
-.hidden {
-    animation: 0.15s ease-out forwards fadeOut;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes fadeOut {
-    0% {
-        opacity: 1;
-    }
-    to {
+/* Entrance: a freshly mounted layer starts small and transparent, then
+   transitions to its resting values. Only layers mounted after a swap carry
+   data-enter="animate"; the first one mounts instantly, as in production. */
+@starting-style {
+    .state[data-enter='animate'] {
+        scale: 0.5;
         opacity: 0;
     }
 }

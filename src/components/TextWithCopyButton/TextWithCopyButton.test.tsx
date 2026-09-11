@@ -1,21 +1,49 @@
 import { render, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createRef } from 'react';
+import { createRef, type ReactElement } from 'react';
+import { Check, Copy } from '@oxobz/icons';
 import { TextWithCopyButton } from './TextWithCopyButton';
 
-/** Selects the root button (the component root). */
+/*
+ * The toast system is a separate component with its own tests; here it is a
+ * spy so the assertions stay about THIS control: what it sends, and when.
+ */
+const toasts = vi.hoisted(() => ({
+    message: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+}));
+vi.mock('../Toast', () => ({ useToasts: () => toasts }));
+
+/** Selects the root button. Production's root carries no marker attribute. */
 function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-text-with-copy-button]');
+    return container.querySelector('button');
 }
 
-/** Selects the label <p>. */
 function getLabel(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-text-with-copy-button] p');
+    return container.querySelector('button > div > :first-child');
 }
 
-/** Selects the two icon layer spans: [0] = Copy, [1] = Check. */
-function getLayers(container: HTMLElement) {
-    return container.querySelectorAll('[data-oxobz-text-with-copy-button] span > span > span');
+/** The single icon layer the Swap keeps mounted, if any. */
+function getState(container: HTMLElement) {
+    return container.querySelector('[data-phase]');
+}
+
+/** Path data of an icon as this test environment renders it. */
+function pathOf(icon: ReactElement) {
+    const { container, unmount } = render(icon);
+    const d = container.querySelector('path')?.getAttribute('d') ?? '';
+    unmount();
+    return d;
+}
+
+/** Which icon a layer holds, matched against real renders of Copy and Check. */
+function iconOf(layer: Element | null) {
+    const d = layer?.querySelector('path')?.getAttribute('d') ?? '';
+    if (d === pathOf(<Copy size={16} />)) return 'copy';
+    if (d === pathOf(<Check size={16} />)) return 'check';
+    return 'unknown';
 }
 
 const baseProps = {
@@ -24,94 +52,153 @@ const baseProps = {
     successMessage: 'Copied to clipboard',
 };
 
+/** Resolves the clipboard promise chain queued by a click. */
+async function flush() {
+    await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+    });
+}
+
 describe('TextWithCopyButton', () => {
-    // ── Rendering ──
-
-    it('renders a root button with data-oxobz-text-with-copy-button and data-version="v1"', () => {
-        const { container } = render(<TextWithCopyButton {...baseProps} />);
-        const root = getRoot(container);
-        expect(root).toBeInTheDocument();
-        expect(root?.tagName).toBe('BUTTON');
-        expect(root).toHaveAttribute('type', 'button');
-        expect(root).toHaveAttribute('data-version', 'v1');
-        expect(root?.className).toContain('button');
-    });
-
-    it('allows a custom data-version', () => {
-        const { container } = render(
-            <TextWithCopyButton {...baseProps} data-version="v2" />,
-        );
-        expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
-    });
-
-    it('renders the textLabel by default', () => {
-        const { container } = render(<TextWithCopyButton {...baseProps} />);
-        expect(getLabel(container)?.textContent).toBe('Copy');
-    });
-
-    it('renders the Copy and Check icon layers inside a stack', () => {
-        const { container } = render(<TextWithCopyButton {...baseProps} />);
-        const layers = getLayers(container);
-        expect(layers).toHaveLength(2);
-        layers.forEach((layer) => expect(layer.className).toContain('icon'));
-        expect(container.querySelectorAll('svg[data-slot="oxobz-icon"]')).toHaveLength(2);
-    });
-
-    // ── ellipsis variant ──
-
-    it('does not apply the ellipsis class by default', () => {
-        const { container } = render(<TextWithCopyButton {...baseProps} />);
-        expect(getLabel(container)?.className).not.toContain('labelEllipsis');
-    });
-
-    it('applies the ellipsis class when ellipsis is set', () => {
-        const { container } = render(<TextWithCopyButton {...baseProps} ellipsis />);
-        expect(getLabel(container)?.className).toContain('labelEllipsis');
-    });
-
-    // ── Copy behavior (uncontrolled) ──
+    let writeText: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.useFakeTimers();
+        writeText = vi.fn().mockResolvedValue(undefined);
+        Object.defineProperty(navigator, 'clipboard', {
+            value: { writeText },
+            configurable: true,
+        });
+        toasts.message.mockClear();
+        toasts.error.mockClear();
     });
 
     afterEach(() => {
         vi.useRealTimers();
     });
 
-    it('shows the Copy layer opaque and the Check layer as .initial before any interaction', () => {
+    // ── Rendering ──
+
+    it('renders a plain root button with no marker or version attribute', () => {
         const { container } = render(<TextWithCopyButton {...baseProps} />);
-        const [copyLayer, checkLayer] = getLayers(container);
-        expect(copyLayer.className).not.toContain('hidden');
-        expect(copyLayer.className).not.toContain('visible');
-        expect(checkLayer.className).toContain('initial');
+        const root = getRoot(container);
+        expect(root).toBeInTheDocument();
+        expect(root).toHaveAttribute('type', 'button');
+        expect(root?.className).toContain('button');
+        expect(root).not.toHaveAttribute('data-oxobz-text-with-copy-button');
+        expect(root).not.toHaveAttribute('data-version');
     });
 
-    it('writes to the clipboard and swaps to successMessage + Check layer after a click, then reverts after 2s', () => {
-        const writeText = vi.fn().mockResolvedValue(undefined);
-        Object.defineProperty(navigator, 'clipboard', {
-            value: { writeText },
-            configurable: true,
-        });
-        const onCopy = vi.fn();
-        const { container } = render(<TextWithCopyButton {...baseProps} onCopy={onCopy} />);
-        const root = getRoot(container) as HTMLElement;
+    it('renders the label as a <p> by default and honours `as`', () => {
+        const { container, rerender } = render(<TextWithCopyButton {...baseProps} />);
+        expect(getLabel(container)?.tagName).toBe('P');
+        expect(getLabel(container)?.textContent).toBe('Copy');
+        rerender(<TextWithCopyButton {...baseProps} as="span" />);
+        expect(getLabel(container)?.tagName).toBe('SPAN');
+    });
 
-        fireEvent.click(root);
+    it('puts `style` on the label, not on the button', () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} style={{ fontWeight: 600 }} />);
+        expect(getLabel(container)).toHaveStyle({ fontWeight: 600 });
+        expect(getRoot(container)).not.toHaveAttribute('style');
+    });
+
+    it('mounts only the copy icon at rest, entered and without data-enter', () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} />);
+        expect(container.querySelectorAll('[data-phase]')).toHaveLength(1);
+        const state = getState(container);
+        expect(state).toHaveAttribute('data-phase', 'entered');
+        expect(state).not.toHaveAttribute('data-enter');
+        expect(iconOf(state)).toBe('copy');
+        expect(container.querySelectorAll('svg')).toHaveLength(1);
+    });
+
+    it('renders nothing without textToCopy, as production does', () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} textToCopy="" />);
+        expect(container.firstChild).toBeNull();
+    });
+
+    // ── ellipsis ──
+
+    it('applies the ellipsis class only when ellipsis is set', () => {
+        const { container, rerender } = render(<TextWithCopyButton {...baseProps} />);
+        expect(getLabel(container)?.className).not.toContain('ellipsis');
+        rerender(<TextWithCopyButton {...baseProps} ellipsis />);
+        expect(getLabel(container)?.className).toContain('ellipsis');
+    });
+
+    // ── Copy behaviour ──
+
+    it('writes to the clipboard and toasts successMessage; the label never changes', async () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} />);
+        fireEvent.click(getRoot(container) as HTMLElement);
         expect(writeText).toHaveBeenCalledWith('lipsum');
-        expect(onCopy).toHaveBeenCalledWith('lipsum');
-        expect(getLabel(container)?.textContent).toBe('Copied to clipboard');
-        const [copyLayer, checkLayer] = getLayers(container);
-        expect(copyLayer.className).toContain('hidden');
-        expect(checkLayer.className).toContain('visible');
+        await flush();
+        expect(toasts.message).toHaveBeenCalledWith('Copied to clipboard');
+        expect(toasts.error).not.toHaveBeenCalled();
+        expect(getLabel(container)?.textContent).toBe('Copy');
+    });
+
+    it('toasts the failure message when the clipboard write rejects', async () => {
+        writeText.mockRejectedValue(new Error('denied'));
+        const { container } = render(<TextWithCopyButton {...baseProps} />);
+        fireEvent.click(getRoot(container) as HTMLElement);
+        await flush();
+        expect(toasts.error).toHaveBeenCalledWith('Failed to copy to clipboard');
+        expect(toasts.message).not.toHaveBeenCalled();
+    });
+
+    it('swaps copy -> check (exit first, then mount) and back after 1s', () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} />);
+        fireEvent.click(getRoot(container) as HTMLElement);
+
+        // The copy layer is exiting; the check layer has not mounted yet.
+        let state = getState(container);
+        expect(iconOf(state)).toBe('copy');
+        expect(state).toHaveAttribute('data-phase', 'exiting');
+        expect(state).toHaveAttribute('data-enter', 'animate');
+        expect(container.querySelectorAll('[data-phase]')).toHaveLength(1);
+
+        // Exit settles (400ms fallback in jsdom); the check layer enters.
+        act(() => {
+            vi.advanceTimersByTime(400);
+        });
+        state = getState(container);
+        expect(iconOf(state)).toBe('check');
+        expect(state).toHaveAttribute('data-phase', 'entered');
+        expect(state).toHaveAttribute('data-enter', 'animate');
+
+        // 1s after the click the check layer starts leaving.
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        state = getState(container);
+        expect(iconOf(state)).toBe('check');
+        expect(state).toHaveAttribute('data-phase', 'exiting');
 
         act(() => {
-            vi.advanceTimersByTime(2000);
+            vi.advanceTimersByTime(400);
         });
-        expect(getLabel(container)?.textContent).toBe('Copy');
-        const [copyLayerAfter, checkLayerAfter] = getLayers(container);
-        expect(copyLayerAfter.className).toContain('visible');
-        expect(checkLayerAfter.className).toContain('hidden');
+        state = getState(container);
+        expect(iconOf(state)).toBe('copy');
+        expect(state).toHaveAttribute('data-phase', 'entered');
+        expect(state).toHaveAttribute('data-enter', 'animate');
+    });
+
+    it('restarts the 1s window when clicked again while copied', () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} />);
+        const root = getRoot(container) as HTMLElement;
+        fireEvent.click(root);
+        act(() => {
+            vi.advanceTimersByTime(800);
+        });
+        fireEvent.click(root);
+        act(() => {
+            vi.advanceTimersByTime(800);
+        });
+        // 1.6s after the first click but only 0.8s after the second: still the check icon.
+        expect(iconOf(getState(container))).toBe('check');
     });
 
     it('forwards the click handler passed by the consumer', () => {
@@ -121,53 +208,40 @@ describe('TextWithCopyButton', () => {
         expect(onClick).toHaveBeenCalledTimes(1);
     });
 
-    // ── Controlled copied ──
+    // ── Tooltip ──
 
-    it('uses the controlled copied prop instead of the internal timer', () => {
-        const { container, rerender } = render(<TextWithCopyButton {...baseProps} copied />);
-        expect(getLabel(container)?.textContent).toBe('Copied to clipboard');
-
-        fireEvent.click(getRoot(container) as HTMLElement);
-        act(() => {
-            vi.advanceTimersByTime(5000);
-        });
-        expect(getLabel(container)?.textContent).toBe('Copied to clipboard');
-
-        rerender(<TextWithCopyButton {...baseProps} copied={false} />);
-        expect(getLabel(container)?.textContent).toBe('Copy');
+    it('renders the row directly unless showTooltip is set', () => {
+        const { container, rerender } = render(<TextWithCopyButton {...baseProps} />);
+        expect(getRoot(container)?.firstElementChild?.className).toContain('row');
+        rerender(<TextWithCopyButton {...baseProps} showTooltip />);
+        expect(getRoot(container)?.firstElementChild?.className).not.toContain('row');
+        expect(container.querySelector('button [class*="row"]')).toBeInTheDocument();
     });
 
     // ── Disabled state ──
 
-    it('renders disabled and does not fire the click handler', () => {
-        const onCopy = vi.fn();
-        const { container } = render(<TextWithCopyButton {...baseProps} disabled onCopy={onCopy} />);
+    it('renders disabled and does not copy', () => {
+        const { container } = render(<TextWithCopyButton {...baseProps} disabled />);
         const root = getRoot(container) as HTMLButtonElement;
         expect(root).toBeDisabled();
         fireEvent.click(root);
-        expect(onCopy).not.toHaveBeenCalled();
+        expect(writeText).not.toHaveBeenCalled();
     });
 
-    // ── Custom className ──
+    // ── Custom className, ref, prop forwarding, displayName ──
 
     it('appends a custom className after the module class', () => {
         const { container } = render(<TextWithCopyButton {...baseProps} className="custom-text-copy" />);
         const root = getRoot(container);
         expect(root?.className).toContain('button');
-        expect(root?.className).toContain('custom-text-copy');
         expect(root?.className.endsWith('custom-text-copy')).toBe(true);
     });
 
-    // ── Ref forwarding ──
-
     it('forwards ref to the root button', () => {
         const ref = createRef<HTMLButtonElement>();
-        render(<TextWithCopyButton {...baseProps} ref={ref} />);
-        expect(ref.current).toBeInstanceOf(HTMLButtonElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-text-with-copy-button');
+        const { container } = render(<TextWithCopyButton {...baseProps} ref={ref} />);
+        expect(ref.current).toBe(getRoot(container));
     });
-
-    // ── Prop forwarding ──
 
     it('forwards extra HTML attributes (id, title)', () => {
         const { container } = render(<TextWithCopyButton {...baseProps} id="text-copy-1" title="Copy" />);
@@ -175,8 +249,6 @@ describe('TextWithCopyButton', () => {
         expect(root).toHaveAttribute('id', 'text-copy-1');
         expect(root).toHaveAttribute('title', 'Copy');
     });
-
-    // ── displayName ──
 
     it('has the correct displayName', () => {
         expect(TextWithCopyButton.displayName).toBe('TextWithCopyButton');

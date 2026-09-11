@@ -1,12 +1,17 @@
 'use client';
 
 import {
+    createContext,
     useCallback,
+    useContext,
     useEffect,
+    useImperativeHandle,
+    useMemo,
     useRef,
     useState,
     type HTMLAttributes,
     type ReactNode,
+    type Ref,
 } from 'react';
 
 /**
@@ -209,3 +214,117 @@ export function Phase({
         </div>
     );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Swap                                                               */
+/* ------------------------------------------------------------------ */
+
+/** Ref that always holds the latest value without causing a re-render. */
+function useLatest<T>(value: T) {
+    const ref = useRef(value);
+    ref.current = value;
+    return ref;
+}
+
+interface SwapContextValue {
+    /** The state currently in the DOM. Lags behind `active` while one exits. */
+    current: string;
+    active: string;
+    exitDuration: number;
+    enter: PhaseEnter;
+    onExited: (id: string) => void;
+}
+
+const SwapContext = createContext<SwapContextValue | null>(null);
+
+export interface SwapProps extends HTMLAttributes<HTMLDivElement> {
+    /** Id of the `Swap.State` that should be showing. */
+    active: string;
+    /** Fallback in ms for a state's exit when no transition event arrives. */
+    exitDuration?: number;
+}
+
+export interface SwapStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'id'> {
+    /** Matched against the parent's `active`. Never written to the DOM. */
+    id: string;
+    ref?: Ref<HTMLDivElement | null>;
+}
+
+/**
+ * Shows exactly one of its `Swap.State` children at a time. Ported from the
+ * same production module as `Phase` (export `S`, read 12 Sep 2026).
+ *
+ * Switching `active` lets the current state finish its exit transition
+ * BEFORE the next one mounts, so the two never overlap in the DOM; the
+ * newcomer then carries `data-enter="animate"` for its `@starting-style`
+ * entrance. The very first state mounts instantly, without `data-enter`,
+ * which is what the live DOM shows at rest. Measured on the Text With Copy
+ * Button page: click -> copy icon exiting -> (150ms) check icon entered ->
+ * (1s) check exiting -> copy entered.
+ */
+function SwapRoot({ active, exitDuration = 5000, children, ...rest }: SwapProps) {
+    const [current, setCurrent] = useState(active);
+    const [hasSwapped, setHasSwapped] = useState(false);
+    const activeRef = useLatest(active);
+
+    const onExited = useCallback(
+        (id: string) => {
+            setHasSwapped(true);
+            setCurrent((value) => (value === id ? activeRef.current : value));
+        },
+        [activeRef],
+    );
+
+    const enter: PhaseEnter = hasSwapped ? 'animate' : 'instant';
+    const value = useMemo<SwapContextValue>(
+        () => ({ current, active, exitDuration, enter, onExited }),
+        [current, active, exitDuration, enter, onExited],
+    );
+
+    return (
+        <SwapContext.Provider value={value}>
+            <div {...rest}>{children}</div>
+        </SwapContext.Provider>
+    );
+}
+
+function SwapState({ id, ref, children, ...rest }: SwapStateProps) {
+    const context = useContext(SwapContext);
+    if (!context) {
+        throw new Error('<Swap.State> must be used inside <Swap>.');
+    }
+
+    const isCurrent = context.current === id;
+    const show = isCurrent && context.active === id;
+    const { phase, ref: nodeRef, mounted, enter } = usePhase({
+        show,
+        mode: 'mount',
+        enter: context.enter,
+        exitDuration: context.exitDuration,
+    });
+
+    useImperativeHandle<HTMLDivElement | null, HTMLDivElement | null>(
+        ref,
+        () => nodeRef.current,
+        [nodeRef],
+    );
+
+    useEffect(() => {
+        if (isCurrent && !show && phase === 'exited') context.onExited(id);
+    }, [isCurrent, show, phase, id, context]);
+
+    if (!isCurrent || !mounted) return null;
+
+    return (
+        <div
+            {...rest}
+            ref={nodeRef}
+            data-phase={phase}
+            data-enter={enter === 'animate' ? 'animate' : undefined}
+        >
+            {children}
+        </div>
+    );
+}
+
+export const Swap = Object.assign(SwapRoot, { State: SwapState });
