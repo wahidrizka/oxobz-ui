@@ -4,18 +4,19 @@ import { describe, it, expect, vi } from 'vitest';
 import { FileTree, Tree, Folder, File, type FileType } from './FileTree';
 
 describe('Tree (root)', () => {
-    it('renders a root div with data-oxobz-file-tree and data-version="v1"', () => {
+    it('renders a plain root div with no marker or version attribute', () => {
         const { container } = render(<Tree />);
-        const root = container.querySelector('[data-oxobz-file-tree]');
+        const root = container.firstElementChild;
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('DIV');
-        expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).not.toHaveAttribute('data-oxobz-file-tree');
+        expect(root).not.toHaveAttribute('data-version');
         expect(root?.className).toContain('tree');
     });
 
     it('appends a custom className after the module class', () => {
         const { container } = render(<Tree className="custom-tree" />);
-        const root = container.querySelector('[data-oxobz-file-tree]');
+        const root = container.firstElementChild;
         expect(root?.className).toContain('tree');
         expect(root?.className).toContain('custom-tree');
         expect(root?.className.endsWith('custom-tree')).toBe(true);
@@ -23,14 +24,14 @@ describe('Tree (root)', () => {
 
     it('forwards ref to the root div', () => {
         const ref = createRef<HTMLDivElement>();
-        render(<Tree ref={ref} />);
+        const { container } = render(<Tree ref={ref} />);
         expect(ref.current).toBeInstanceOf(HTMLDivElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-file-tree');
+        expect(ref.current).toBe(container.firstElementChild);
     });
 
     it('forwards extra HTML attributes', () => {
         const { container } = render(<Tree id="my-tree" aria-label="Project files" />);
-        const root = container.querySelector('[data-oxobz-file-tree]');
+        const root = container.firstElementChild;
         expect(root).toHaveAttribute('id', 'my-tree');
         expect(root).toHaveAttribute('aria-label', 'Project files');
     });
@@ -56,10 +57,7 @@ describe('Folder', () => {
             </Tree>,
         );
         expect(screen.queryByText('main.tsx')).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /app/i })).toHaveAttribute(
-            'aria-expanded',
-            'false',
-        );
+        expect(screen.getByRole('button', { name: /app/i })).not.toHaveAttribute('aria-expanded');
     });
 
     it('defaultOpen renders children on mount', () => {
@@ -71,10 +69,7 @@ describe('Folder', () => {
             </Tree>,
         );
         expect(screen.getByText('index.js')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /.vercel/i })).toHaveAttribute(
-            'aria-expanded',
-            'true',
-        );
+        expect(screen.getByRole('button', { name: /.vercel/i })).not.toHaveAttribute('aria-expanded');
     });
 
     it('click toggles expansion (uncontrolled)', () => {
@@ -89,11 +84,9 @@ describe('Folder', () => {
         expect(screen.queryByText('main.tsx')).not.toBeInTheDocument();
 
         fireEvent.click(button);
-        expect(button).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByText('main.tsx')).toBeInTheDocument();
 
         fireEvent.click(button);
-        expect(button).toHaveAttribute('aria-expanded', 'false');
         expect(screen.queryByText('main.tsx')).not.toBeInTheDocument();
     });
 
@@ -135,15 +128,20 @@ describe('Folder', () => {
         expect(screen.getByText('main.tsx')).toBeInTheDocument();
     });
 
-    it('data-state reflects open/closed', () => {
+    it('carries no data-state; the child list simply mounts and unmounts', () => {
         render(
             <Tree>
-                <Folder name="app" defaultOpen />
+                <Folder name="app" defaultOpen>
+                    <File name="main.tsx" />
+                </Folder>
             </Tree>,
         );
-        expect(screen.getByTitle('app')).toHaveAttribute('data-state', 'open');
+        const item = screen.getByTitle('app');
+        expect(item).not.toHaveAttribute('data-state');
+        expect(item.querySelector('ul')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: /app/i }));
-        expect(screen.getByTitle('app')).toHaveAttribute('data-state', 'closed');
+        expect(item).not.toHaveAttribute('data-state');
+        expect(item.querySelector('ul')).not.toBeInTheDocument();
     });
 
     it('swaps the folder icon between closed and open states', () => {
@@ -207,7 +205,7 @@ describe('Folder', () => {
             </Tree>,
         );
         expect(ref.current).toBeInstanceOf(HTMLLIElement);
-        expect(ref.current).toHaveAttribute('data-oxobz-file-tree-folder');
+        expect(ref.current?.tagName).toBe('LI');
     });
 });
 
@@ -252,14 +250,14 @@ describe('File', () => {
         ['middleware', 'dashboard.tsx'],
     ];
 
-    it.each(fileTypeInfo)('forwards type="%s" as data-type', (type, name) => {
+    it.each(fileTypeInfo)('does not write type="%s" to the DOM, as production', (type, name) => {
         render(
             <Tree>
                 <File name={name} type={type} />
             </Tree>,
         );
         const link = screen.getByText(name).closest('a');
-        expect(link).toHaveAttribute('data-type', type);
+        expect(link).not.toHaveAttribute('data-type');
     });
 
     // Per-type icon swap, verified path-for-path against

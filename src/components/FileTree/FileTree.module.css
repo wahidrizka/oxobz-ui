@@ -62,7 +62,8 @@
     );
     background-repeat: no-repeat;
     vertical-align: top;
-    transform: translateX(-4px);
+    /* -translate-x-1: Tailwind v4 writes the `translate` property, not transform. */
+    translate: -4px 0;
     flex-shrink: 0;
     --indent-color: var(--ds-gray-400);
 }
@@ -80,6 +81,8 @@
 .item {
     display: flex;
     align-items: center;
+    /* grow-1: no visual effect under a block <ul>, but it is a computed value. */
+    flex-grow: 1;
 }
 
 .folderItem {
@@ -87,7 +90,8 @@
     flex-direction: column;
 }
 
-.childList {
+/* [&_ul]:list-none [&_ul]:m-0 [&_ul]:p-0: the child list is a bare <ul>. */
+.folderItem ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -99,16 +103,15 @@
     margin-left: -8px;
     display: flex;
     background: transparent;
-    border: none;
+    /* border-none sets the style only; the base border color stays, as in production. */
+    border-style: none;
     height: 28px;
-    width: calc(100% + 8px);
     align-items: center;
     border-radius: 4px;
     padding: 4px 8px;
     cursor: pointer;
     color: inherit;
     font: inherit;
-    text-align: left;
 }
 
 .folderButton:hover {
@@ -119,7 +122,6 @@
 .fileLink {
     margin-left: -8px;
     height: 28px;
-    width: calc(100% + 8px);
     display: flex !important;
     align-items: center;
     overflow: hidden;

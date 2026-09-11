@@ -55,6 +55,10 @@ export interface TreeProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * Tree — the root container of a file tree. Directly nests `Folder` and
  * `File` rows (file-tree.html Show-code: `<Tree><Folder>…</Folder></Tree>`).
+ *
+ * Measured off the live page on 12 Sep 2026: no element in the tree carries
+ * a component marker, data-version, data-state, data-type or aria-expanded.
+ * An older build here had all five; they are gone.
  */
 const Tree = forwardRef<HTMLDivElement, TreeProps>(
     ({ className, children, ...rest }, ref) => (
@@ -62,8 +66,6 @@ const Tree = forwardRef<HTMLDivElement, TreeProps>(
             {...rest}
             ref={ref}
             className={cn(styles.tree, className)}
-            data-oxobz-file-tree=""
-            data-version="v1"
         >
             <TreeDepthContext.Provider value={0}>
                 {children}
@@ -131,13 +133,12 @@ const Folder = forwardRef<HTMLLIElement, FolderProps>(
                 ref={ref}
                 className={cn(styles.folderItem, className)}
                 title={name}
-                data-oxobz-file-tree-folder=""
-                data-state={isOpen ? 'open' : 'closed'}
             >
+                {/* Production writes the full-bleed width inline, not in a class. */}
                 <button
                     type="button"
                     className={styles.folderButton}
-                    aria-expanded={isOpen}
+                    style={{ width: 'calc(100% + 8px)' }}
                     onClick={handleToggle}
                 >
                     <IndentGuides depth={depth} />
@@ -147,7 +148,7 @@ const Folder = forwardRef<HTMLLIElement, FolderProps>(
                     <span className={styles.label}>{name}</span>
                 </button>
                 {hasChildren && isOpen && (
-                    <ul className={styles.childList}>
+                    <ul>
                         <TreeDepthContext.Provider value={depth + 1}>
                             {children}
                         </TreeDepthContext.Provider>
@@ -237,19 +238,19 @@ const FILE_TYPE_ICONS: Record<FileType, ComponentType<IconProps>> = {
  * span/classes (`.icon.fileIcon`); only the inner `<svg>` differs.
  */
 const File = forwardRef<HTMLAnchorElement, FileProps>(
-    ({ name, href, type, className, ...rest }, ref) => {
+    ({ name, href, type, className, style, ...rest }, ref) => {
         const depth = useContext(TreeDepthContext);
         const TypeIcon = type ? FILE_TYPE_ICONS[type] : undefined;
 
         return (
-            <li className={styles.item} title={name} data-oxobz-file-tree-file="">
+            <li className={styles.item} title={name}>
                 <IndentGuides depth={depth} />
                 <a
                     {...rest}
                     ref={ref}
                     href={href}
                     className={cn(styles.fileLink, className)}
-                    data-type={type}
+                    style={{ width: 'calc(100% + 8px)', ...style }}
                 >
                     <span className={cn(styles.icon, styles.fileIcon)}>
                         {TypeIcon ? <TypeIcon size={14} /> : <FileIcon size={14} />}
