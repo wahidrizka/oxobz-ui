@@ -7,18 +7,13 @@ import {
     useRef,
     useState,
     type ComponentType,
+    type CSSProperties,
     type FormEvent,
     type HTMLAttributes,
     type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-/*
- * The inline card is a framer-motion `motion.div` in production, animated
- * through a `variants` map. Rebuilding it by hand would need a per-frame
- * tween that the bundle already spells out, so this uses the same library.
- * Reported as an added dependency on 30 Aug 2026.
- */
-import { AnimatePresence, motion } from 'framer-motion';
+import { Phase } from '../../utils/phase';
 import {
     CheckCircleFill,
     FaceHappy,
@@ -50,17 +45,11 @@ const POPOVER_ENTER_MS = 100;
 const POPOVER_EXIT_MS = 200;
 
 /**
- * Inline card motion, copied field-for-field from the production bundle
- * (chunk `2lqodt92x3oso.js`, read 30 Aug 2026):
- *
- *   <motion.div initial="closed" animate={open ? variant : "closed"}
- *               transition={{ duration: .15, ease: "easeOut" }} variants={...} />
- *
- * Cross-checked against three live recordings of the open animation: with
- * `easeOut` (cubic-bezier(0,0,.58,1)) over 150ms the modelled height lands
- * within 0.006 of the measured progress at every sampled frame.
+ * Fallback for the form's exit transition, in ms. Production passes this to
+ * its phase primitive as `exitDuration={400}`; the CSS transition itself runs
+ * for 200ms, so this only matters if no transition event ever arrives.
  */
-const INLINE_TRANSITION = { duration: 0.15, ease: 'easeOut' } as const;
+const FORM_EXIT_MS = 400;
 
 /** Inline success panel box — production writes these two values inline. */
 const SUCCESS_FIXED_BOX = { height: '75%', paddingTop: 48 } as const;
@@ -600,24 +589,33 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
             const tinggiTerbuka = inlineOpenHeight(showTopics);
 
             /*
-             * Variants copied field-for-field from the production bundle
-             * (chunk `2lqodt92x3oso.js`, read 30 Aug 2026). The two "Error"
-             * variants and the auto-height `open` variant are omitted here
-             * because this build has no inline validation state yet; see
-             * tasks/todo.md.
+             * Card box, copied field-for-field from the production bundle
+             * (module 383750, chunk read 11 Sep 2026), where it is a `useMemo`
+             * feeding the card's inline `style`:
+             *
+             *   open ? (upwards ? {height: h + 2, width: 336, borderRadius: 12,
+             *                     transform: `translateY(${error ? -100 : -200}px)`}
+             *                   : {height: error ? h + 28 : h, width: 336, borderRadius: 12})
+             *        : fullWidth ? {height: 48, borderRadius: 30}
+             *                    : {height: 48, width: 274, borderRadius: 30}
+             *
+             * The two error branches are omitted because this build has no
+             * inline validation state yet; see tasks/todo.md. The card is a
+             * plain `<div>`: production animates these three values with a CSS
+             * transition on the element itself, not with a motion library.
              */
-            const variants = {
-                closed: fullWidth
-                    ? { height: 48, borderRadius: 30 }
-                    : { height: 48, width: 274, borderRadius: 30 },
-                openFixed: { height: tinggiTerbuka, width: 336, borderRadius: 12 },
-                openFixedUpwards: {
-                    height: tinggiTerbuka + 2,
-                    width: 336,
-                    borderRadius: 12,
-                    y: -200,
-                },
-            };
+            const cardStyle: CSSProperties = isOpen
+                ? upwards
+                    ? {
+                          height: tinggiTerbuka + 2,
+                          width: 336,
+                          borderRadius: 12,
+                          transform: 'translateY(-200px)',
+                      }
+                    : { height: tinggiTerbuka, width: 336, borderRadius: 12 }
+                : fullWidth
+                  ? { height: 48, borderRadius: 30 }
+                  : { height: 48, width: 274, borderRadius: 30 };
 
             return (
                 /*
@@ -632,13 +630,10 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
                     className={cn(styles.inlineWrapper, upwards && styles.inlineUpwards, className)}
                     data-feedback-inline=""
                 >
-                    <motion.div
-                        animate={isOpen ? (upwards ? 'openFixedUpwards' : 'openFixed') : 'closed'}
+                    <div
                         className={cn(styles.card, fullWidth && styles.cardFullWidth)}
-                        initial="closed"
                         ref={inlineRef}
-                        transition={INLINE_TRANSITION}
-                        variants={variants}
+                        style={cardStyle}
                     >
                         <div className={styles.prompt}>
                             <p className={cn('text-copy-14', styles.promptText)}>{prompt}</p>
@@ -646,44 +641,42 @@ const Feedback = forwardRef<HTMLDivElement, FeedbackProps>(
                         </div>
 
                         {/*
-                         * No wrapper div and no collapse mechanism. The bare
-                         * `<div>` that shows up between the card and the form
-                         * on the live page IS this `motion.div` (it carries no
-                         * class, so it looks anonymous); the form keeps its
-                         * natural 197px height and the card clips it with
-                         * `overflow: hidden`. The old grid `0fr -> 1fr` trick
-                         * collapsed the form to zero and needed an extra
+                         * The form keeps its natural 197px height in every
+                         * state; the card clips it with `overflow: hidden`
+                         * while the card's own height transition runs. No
+                         * collapse mechanism here — the old grid `0fr -> 1fr`
+                         * trick squashed the form to zero and needed an extra
                          * element production does not have.
+                         *
+                         * The success panel is a sibling, not an alternative:
+                         * production renders both while the form is exiting.
                          */}
-                        <AnimatePresence>
-                            {submitted ? (
-                                <SuccessView fixedHeight key="success" />
-                            ) : (
-                                <motion.div
-                                    exit={{ opacity: 0, y: -4 }}
-                                    key="form"
-                                    transition={{ duration: 0.2 }}
+                        <Phase
+                            className={styles.formPhase}
+                            enter="instant"
+                            exitDuration={FORM_EXIT_MS}
+                            show={!submitted}
+                        >
+                            <form className={styles.form} onSubmit={handleSubmit}>
+                                <div className={styles.formWrapper}>
+                                    {topicSelect}
+                                    {messageField}
+                                    <MarkdownTip />
+                                </div>
+                                {/* Production writes this override inline, not as a class. */}
+                                <div
+                                    className={styles.actions}
+                                    style={{ justifyContent: 'flex-end' }}
                                 >
-                                    <form className={styles.form} onSubmit={handleSubmit}>
-                                        <div className={styles.formWrapper}>
-                                            {topicSelect}
-                                            {messageField}
-                                            <MarkdownTip />
-                                        </div>
-                                        {/* Production writes this override inline, not as a class. */}
-                                        <div
-                                            className={styles.actions}
-                                            style={{ justifyContent: 'flex-end' }}
-                                        >
-                                            <Button size="small" typeName="submit">
-                                                Send
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
+                                    <Button size="small" typeName="submit">
+                                        Send
+                                    </Button>
+                                </div>
+                            </form>
+                        </Phase>
+
+                        {submitted ? <SuccessView fixedHeight /> : null}
+                    </div>
                 </div>
             );
         }

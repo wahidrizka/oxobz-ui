@@ -102,9 +102,9 @@ describe('Feedback', () => {
 
         /*
          * The card no longer carries `data-open`: production has no such
-         * attribute, and the open geometry is written as inline style by
-         * framer-motion. Open state is read off the emoji radios instead,
-         * which is the signal production itself exposes.
+         * attribute, and the open geometry is written as inline style that a
+         * CSS transition tweens. Open state is read off the emoji radios
+         * instead, which is the signal production itself exposes.
          */
         it('opens the card only after an emoji is picked', () => {
             render(<Feedback type="inline" />);

@@ -70,9 +70,9 @@
 
 /* ---- Root wrapper (production: `flex justify-center`) ----
  * Flattened from the live class list. There is NO `align-items` here: the
- * opened card clears a height-locked wrapper through framer-motion's
- * `y: -200`, not through bottom alignment. Measured `align-items: normal`
- * on both live instances, 30 Aug 2026.
+ * opened card clears a height-locked wrapper through its own
+ * `transform: translateY(-200px)`, not through bottom alignment. Measured
+ * `align-items: normal` on both live instances, 30 Aug 2026.
  */
 .inlineWrapper {
     display: flex;
@@ -84,14 +84,20 @@
     height: 48px;
 }
 
-/* ---- Card (production: the framer-motion `motion.div`) ----
- * Flattened from `bg-[var(--ds-background-100)]
- * shadow-[var(--ds-shadow-border-small)] transition-colors duration-200
- * w-fit overflow-hidden`.
+/* ---- Card ----
+ * Flattened from the live class list (11 Sep 2026):
+ *   bg-background-100 shadow-(--ds-shadow-border-small) w-fit overflow-hidden
+ *   transition-[height,width,border-radius,transform,background-color]
+ *   duration-150 ease-out
  *
- * NO width, height or border-radius here: framer-motion writes all three as
- * inline style from the `variants` map, exactly as production does
- * (`style="height:48px;width:274px;border-radius:30px"` while closed).
+ * The transition is what opens and closes the card: production writes height,
+ * width, border-radius and transform as inline style
+ * (`style="height:48px;width:274px;border-radius:30px"` while closed) and lets
+ * these four properties tween. It used to drive them with framer-motion and no
+ * longer does, so the old `transition-colors` line here animated the wrong
+ * properties entirely.
+ *
+ * NO width, height or border-radius here — all three are inline.
  * NO display either — production's card computes to `display: block`.
  */
 .card {
@@ -99,14 +105,10 @@
     overflow: hidden;
     background: var(--ds-background-100);
     box-shadow: var(--ds-shadow-border-small);
-    /* `transition-colors duration-200` spelled out. The three
-       --tw-gradient-* entries are part of Tailwind v4's own colour list and
-       show up verbatim in the live computed value, so they are kept. */
-    transition-property: color, background-color, border-color, outline-color,
-        text-decoration-color, fill, stroke, --tw-gradient-from,
-        --tw-gradient-via, --tw-gradient-to;
-    transition-duration: 0.2s;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-property: height, width, border-radius, transform, background-color;
+    transition-duration: 0.15s;
+    /* Tailwind's `ease-out`, which is not the CSS keyword of the same name. */
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
 }
 
 /* Production's `w-full`, paired with the `fullWidth` prop. */
@@ -125,6 +127,30 @@
 
 .promptText {
     color: var(--ds-gray-900);
+    /* Production's `whitespace-nowrap`: the prompt never wraps, so the card's
+       fixed 274px closed width always holds it on one line. */
+    white-space: nowrap;
+}
+
+/* ---- Form phase wrapper ----
+ * Flattened from production's shared exit-transition class:
+ *   transition-[opacity,translate] duration-200
+ *   data-[phase=exiting]:-translate-y-1 data-[phase=exiting]:opacity-0
+ *
+ * Written by `<Phase>` (src/utils/phase.tsx). The form stays mounted while it
+ * exits so this transition can run; `-translate-y-1` is Tailwind's 0.25rem, and
+ * it rides on the `translate` property rather than `transform` — which is what
+ * the transition names, and what keeps it clear of the card's own transform.
+ */
+.formPhase {
+    transition-property: opacity, translate;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.formPhase[data-phase='exiting'] {
+    translate: 0 -4px;
+    opacity: 0;
 }
 
 /* ---- Emoji picker (feedback-module __emojisWrapper / __emoji) ----
@@ -206,7 +232,7 @@
 /* ---- Form element (production: `class="h-full"` on the <form>) ----
  * The old `.collapse` / `.collapseInner` pair is gone. Production never
  * collapses the form: it stays at its natural 197px and the card clips it
- * with `overflow: hidden` while framer-motion tweens the card's height.
+ * with `overflow: hidden` while the card's own height transition runs.
  */
 .form {
     height: 100%;
