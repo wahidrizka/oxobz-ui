@@ -1,196 +1,263 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { createRef } from 'react';
+import { render, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createRef, type ReactElement } from 'react';
+import { Pause, Play } from '@oxobz/icons';
 import { Video } from './Video';
 
-/** Selects the root <figure>. */
-function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-oxobz-video]');
+const SRC = 'https://example.com/geist.mp4';
+const base = { src: SRC, width: 600, height: 582, lazy: false };
+
+function getFigure(container: HTMLElement) {
+    return container.querySelector('figure');
 }
 
 function getVideo(container: HTMLElement) {
     return container.querySelector('video');
 }
 
+function getBar(container: HTMLElement) {
+    return container.querySelector('video + div');
+}
+
+/** Puts jsdom's inert <video> into a "can play" state and fires the event production listens to. */
+function loadVideo(video: HTMLVideoElement, duration = 20) {
+    Object.defineProperty(video, 'readyState', { value: 4, configurable: true });
+    Object.defineProperty(video, 'duration', { value: duration, configurable: true });
+    fireEvent.loadedData(video);
+}
+
+/** Path data of an icon as this test environment renders it. */
+function pathOf(icon: ReactElement) {
+    const { container, unmount } = render(icon);
+    const d = container.querySelector('path')?.getAttribute('d') ?? '';
+    unmount();
+    return d;
+}
+
+/** Which icon the control button shows, matched against real renders of Play and Pause. */
+function iconOf(container: HTMLElement) {
+    const d = container.querySelector('video + div > button path')?.getAttribute('d') ?? '';
+    if (d === pathOf(<Play />)) return 'play';
+    if (d === pathOf(<Pause />)) return 'pause';
+    return 'unknown';
+}
+
 describe('Video', () => {
-    // ── Rendering ──
+    let play: ReturnType<typeof vi.fn>;
+    let pause: ReturnType<typeof vi.fn>;
 
-    it('renders a root figure with data-oxobz-video and data-version="v1"', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const root = getRoot(container);
-        expect(root).toBeInTheDocument();
-        expect(root?.tagName).toBe('FIGURE');
-        expect(root).toHaveAttribute('data-version', 'v1');
-        expect(root).toHaveAttribute('role', 'region');
-        expect(root).toHaveAttribute('aria-label', 'Video player');
-        expect(root?.className).toContain('figure');
+    beforeEach(() => {
+        vi.useFakeTimers();
+        play = vi.fn().mockResolvedValue(undefined);
+        pause = vi.fn();
+        Object.defineProperty(HTMLMediaElement.prototype, 'play', { value: play, configurable: true });
+        Object.defineProperty(HTMLMediaElement.prototype, 'pause', { value: pause, configurable: true });
     });
 
-    it('allows a custom data-version', () => {
-        const { container } = render(
-            <Video data-version="v2" height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        expect(getRoot(container)).toHaveAttribute('data-version', 'v2');
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
-    it('sets --video-width and --video-margin custom properties from width', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const root = getRoot(container) as HTMLElement;
-        expect(root.style.getPropertyValue('--video-width')).toBe('min(600px, 950px)');
-        expect(root.style.getPropertyValue('--video-margin')).toBe('40px');
+    // ── Figure ──
+
+    it('renders a figure with data-version="v1" and no component marker', () => {
+        const { container } = render(<Video {...base} />);
+        const figure = getFigure(container);
+        expect(figure).toHaveAttribute('data-version', 'v1');
+        expect(figure).toHaveAttribute('role', 'region');
+        expect(figure).toHaveAttribute('aria-label', 'Video player');
+        expect(figure).not.toHaveAttribute('data-oxobz-video');
     });
 
-    it('renders the <video> with src, width and height when lazy is false', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const video = getVideo(container);
-        expect(video).toBeInTheDocument();
-        expect(video).toHaveAttribute('src', 'movie.mp4');
-        expect(video).toHaveAttribute('width', '600');
-        expect(video).toHaveAttribute('height', '400');
-        expect(video).toHaveAttribute('playsinline');
-        expect(video).toHaveAttribute('preload', 'auto');
-        expect(video?.className).toContain('video');
+    it('sets --video-width from width, --video-margin from margin, and maxWidth', () => {
+        const { container } = render(<Video {...base} margin={24} maxWidth={800} />);
+        const style = getFigure(container)?.getAttribute('style') ?? '';
+        expect(style).toContain('--video-width: min(600px, 950px)');
+        expect(style).toContain('--video-margin: 24px');
+        expect(style).toContain('max-width: 800px');
     });
 
-    it('defers the <video> src when lazy is true and IntersectionObserver is unavailable (fallback)', () => {
-        // jsdom has no IntersectionObserver — the component's documented
-        // fallback makes the video visible immediately instead of hanging.
-        const { container } = render(<Video height={400} src="movie.mp4" width={600} />);
-        const video = getVideo(container);
-        expect(video).toHaveAttribute('src', 'movie.mp4');
+    it('defaults width to 600 and margin to 40', () => {
+        const { container } = render(<Video src={SRC} height={300} lazy={false} />);
+        const style = getFigure(container)?.getAttribute('style') ?? '';
+        expect(style).toContain('--video-width: min(600px, 950px)');
+        expect(style).toContain('--video-margin: 40px');
     });
-
-    // ── Aspect ratio ──
 
     it('computes the aspect-ratio padding-bottom from height/width', () => {
-        const { container } = render(
-            <Video height={582} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const box = container.querySelector('[class*="aspectBox"]') as HTMLElement;
-        expect(box.style.paddingBottom).toBe('97%');
+        const { container } = render(<Video {...base} />);
+        const box = container.querySelector('figure > div > div');
+        expect(box).toHaveStyle({ paddingBottom: '97%' });
     });
 
-    // ── Controls variant (Default / No Controls) ──
+    // ── <video> ──
 
-    it('renders the controls bar by default (play button, times, progress)', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        expect(container.querySelector('[class*="controlsBar"]')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
-        expect(container.querySelector('progress')).toBeInTheDocument();
+    it('renders the <video> with src, width and height when lazy is false', () => {
+        const { container } = render(<Video {...base} />);
+        const video = getVideo(container);
+        expect(video).toHaveAttribute('src', SRC);
+        expect(video).toHaveAttribute('width', '600');
+        expect(video).toHaveAttribute('height', '582');
+        expect(video).toHaveAttribute('preload', 'auto');
+        expect(video).toHaveAttribute('playsinline');
     });
 
-    it('omits the controls bar entirely when controls is false ("No Controls")', () => {
-        const { container } = render(
-            <Video controls={false} height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        expect(container.querySelector('[class*="controlsBar"]')).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /play|pause/i })).not.toBeInTheDocument();
-    });
-
-    // ── Play / pause toggle ──
-
-    it('toggles the play/pause button label and icon on click', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const button = screen.getByRole('button', { name: 'Pause' });
-        fireEvent.click(button);
-        expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'Play' }));
-        expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
-        void container;
-    });
-
-    // ── Progress / time display ──
-
-    it('reflects currentTime/duration in the progress value and time labels', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const video = getVideo(container) as HTMLVideoElement;
-        Object.defineProperty(video, 'duration', { configurable: true, value: 20 });
-        fireEvent.loadedMetadata(video);
-        Object.defineProperty(video, 'currentTime', { configurable: true, value: 10 });
-        fireEvent.timeUpdate(video);
-
-        const progress = container.querySelector('progress');
-        expect(progress).toHaveAttribute('value', '50');
-        expect(screen.getByText('00:10')).toBeInTheDocument();
-        expect(screen.getByText('00:20')).toBeInTheDocument();
-    });
-
-    // ── Loop behavior (Default vs "No Loop") ──
-
-    it('replays from the start on "ended" when loop is true (default)', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const video = getVideo(container) as HTMLVideoElement;
-        Object.defineProperty(video, 'duration', { configurable: true, value: 20 });
-        Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 15 });
-        fireEvent.ended(video);
-        expect(video.currentTime).toBe(0);
-        expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
+    it('does not autoplay where motion preference is unknown, and never sets loop or controls', () => {
+        const { container } = render(<Video {...base} />);
+        const video = getVideo(container);
+        expect(video).not.toHaveAttribute('autoplay');
         expect(video).not.toHaveAttribute('loop');
+        expect(video).not.toHaveAttribute('controls');
     });
 
-    it('stops instead of replaying on "ended" when loop is false ("No Loop")', () => {
-        const { container } = render(
-            <Video height={400} lazy={false} loop={false} src="movie.mp4" width={600} />,
-        );
+    it('mounts no <video> at all while lazy and not yet in view', () => {
+        const { container } = render(<Video src={SRC} width={600} height={582} />);
+        expect(getVideo(container)).toBeNull();
+        expect(container.querySelector('figure > div > div')?.childElementCount).toBe(0);
+    });
+
+    // ── Control bar ──
+
+    it('mounts the control bar only once the video can play, starting paused at 00:00', () => {
+        const { container } = render(<Video {...base} />);
+        expect(getBar(container)).toBeNull();
+        loadVideo(getVideo(container) as HTMLVideoElement);
+        const bar = getBar(container);
+        expect(bar).toBeInTheDocument();
+        expect(iconOf(container)).toBe('play');
+        expect(bar?.querySelector('button')).not.toHaveAttribute('aria-label');
+        const times = bar?.querySelectorAll(':scope > div');
+        expect(times?.[0].textContent).toBe('00:00');
+        expect(times?.[2].textContent).toBe('00:20');
+        expect(bar?.querySelector('progress')).toHaveAttribute('value', '0');
+        expect(bar?.querySelector('progress + div')).toHaveStyle({ left: '0%' });
+    });
+
+    it('never mounts the control bar when controls is false', () => {
+        const { container } = render(<Video {...base} controls={false} />);
+        loadVideo(getVideo(container) as HTMLVideoElement);
+        expect(getBar(container)).toBeNull();
+    });
+
+    it('swaps to the pause icon once play() resolves, and back on pause', async () => {
+        const { container } = render(<Video {...base} />);
+        const video = getVideo(container) as HTMLVideoElement;
+        loadVideo(video);
+        fireEvent.click(getBar(container)?.querySelector('button') as HTMLElement);
+        expect(play).toHaveBeenCalledTimes(1);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(iconOf(container)).toBe('pause');
+        fireEvent.click(getBar(container)?.querySelector('button') as HTMLElement);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(pause).toHaveBeenCalled();
+        expect(iconOf(container)).toBe('play');
+    });
+
+    it('reports onPlay with the src once playback starts', async () => {
+        const onPlay = vi.fn();
+        const { container } = render(<Video {...base} onPlay={onPlay} />);
+        fireEvent.click(getVideo(container) as HTMLElement);
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(onPlay).toHaveBeenCalledWith(SRC);
+    });
+
+    it('reflects currentTime in the elapsed label, progress value and dot position', () => {
+        const { container } = render(<Video {...base} />);
+        const video = getVideo(container) as HTMLVideoElement;
+        loadVideo(video, 20);
+        Object.defineProperty(video, 'currentTime', { value: 5, configurable: true, writable: true });
+        fireEvent.timeUpdate(video);
+        const bar = getBar(container);
+        expect(bar?.querySelector(':scope > div')?.textContent).toBe('00:05');
+        expect(bar?.querySelector('progress')).toHaveAttribute('value', '25');
+        expect(bar?.querySelector('progress + div')).toHaveStyle({ left: '25%' });
+    });
+
+    it('formats an unknown duration as 00:00', () => {
+        const { container } = render(<Video {...base} />);
+        loadVideo(getVideo(container) as HTMLVideoElement, Number.NaN);
+        const times = getBar(container)?.querySelectorAll(':scope > div');
+        expect(times?.[2].textContent).toBe('00:00');
+    });
+
+    it('replays at most twice when loop is on, then stops', async () => {
+        const { container } = render(<Video {...base} />);
         const video = getVideo(container) as HTMLVideoElement;
         fireEvent.ended(video);
-        expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+        fireEvent.ended(video);
+        expect(play).toHaveBeenCalledTimes(2);
+        expect(pause).not.toHaveBeenCalled();
+        fireEvent.ended(video);
+        // pause() waits for the pending play() promise first, as production does.
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(play).toHaveBeenCalledTimes(2);
+        expect(pause).toHaveBeenCalledTimes(1);
     });
 
-    // ── Custom className ──
+    it('stops on "ended" when loop is off', () => {
+        const { container } = render(<Video {...base} loop={false} />);
+        fireEvent.ended(getVideo(container) as HTMLVideoElement);
+        expect(play).not.toHaveBeenCalled();
+        expect(pause).toHaveBeenCalledTimes(1);
+    });
+
+    // ── Controls visibility ──
+
+    it('shows the bar on mouse move, hides it 3s later, and on mouse leave', () => {
+        const { container } = render(<Video {...base} />);
+        loadVideo(getVideo(container) as HTMLVideoElement);
+        const figure = getFigure(container) as HTMLElement;
+        expect(getBar(container)?.className).not.toContain('barVisible');
+        fireEvent.mouseMove(figure);
+        expect(getBar(container)?.className).toContain('barVisible');
+        act(() => {
+            vi.advanceTimersByTime(3000);
+        });
+        expect(getBar(container)?.className).not.toContain('barVisible');
+        fireEvent.mouseEnter(figure);
+        expect(getBar(container)?.className).toContain('barVisible');
+        fireEvent.mouseLeave(figure);
+        expect(getBar(container)?.className).not.toContain('barVisible');
+    });
+
+    // ── Scrubbing ──
+
+    it('seeks on drag end using the horizontal ratio of the pointer', () => {
+        const { container } = render(<Video {...base} />);
+        const video = getVideo(container) as HTMLVideoElement;
+        loadVideo(video, 20);
+        Object.defineProperty(video, 'currentTime', { value: 0, configurable: true, writable: true });
+        const strip = getBar(container)?.querySelector('progress')?.previousElementSibling as HTMLElement;
+        strip.getBoundingClientRect = () => ({ left: 100, width: 200, top: 0, height: 18, right: 300, bottom: 18, x: 100, y: 0, toJSON: () => undefined });
+        // jsdom derives pageX from clientX plus the (zero) scroll offset.
+        fireEvent.mouseDown(strip, { clientX: 150 });
+        fireEvent.mouseUp(window, { clientX: 150 });
+        expect(video.currentTime).toBe(5);
+        expect(getBar(container)?.querySelector('progress')).toHaveAttribute('value', '25');
+    });
+
+    // ── Misc ──
 
     it('appends a custom className after the module class', () => {
-        const { container } = render(
-            <Video className="custom-video" height={400} lazy={false} src="movie.mp4" width={600} />,
-        );
-        const root = getRoot(container);
-        expect(root?.className).toContain('figure');
-        expect(root?.className).toContain('custom-video');
-        expect(root?.className.endsWith('custom-video')).toBe(true);
+        const { container } = render(<Video {...base} className="custom-video" />);
+        expect(getFigure(container)?.className.endsWith('custom-video')).toBe(true);
     });
 
-    // ── Ref forwarding ──
-
-    it('forwards ref to the underlying <video> element', () => {
+    it('forwards ref and extra attributes to the <video>', () => {
         const ref = createRef<HTMLVideoElement>();
-        render(<Video height={400} lazy={false} ref={ref} src="movie.mp4" width={600} />);
-        expect(ref.current).toBeInstanceOf(HTMLVideoElement);
-        expect(ref.current).toHaveAttribute('src', 'movie.mp4');
+        const { container } = render(<Video {...base} id="v1" poster="/poster.png" ref={ref} />);
+        expect(ref.current).toBe(getVideo(container));
+        expect(ref.current).toHaveAttribute('id', 'v1');
+        expect(ref.current).toHaveAttribute('poster', '/poster.png');
     });
-
-    // ── Prop forwarding (native video attributes) ──
-
-    it('forwards extra native <video> attributes (id, poster)', () => {
-        const { container } = render(
-            <Video
-                height={400}
-                id="hero-video"
-                lazy={false}
-                poster="poster.jpg"
-                src="movie.mp4"
-                width={600}
-            />,
-        );
-        const video = getVideo(container);
-        expect(video).toHaveAttribute('id', 'hero-video');
-        expect(video).toHaveAttribute('poster', 'poster.jpg');
-    });
-
-    // ── displayName ──
 
     it('has the correct displayName', () => {
         expect(Video.displayName).toBe('Video');

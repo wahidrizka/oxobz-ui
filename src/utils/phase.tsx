@@ -328,3 +328,112 @@ function SwapState({ id, ref, children, ...rest }: SwapStateProps) {
 }
 
 export const Swap = Object.assign(SwapRoot, { State: SwapState });
+
+/* ------------------------------------------------------------------ */
+/*  useSight                                                           */
+/* ------------------------------------------------------------------ */
+
+export type SightPhase = 'unknown' | 'visible' | 'hidden';
+
+export type SightReason = 'initial' | 'viewport' | 'document' | 'bfcache' | 'all-hidden';
+
+export interface UseSightOptions {
+    /** Element to watch. Pass either this or `target: 'page'`. */
+    ref?: React.RefObject<Element | null>;
+    /** 'page' watches the document itself instead of an element. */
+    target?: 'page';
+    /** 'once' stops after the first time the target becomes visible. */
+    observe?: 'once' | 'continuous';
+    root?: Element | Document | null;
+    rootMargin?: string;
+    threshold?: number | number[];
+    /** When given, phase changes go here instead of into React state. */
+    onVisibilityChange?: (phase: SightPhase, reason: SightReason) => void;
+}
+
+/**
+ * Visibility tracker from the same production module as `Phase` (export
+ * `P`, read 12 Sep 2026). "Visible" means the target intersects the viewport
+ * AND the document itself is not hidden; tab switches (visibilitychange) and
+ * back/forward-cache restores (pageshow) flip it too. Production shares one
+ * IntersectionObserver per option set across targets; that cache is an
+ * optimisation with no observable effect and is left out here.
+ */
+export function useSight(options: UseSightOptions = {}) {
+    const { observe = 'continuous', target, root, rootMargin, threshold } = options;
+    const [state, setState] = useState<{ phase: SightPhase; phaseReason: SightReason }>({
+        phase: 'unknown',
+        phaseReason: 'initial',
+    });
+    const phaseRef = useRef<SightPhase>('unknown');
+    const phaseReasonRef = useRef<SightReason>('initial');
+    const onChange = useLatest(options.onVisibilityChange);
+    const ownRef = useRef<Element | null>(null);
+    const ref = options.ref ?? ownRef;
+
+    useEffect(() => {
+        if (target && options.ref) {
+            throw new Error('useSight() received both ref and target.');
+        }
+        const el: Element | Document | null = target === 'page' ? document : ref.current;
+        if (!el) return;
+
+        const isDocument = el.nodeType === 9;
+        let stopped = false;
+        let phase: SightPhase = 'unknown';
+        let docVisible = !document.hidden;
+        let inView = isDocument;
+        let observer: IntersectionObserver | null = null;
+
+        const update = (reason: SightReason) => {
+            if (stopped) return;
+            const next: SightPhase = docVisible && inView ? 'visible' : 'hidden';
+            const why: SightReason = next !== 'hidden' || docVisible || inView ? reason : 'all-hidden';
+            if (next === phase) return;
+            phase = next;
+            phaseRef.current = phase;
+            phaseReasonRef.current = why;
+            if (onChange.current) onChange.current(phase, why);
+            else setState({ phase, phaseReason: why });
+            if (observe === 'once' && phase === 'visible') stop();
+        };
+        const onDocument = () => {
+            docVisible = !document.hidden;
+            update('document');
+        };
+        const onPageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                docVisible = true;
+                update('bfcache');
+            }
+        };
+        const stop = () => {
+            if (stopped) return;
+            stopped = true;
+            document.removeEventListener('visibilitychange', onDocument);
+            window.removeEventListener('pageshow', onPageShow);
+            observer?.disconnect();
+        };
+
+        document.addEventListener('visibilitychange', onDocument);
+        window.addEventListener('pageshow', onPageShow);
+        if (isDocument) {
+            update('initial');
+        } else if (typeof IntersectionObserver !== 'undefined') {
+            observer = new IntersectionObserver(
+                (entries) => {
+                    for (const entry of entries) {
+                        inView = entry.isIntersecting;
+                        update('viewport');
+                    }
+                },
+                { root: root ?? null, rootMargin, threshold },
+            );
+            observer.observe(el as Element);
+        }
+        return stop;
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- production depends on observe and target alone
+    }, [observe, target]);
+
+    return { ref, ...state, phaseRef, phaseReasonRef };
+}
