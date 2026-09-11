@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { Check, Copy } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
+import { Button } from '../Button';
 import styles from './CopyButton.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -33,9 +34,6 @@ export interface CopyButtonProps
 
     /** Called with the copied string after a successful copy. */
     onCopy?: (text: string) => void;
-
-    /** data-version attribute matching Geist production output. */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -53,30 +51,29 @@ const COPIED_RESET_MS = 2000;
  * A button that copies a given string to the clipboard and provides
  * feedback when copied by cross-fading a Copy icon into a Check icon.
  *
- * Rendered DOM (Geist production structure, copy-button.html):
+ * The root IS a Button: production composes this out of a `secondary`,
+ * `shape="square"`, `size="medium"` Button, which is where
+ * `data-geist-button`, `data-react-aria-pressable`, `data-prefix`,
+ * `data-suffix`, `data-version` and `--geist-icon-size` all come from. An
+ * older build here hand-rolled the button element and re-implemented those
+ * styles in this module instead; the measured DOM shows production does not.
+ *
+ * Rendered DOM, measured off the live page on 11 Sep 2026:
  * ```html
- * <button aria-label="copy text" data-oxobz-copy-button="" data-version="v1">
- *   <span class="iconStack">
- *     <span class="icon …">{copy}</span>
- *     <span class="icon …">{check}</span>
+ * <button aria-label="copy text" data-testid="copy/button" data-oxobz-button="" …>
+ *   <span class="content flex">
+ *     <div class="iconStack">
+ *       <div class="icon iconHidden">{check}</div>
+ *       <div class="icon iconShown">{copy}</div>
+ *     </div>
  *   </span>
  * </button>
  * ```
+ * Check comes FIRST in the DOM and Copy second; only their opacity/scale
+ * swap when the copied state flips.
  */
 const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
-    (
-        {
-            textToCopy,
-            label = 'copy text',
-            copied,
-            onCopy,
-            className,
-            onClick,
-            'data-version': dataVersion = 'v1',
-            ...rest
-        },
-        ref,
-    ) => {
+    ({ textToCopy, label = 'copy text', copied, onCopy, className, onClick, ...rest }, ref) => {
         const isControlled = copied !== undefined;
         const [internalCopied, setInternalCopied] = useState(false);
         const showCopied = isControlled ? copied : internalCopied;
@@ -109,35 +106,37 @@ const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
         );
 
         return (
-            <button
+            <Button
                 {...rest}
                 ref={ref}
-                type="button"
                 aria-label={label}
-                className={cn(styles.copyButtonIcon, className)}
-                data-oxobz-copy-button=""
-                data-version={dataVersion}
+                className={className}
+                data-testid="copy/button"
                 onClick={handleClick}
+                shape="square"
+                svgOnly
+                typeName="button"
+                variant="secondary"
             >
-                <span className={styles.iconStack}>
-                    <span
-                        className={cn(
-                            styles.icon,
-                            showCopied ? styles.iconHidden : styles.iconShown,
-                        )}
-                    >
-                        <Copy size={16} />
-                    </span>
-                    <span
+                <div className={styles.iconStack}>
+                    <div
                         className={cn(
                             styles.icon,
                             showCopied ? styles.iconShown : styles.iconHidden,
                         )}
                     >
                         <Check size={16} />
-                    </span>
-                </span>
-            </button>
+                    </div>
+                    <div
+                        className={cn(
+                            styles.icon,
+                            showCopied ? styles.iconHidden : styles.iconShown,
+                        )}
+                    >
+                        <Copy size={16} />
+                    </div>
+                </div>
+            </Button>
         );
     },
 );
