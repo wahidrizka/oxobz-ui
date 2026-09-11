@@ -9,24 +9,17 @@ const next: PaginationLink = { title: 'Introduction', href: '/introduction' };
 describe('Pagination', () => {
     // ── Rendering ──
 
-    it('renders a nav with aria-label="pagination", data-oxobz-pagination and data-version="v1"', () => {
+    it('renders a nav with aria-label="pagination" and no marker or version attribute', () => {
         const { container } = render(
             <Pagination previous={prev} next={next} />,
         );
-        const root = container.querySelector('[data-oxobz-pagination]');
+        const root = container.querySelector('nav');
         expect(root).toBeInTheDocument();
         expect(root?.tagName).toBe('NAV');
         expect(root).toHaveAttribute('aria-label', 'pagination');
-        expect(root).toHaveAttribute('data-version', 'v1');
+        expect(root).not.toHaveAttribute('data-oxobz-pagination');
+        expect(root).not.toHaveAttribute('data-version');
         expect(root?.className).toContain('pagination');
-    });
-
-    it('allows a custom data-version', () => {
-        const { container } = render(
-            <Pagination data-version="v2" previous={prev} />,
-        );
-        const root = container.querySelector('[data-oxobz-pagination]');
-        expect(root).toHaveAttribute('data-version', 'v2');
     });
 
     // ── Previous slot ──
@@ -150,7 +143,7 @@ describe('Pagination', () => {
         const { container } = render(
             <Pagination className="custom-pager" previous={prev} />,
         );
-        const root = container.querySelector('[data-oxobz-pagination]');
+        const root = container.querySelector('nav');
         expect(root?.className).toContain('pagination');
         expect(root?.className).toContain('custom-pager');
         expect(root?.className.endsWith('custom-pager')).toBe(true);
@@ -163,7 +156,7 @@ describe('Pagination', () => {
         render(<Pagination ref={ref} previous={prev} />);
         expect(ref.current).toBeInstanceOf(HTMLElement);
         expect(ref.current?.tagName).toBe('NAV');
-        expect(ref.current).toHaveAttribute('data-oxobz-pagination');
+        expect(ref.current?.tagName).toBe('NAV');
     });
 
     // ── Prop forwarding ──
@@ -172,7 +165,7 @@ describe('Pagination', () => {
         const { container } = render(
             <Pagination id="pager-1" style={{ maxWidth: '600px' }} />,
         );
-        const root = container.querySelector('[data-oxobz-pagination]');
+        const root = container.querySelector('nav');
         expect(root).toHaveAttribute('id', 'pager-1');
         expect(root).toHaveStyle({ maxWidth: '600px' });
     });

@@ -35,13 +35,11 @@ export interface PaginationProps extends HTMLAttributes<HTMLElement> {
     next?: PaginationLink;
 
     /**
-     * Content for the centered slot (out of flow, hidden below 1200px).
-     * Undocumented by Geist but always present in the production DOM.
+     * Content for the centered slot (out of flow, hidden below the xl
+     * breakpoint). Undocumented by Geist but always present in the production
+     * DOM; the docs footer puts its feedback widget there.
      */
     children?: ReactNode;
-
-    /** data-version attribute matching Geist production output. */
-    'data-version'?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -69,7 +67,7 @@ function PaginationSlot({
         >
             <span className={styles.label}>{isNext ? 'Next' : 'Previous'}</span>
             <div className={styles.title}>
-                <span>{link.title}</span>
+                <span className={styles.titleText}>{link.title}</span>
                 <span className={styles.icon}>
                     {isNext ? (
                         <ChevronRight size={20} />
@@ -91,8 +89,7 @@ function PaginationSlot({
  *
  * Rendered DOM (Geist production structure):
  * ```html
- * <nav aria-label="pagination" class="pagination"
- *      data-oxobz-pagination="" data-version="v1">
+ * <nav aria-label="pagination" class="pagination">   <!-- no marker, no data-version (live, 12 Sep 2026) -->
  *   <a class="item" aria-label="Go to previous page: {title}" href="{href}">
  *     <span class="label">Previous</span>
  *     <div class="title"><span>{title}</span><span class="icon">…</span></div>
@@ -107,14 +104,7 @@ function PaginationSlot({
  */
 const Pagination = forwardRef<HTMLElement, PaginationProps>(
     (
-        {
-            children,
-            className,
-            next,
-            previous,
-            'data-version': dataVersion = 'v1',
-            ...rest
-        },
+        { children, className, next, previous, ...rest },
         ref,
     ) => {
         return (
@@ -122,8 +112,6 @@ const Pagination = forwardRef<HTMLElement, PaginationProps>(
                 {...rest}
                 aria-label="pagination"
                 className={cn(styles.pagination, className)}
-                data-oxobz-pagination=""
-                data-version={dataVersion}
                 ref={ref}
             >
                 {previous && (

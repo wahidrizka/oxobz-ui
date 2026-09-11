@@ -63,13 +63,18 @@
 .icon,
 .label {
     color: var(--ds-gray-900);
-    /* live: transition-colors duration-200 ease-in-out = cubic-bezier(.4,0,.2,1). */
-    transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /* transition-colors duration-200 ease-in-out */
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ---- "Previous" / "Next" label (__label, folded text-copy-13) ---- */
 .label {
     margin-bottom: 2px;
+    /* text-copy-13: the same font variable the token utility uses. Measured
+       live: GeistSans, "GeistSans Fallback" 13px/18px 400, letter-spacing normal. */
+    font-family: var(--font-geist-sans);
     font-size: 13px;
     line-height: 18px;
     font-weight: 400;
@@ -81,6 +86,7 @@
     display: flex;
 }
 
+/* [&>span]: applies to the title span AND the chevron span */
 .title > span {
     display: inline-block;
     max-width: 20em;
@@ -88,6 +94,10 @@
     white-space: nowrap;
     overflow-wrap: break-word;
     text-overflow: ellipsis;
+}
+
+/* text-[16px] leading-[24px] font-medium: the title span only (the chevron span stays 400) */
+.titleText {
     font-size: 16px;
     line-height: 24px;
     font-weight: 500;
@@ -108,11 +118,12 @@
     }
 }
 
-/* keyboard focus ring on the link */
-.item:focus-visible,
-.item [data-focus] {
+/* focus-visible:outline-none focus-visible:shadow-[var(--ds-focus-ring)] sits on
+   the title div in production (not on the link), so it can never match: the
+   div is not focusable. Kept where production keeps it. */
+.title:focus-visible {
+    outline-style: none;
     box-shadow: var(--ds-focus-ring);
-    outline: none;
 }
 
 /* ---- Centered slot (__children) — out of flow, absolute center ---- */
@@ -121,10 +132,12 @@
     top: 50%;
     left: 50%;
     z-index: 2;
-    transform: translate(-50%, -50%);
+    /* -translate-x-1/2 -translate-y-1/2: Tailwind v4 writes the translate property */
+    translate: -50% -50%;
 }
 
-@media (max-width: 1200px) {
+/* max-xl:hidden */
+@media (width < 80rem) {
     .children {
         display: none;
     }
