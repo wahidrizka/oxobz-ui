@@ -1,290 +1,305 @@
 /**
  * Toast — CSS Module
  *
- * Production source:
- * - _nextstatic/chunks/d2f6d4dcdb88e56d.css
- *   Module: toasts-module__QgOjEG (note: plural "toasts", not "toast").
- *   Classes translated 1:1 — toastArea, center, multiple, toastContainer,
- *   fullBleed, overflowHidden, error, success, warning, actionsContainer,
- *   fullActions, visible, hiding, toast, message, fullWidth, visualContainer.
- *   All transitions/animations, the two @media (hover:hover) fan-out blocks,
- *   the :nth-last-child stacking limits, and the .dark-theme warning overrides
- *   are preserved verbatim.
+ * Source: the live stylesheet and bundle of vercel.com/geist, fetched
+ * 10 Nov 2026. Production's toasts are a geistcn (Tailwind) component now;
+ * the classic `toasts-module__QgOjEG` is gone. Each rule below is the
+ * flattened form of the utility classes written in production's own source
+ * (turbopack module 615745), and the utilities are named beside it.
  *
- * Var renames (Geist -> oxobz branding):
- *   --geist-gap        -> --oxobz-gap
- *   --geist-background -> --oxobz-background
- *   --offset-bottom    -> --oxobz-offset-bottom (fallback 0px)
- * Kept as-is (runtime per-instance vars, not design tokens):
- *   --y, --z, --max-height, --visual-height, --themed-bg, --themed-border
- *   and every --ds-* token.
+ * Where production lists two utilities for the same property (for example
+ * `opacity-0` and, once visible, `opacity-100`), its class merger keeps only
+ * the later one. Here the later one is simply declared further down.
  *
- * NOTE: toast.html snapshot only contains the docs page prose (Best Practices),
- * not a rendered toast, so the DOM tree here is derived from the class-usage
- * semantics of this module + the toast.md API. data-oxobz-* / data-version are
- * unverifiable from the snapshot; they follow the workspace convention (v1).
+ * Token names: --geist-gap is --oxobz-gap here, --geist-background is
+ * --oxobz-background. Per-toast variables keep their names: --y, --z,
+ * --max-height, --offset-bottom, --visual-height, --themed-bg, --themed-border.
  */
 
-/* ---- Area (toastArea) — fixed anchor, bottom-right ---- */
+/* ---- Area ----
+   pointer-events-auto fixed bottom-[calc(var(--geist-gap)+var(--offset-bottom))]
+   right-[var(--geist-gap)] z-[var(--ds-z-toast)] transition-all duration-400
+   ease-in-out. Production's sheet also gives `duration-400` and `ease-in-out`
+   an animation-duration and animation-timing-function. */
 .toastArea {
-    bottom: calc(var(--oxobz-gap) + var(--oxobz-offset-bottom, 0px));
-    right: var(--oxobz-gap);
-    z-index: 5000;
-    transition: transform 0.4s, bottom 0.4s;
+    pointer-events: auto;
     position: fixed;
+    right: var(--oxobz-gap);
+    bottom: calc(var(--oxobz-gap) + var(--offset-bottom));
+    z-index: var(--ds-z-toast);
+    transition-property: all;
+    transition-duration: 0.4s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.toastArea.center {
+/* right-[calc(50%-210px)] */
+.center {
     right: calc(50% - 210px);
 }
 
-@media (hover: hover) {
-    .toastArea.multiple:hover {
-        transform: translateY(-10px);
-    }
+/* [transform:translate3d(0,-10px,0)] — more than one toast */
+.multiple {
+    transform: translate3d(0, -10px, 0);
 }
 
-/* ---- Container (toastContainer) — one card, enter/exit lifecycle ---- */
+/* ---- Card ----
+   w-[420px] absolute bottom-0 right-0 shadow-[var(--ds-shadow-menu)]
+   rounded-[12px] bg-[var(--geist-background)] text-[var(--ds-gray-1000)]
+   leading-[21px] p-4 opacity-0 z-[var(--ds-z-toast)]
+   max-w-[min(420px,calc(100vw-2*var(--geist-gap)))] transition-all
+   duration-[time:350ms] ease-[easing-function:cubic-bezier(0.25,0.75,0.6,0.98)]
+   transform-[translate3d(0,100%,150px)scale(1)] */
 .toastContainer {
+    box-sizing: border-box;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: var(--ds-z-toast);
     width: 420px;
-    box-shadow: var(--ds-shadow-menu);
-    background: var(--oxobz-background);
-    color: var(--ds-gray-1000);
-    opacity: 0;
-    z-index: 5000;
     max-width: min(420px, calc(100vw - 2 * var(--oxobz-gap)));
     border-radius: 12px;
-    padding: 16px;
+    background-color: var(--oxobz-background);
+    padding: 1rem;
     line-height: 21px;
-    transition: all 0.35s cubic-bezier(0.25, 0.75, 0.6, 0.98);
-    position: absolute;
-    bottom: 0;
-    right: 0;
+    color: var(--ds-gray-1000);
+    opacity: 0;
+    box-shadow: var(--ds-shadow-menu);
     transform: translate3d(0, 100%, 150px) scale(1);
+    transition-property: all;
+    transition-duration: 0.35s;
+    transition-timing-function: cubic-bezier(0.25, 0.75, 0.6, 0.98);
+    animation-duration: 0.35s;
+    animation-timing-function: cubic-bezier(0.25, 0.75, 0.6, 0.98);
 }
 
-.toastContainer.fullBleed {
-    padding: 0;
-}
-
-.toastContainer.overflowHidden {
-    overflow: hidden;
-}
-
-/* ---- Type: error ---- */
-.toastContainer.error {
-    background-color: var(--ds-red-800);
-    color: var(--ds-contrast-fg);
-    border: 0;
-}
-
-.toastContainer.error .actionsContainer {
-    --themed-bg: var(--ds-red-700);
-}
-
-.toastContainer.error .actionsContainer button {
-    color: var(--ds-contrast-fg);
-}
-
-.toastContainer.error .fullActions button:first-of-type {
-    --themed-bg: var(--ds-red-700);
-}
-
-/* ---- Type: success ---- */
-.toastContainer.success {
-    background-color: var(--ds-blue-700);
-    color: var(--ds-contrast-fg);
-    border: 0;
-}
-
-.toastContainer.success .actionsContainer {
-    --themed-bg: var(--ds-blue-600);
-}
-
-.toastContainer.success .actionsContainer button {
-    color: var(--ds-contrast-fg);
-}
-
-.toastContainer.success .fullActions button:first-of-type {
-    --themed-bg: var(--ds-blue-600);
-}
-
-/* ---- Type: warning ---- */
-.toastContainer.warning {
-    background-color: var(--ds-amber-800);
-    color: var(--ds-gray-1000);
-    border: 0;
-}
-
-.toastContainer.warning .actionsContainer {
-    --themed-bg: var(--ds-amber-700);
-}
-
-.toastContainer.warning .actionsContainer button {
-    color: var(--ds-gray-1000);
-}
-
-.toastContainer.warning .fullActions button:first-of-type {
-    --themed-bg: var(--ds-amber-700);
-}
-
-/* ---- Full-width actions row (fullActions) ---- */
-.fullActions {
-    width: 100%;
-}
-
-.fullActions button:first-of-type {
-    color: inherit;
-}
-
-.fullActions button:last-of-type {
-    --themed-border: none !important;
-}
-
-/* ---- Dark theme warning overrides ---- */
-:global(.dark-theme) .toastContainer.warning {
-    color: var(--ds-gray-100);
-}
-
-:global(.dark-theme) .toastContainer.warning button {
-    color: var(--ds-gray-100);
-}
-
-/* ---- Lifecycle: visible / hiding ---- */
-.toastContainer.visible {
+/* opacity-100 transform-none */
+.visible {
     opacity: 1;
     transform: none;
 }
 
-.toastContainer.hiding {
-    opacity: 0;
-    transition: all 0.16s cubic-bezier(0.6, 0.3, 0.98, 0.5);
-    transform: scale(0.98);
+/* bg-[var(--ds-red-800)] text-[var(--ds-contrast-fg)] border-0 */
+.error {
+    border-width: 0;
+    background-color: var(--ds-red-800);
+    color: var(--ds-contrast-fg);
 }
 
-/* ---- Toast body (toast) — source ships two rules, kept in order ---- */
-.toast {
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 12px;
-    display: flex;
+/* bg-[var(--ds-blue-700)] text-[var(--ds-contrast-fg)] border-0 */
+.success {
+    border-width: 0;
+    background-color: var(--ds-blue-700);
+    color: var(--ds-contrast-fg);
 }
 
-/* Hover fan-out: expand + lift each card to its measured --y/--z slot. */
+/* bg-[var(--ds-amber-800)] text-[var(--ds-gray-1000)] border-0 */
+.warning {
+    border-width: 0;
+    background-color: var(--ds-amber-800);
+    color: var(--ds-gray-1000);
+}
+
+/* !p-0 */
+.fullBleed {
+    padding: 0 !important;
+}
+
+/* overflow-hidden */
+.overflowHidden {
+    overflow: hidden;
+}
+
+/* !opacity-0 !transform-[scale(0.98)] !transition-all !duration-[time:160ms]
+   !ease-[easing-function:cubic-bezier(0.6,_0.3,_0.98,_0.5)] */
+.hiding {
+    opacity: 0 !important;
+    transform: scale(0.98) !important;
+    transition-property: all !important;
+    transition-duration: 0.16s !important;
+    transition-timing-function: cubic-bezier(0.6, 0.3, 0.98, 0.5) !important;
+    animation-duration: 0.16s !important;
+    animation-timing-function: cubic-bezier(0.6, 0.3, 0.98, 0.5) !important;
+}
+
+/* nth-last-[n+4]:!opacity-0 nth-last-[n+4]:!pointer-events-none
+   Only the three newest toasts are shown. */
+.toastContainer:nth-last-child(n + 4) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* max-sm:nth-last-[n+3]:!opacity-0 max-sm:nth-last-[n+3]:!pointer-events-none */
+@media (width < 40rem) {
+    .toastContainer:nth-last-child(n + 3) {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+}
+
+/* Hovering the area fans the stack out.
+   group-hover/toastArea:!max-h-[var(--max-height)]
+   group-hover/toastArea:![transform:translate3d(0,var(--y),var(--z))_scale(1)]
+   group-hover/toastArea:after:{content-[''] absolute left-0 right-0
+   top-[calc(100%+1px)] w-full h-5 bg-transparent} */
 @media (hover: hover) {
-    .toastArea:hover .toastContainer {
+    .toastContainer:is(:where(.toastArea):hover *) {
         max-height: var(--max-height) !important;
         transform: translate3d(0, var(--y), var(--z)) scale(1) !important;
     }
-}
 
-/* Behind cards hide their message until the stack is hovered. */
-.toastArea .toastContainer:not(:last-child) .toast .message {
-    opacity: 0;
-}
-
-@media (hover: hover) {
-    .toastArea:hover .toastContainer .toast .message {
-        opacity: 1;
-    }
-
-    .toastArea:hover .toastContainer:after {
+    .toastContainer:is(:where(.toastArea):hover *)::after {
         content: '';
-        background: 0 0;
-        width: 100%;
-        height: 20px;
         position: absolute;
         top: calc(100% + 1px);
-        left: 0;
         right: 0;
+        left: 0;
+        width: 100%;
+        height: 1.25rem;
+        background-color: transparent;
     }
 }
 
-/* Only the front three cards are visible in the collapsed stack. */
-.toastArea .toastContainer:nth-last-child(n + 4) {
-    opacity: 0;
-    pointer-events: none;
-}
-
+/* ---- Inside the card ----
+   max-w-full items-center justify-between text-[0.875rem] flex transition-all
+   duration-[time:400ms] ease-in-out flex-col gap-3 */
 .toast {
-    justify-content: space-between;
-    align-items: center;
-    max-width: 100%;
-    font-size: 0.875rem;
-    transition: all 0.4s;
     display: flex;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    transition-property: all;
+    transition-duration: 0.4s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ---- Message (message) ---- */
+/* h-[var(--visual-height,128px)] -m-4 mb-0 w-[calc(100%+32px)] */
+.visual {
+    width: calc(100% + 32px);
+    height: var(--visual-height, 128px);
+    margin: -1rem;
+    margin-bottom: 0;
+}
+
+/* -mt-px w-full opacity-100 h-full transition-opacity duration-[time:400ms]
+   ease-in-out flex gap-4 justify-between items-center text-pretty
+   [word-break:break-word] text-inherit */
 .message {
-    opacity: 1;
-    word-break: break-word;
-    text-wrap: pretty;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+    display: flex;
     width: 100%;
     height: 100%;
     margin-top: -1px;
-    transition: opacity 0.4s;
-    display: flex;
-}
-
-.message.fullWidth > span {
-    width: 100%;
-}
-
-.message span,
-.message div,
-.message blockquote,
-.message h1,
-.message h2,
-.message h3,
-.message h4,
-.message h5,
-.message h6,
-.message label,
-.message legend,
-.message p,
-.message q,
-.message small,
-.message strong {
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     color: inherit;
+    text-wrap: pretty;
+    word-break: break-word;
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.4s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* group-not-last/toastContainer:!opacity-0 — text of the toasts behind */
+.message:is(:where(.toastContainer):not(:last-child) *) {
+    opacity: 0 !important;
+}
+
+/* group-hover/toastArea:!opacity-100 */
+@media (hover: hover) {
+    .message:is(:where(.toastArea):hover *) {
+        opacity: 1 !important;
+    }
+}
+
+/* [&_a]:[background-image:linear-gradient(var(--ds-gray-1000),var(--ds-gray-1000))]
+   [&_a]:[background-size:100%_1px] [&_a]:[background-position:_left_bottom]
+   [&_a]:[background-repeat:_no-repeat] [&_a]:font-medium */
 .message a {
     background-image: linear-gradient(var(--ds-gray-1000), var(--ds-gray-1000));
-    background-position: 0 100%;
+    background-position: left bottom;
     background-repeat: no-repeat;
     background-size: 100% 1px;
     font-weight: 500;
 }
 
-/* ---- Actions (actionsContainer) ---- */
-.actionsContainer {
-    flex-direction: row;
-    flex-wrap: none;
-    justify-content: space-between;
-    align-items: center;
-    gap: 4px;
-    display: flex;
+/* [&_span]:w-full */
+.fullWidth span {
+    width: 100%;
 }
 
-.actionsContainer button {
+/* ---- Undo and dismiss: flex flex-row flex-nowrap gap-1 items-center justify-between ---- */
+.controls {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+}
+
+/* [--themed-bg:var(--ds-red-700)] [&_button]:!text-[var(--ds-contrast-fg)] */
+.controls-error {
+    --themed-bg: var(--ds-red-700);
+}
+
+.controls-error button {
+    color: var(--ds-contrast-fg) !important;
+}
+
+/* [--themed-bg:var(--ds-blue-600)] [&_button]:!text-[var(--ds-contrast-fg)] */
+.controls-success {
+    --themed-bg: var(--ds-blue-600);
+}
+
+.controls-success button {
+    color: var(--ds-contrast-fg) !important;
+}
+
+/* [--themed-bg:var(--ds-amber-700)] [&_button]:!text-[var(--ds-gray-1000)] */
+.controls-warning {
+    --themed-bg: var(--ds-amber-700);
+}
+
+.controls-warning button {
+    color: var(--ds-gray-1000) !important;
+}
+
+/* text-inherit on the Undo button */
+.undo.undo {
     color: inherit;
 }
 
-/* On narrow viewports only the front two cards remain visible. */
-@media (max-width: 440px) {
-    .toastArea .toastContainer:nth-last-child(n + 3) {
-        opacity: 0;
-        pointer-events: none;
-    }
+/* ---- Action row: flex w-full gap-0.5 justify-end ---- */
+.actions {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    gap: 0.125rem;
 }
 
-/* ---- Visual header slot (visualContainer) ---- */
-.visualContainer {
-    height: var(--visual-height, 128px);
-    width: calc(100% + 32px);
-    margin: -16px -16px 0;
+/* first-of-type:text-inherit first-of-type:![--themed-border:none] */
+.cancel.cancel:first-of-type {
+    --themed-border: none !important;
+
+    color: inherit;
+}
+
+/* first-of-type:!text-[var(--ds-contrast-fg)] */
+.cancel-error:first-of-type,
+.cancel-success:first-of-type {
+    color: var(--ds-contrast-fg) !important;
+}
+
+/* first-of-type:!text-[var(--ds-gray-1000)] */
+.cancel-warning:first-of-type {
+    color: var(--ds-gray-1000) !important;
 }

@@ -1,8 +1,2 @@
-export { ToastArea, useToasts } from './Toast';
-export type {
-    ToastAreaProps,
-    ToastControls,
-    ToastOptions,
-    ToastsApi,
-    ToastType,
-} from './Toast';
+export { Toasts, toasts, useToasts } from './Toast';
+export type { ToastOptions, ToastsApi, ToastsProps, ToastType, ToastVisual } from './Toast';

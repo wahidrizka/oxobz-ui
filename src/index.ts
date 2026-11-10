@@ -92,8 +92,8 @@ export type { SkeletonProps } from './components/Skeleton';
 export { Snippet } from './components/Snippet';
 export type { SnippetProps, SnippetType } from './components/Snippet';
 
-export { ToastArea, useToasts } from './components/Toast';
-export type { ToastAreaProps, ToastControls, ToastOptions, ToastsApi, ToastType } from './components/Toast';
+export { Toasts, toasts, useToasts } from './components/Toast';
+export type { ToastOptions, ToastsApi, ToastsProps, ToastType, ToastVisual } from './components/Toast';
 
 export {
     Modal, ModalBody, ModalHeader, ModalTitle, ModalSubtitle,
