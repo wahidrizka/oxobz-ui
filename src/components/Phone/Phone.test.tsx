@@ -1,160 +1,167 @@
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 import { createRef } from 'react';
 import { Phone } from './Phone';
 
+/** The outer element: it only sets up the container query. */
+function getWrapper(container: HTMLElement) {
+    return container.firstElementChild as HTMLElement;
+}
+
+/** The frame: the element that receives className and every other prop. */
+function getFrame(container: HTMLElement) {
+    return getWrapper(container).firstElementChild as HTMLElement;
+}
+
+/** Class names of the frame's direct children, in DOM order. */
+function childClasses(container: HTMLElement) {
+    return Array.from(getFrame(container).children).map((el) => el.className);
+}
+
 describe('Phone', () => {
-    // ---- Render dasar ----
-    describe('render dasar', () => {
-        it('render tanpa error', () => {
-            const { container } = render(<Phone />);
-            expect(container.firstChild).toBeDefined();
-        });
+    // ── Structure ──
 
-        it('mempunyai data-oxobz-phone attribute', () => {
-            const { container } = render(<Phone />);
-            const phone = container.querySelector('[data-oxobz-phone]');
-            expect(phone).not.toBeNull();
-        });
-
-        it('mempunyai data-oxobz-phone-screen attribute pada layar', () => {
-            const { container } = render(<Phone />);
-            const screen_ = container.querySelector('[data-oxobz-phone-screen="true"]');
-            expect(screen_).not.toBeNull();
-        });
-
-        it('render container query wrapper', () => {
-            const { container } = render(<Phone />);
-            const el = container.firstChild as HTMLElement;
-            expect(el.className).toMatch(/containerQuery/);
-        });
-
-        it('render bezel shell', () => {
-            const { container } = render(<Phone />);
-            const bezel = container.querySelector('[data-oxobz-phone]') as HTMLElement;
-            expect(bezel.className).toMatch(/bezel/);
-        });
+    it('wraps the frame in a class-less element that sets up the container query', () => {
+        const { container } = render(<Phone />);
+        const wrapper = getWrapper(container);
+        expect(wrapper.tagName).toBe('DIV');
+        expect(wrapper).not.toHaveAttribute('class');
+        expect(wrapper.getAttribute('style')).toContain('container-type: inline-size');
+        expect(wrapper.children).toHaveLength(1);
     });
 
-    // ---- Chrome decoratif ----
-    describe('chrome decoratif', () => {
-        it('render notch', () => {
-            const { container } = render(<Phone />);
-            expect(container.querySelector('[class*="notch"]')).not.toBeNull();
-        });
-
-        it('render home indicator', () => {
-            const { container } = render(<Phone />);
-            expect(container.querySelector('[class*="homeIndicator"]')).not.toBeNull();
-        });
-
-        it('render 4 side buttons (mute, volume up/down, power)', () => {
-            const { container } = render(<Phone />);
-            const buttons = container.querySelectorAll('[class*="sideButton"]');
-            expect(buttons.length).toBe(4);
-        });
-
-        it('notch dan home indicator bersifat aria-hidden', () => {
-            const { container } = render(<Phone />);
-            const notch = container.querySelector('[class*="notch"]');
-            const homeIndicator = container.querySelector('[class*="homeIndicator"]');
-            expect(notch?.getAttribute('aria-hidden')).toBe('true');
-            expect(homeIndicator?.getAttribute('aria-hidden')).toBe('true');
-        });
+    it('carries no marker, version or aria-hidden attribute anywhere', () => {
+        const { container } = render(<Phone address="https://vercel.com" />);
+        const all = [getWrapper(container), ...Array.from(container.querySelectorAll('div, span'))];
+        for (const el of all) {
+            for (const name of el.getAttributeNames()) {
+                expect(name.startsWith('data-')).toBe(false);
+                expect(name).not.toBe('aria-hidden');
+            }
+        }
     });
 
-    // ---- Status bar & address pill ----
-    describe('status bar', () => {
-        it('render status bar dengan back dan more icon selalu ada', () => {
-            const { container } = render(<Phone />);
-            const statusBar = container.querySelector('[class*="statusBar"]');
-            expect(statusBar).not.toBeNull();
-            const svgs = statusBar!.querySelectorAll('svg');
-            expect(svgs.length).toBe(2);
-        });
-
-        it('render address text ketika address prop diberikan', () => {
-            render(<Phone address="vercel.com" />);
-            expect(screen.getByText('vercel.com')).toBeDefined();
-        });
-
-        it('render pillAddress container ketika address diberikan', () => {
-            const { container } = render(<Phone address="vercel.com" />);
-            expect(container.querySelector('[class*="pillAddress"]')).not.toBeNull();
-        });
-
-        it('tidak render pillAddress ketika address prop tidak diberikan', () => {
-            const { container } = render(<Phone />);
-            expect(container.querySelector('[class*="pillAddress"]')).toBeNull();
-        });
+    it('renders screen, notch, home indicator and four side buttons without an address', () => {
+        const { container } = render(<Phone />);
+        const classes = childClasses(container);
+        expect(classes).toHaveLength(7);
+        expect(classes[0]).toContain('screen');
+        expect(classes[1]).toContain('notch');
+        expect(classes[2]).toContain('homeIndicator');
+        expect(classes[3]).toContain('buttonMute');
+        expect(classes[4]).toContain('buttonVolumeUp');
+        expect(classes[5]).toContain('buttonVolumeDown');
+        expect(classes[6]).toContain('buttonPower');
+        classes.slice(3).forEach((name) => expect(name).toContain('sideButton'));
     });
 
-    // ---- Children / screen content ----
-    describe('children', () => {
-        it('render children di dalam screen backdrop', () => {
-            render(
-                <Phone address="vercel.com">
-                    <img alt="Vercel dashboard on iPhone" src="/shot.png" data-testid="phone-content" />
-                </Phone>,
-            );
-            expect(screen.getByTestId('phone-content')).toBeDefined();
-        });
-
-        it('children berada di dalam screen, bukan di status bar', () => {
-            const { container } = render(
-                <Phone>
-                    <div data-testid="inner-content">Content</div>
-                </Phone>,
-            );
-            const screenEl = container.querySelector('[data-oxobz-phone-screen="true"]')!;
-            const statusBar = container.querySelector('[class*="statusBar"]')!;
-            const content = screen.getByTestId('inner-content');
-
-            expect(screenEl.contains(content)).toBe(true);
-            expect(statusBar.contains(content)).toBe(false);
-        });
+    it('puts the bottom bar between the home indicator and the side buttons', () => {
+        const { container } = render(<Phone address="https://vercel.com" />);
+        const classes = childClasses(container);
+        expect(classes).toHaveLength(8);
+        expect(classes[2]).toContain('homeIndicator');
+        expect(classes[3]).toContain('bar');
+        expect(classes[4]).toContain('buttonMute');
     });
 
-    // ---- className & props forwarding ----
-    describe('className dan props forwarding', () => {
-        it('forward className ke container query wrapper', () => {
-            const { container } = render(<Phone className="custom-class" />);
-            const el = container.firstChild as HTMLElement;
-            expect(el.className).toContain('custom-class');
-        });
+    // ── notch ──
 
-        it('forward style prop', () => {
-            const { container } = render(<Phone style={{ width: '100%' }} />);
-            const el = container.firstChild as HTMLElement;
-            expect(el.style.width).toBe('100%');
-        });
-
-        it('forward data-* attributes', () => {
-            const { container } = render(<Phone data-testid="my-phone" />);
-            const el = container.firstChild as HTMLElement;
-            expect(el.getAttribute('data-testid')).toBe('my-phone');
-        });
-
-        it('forward id attribute', () => {
-            const { container } = render(<Phone id="phone-1" />);
-            const el = container.firstChild as HTMLElement;
-            expect(el.id).toBe('phone-1');
-        });
+    it('draws the notch by default and leaves it out with notch={false}', () => {
+        const { container, rerender } = render(<Phone />);
+        expect(container.querySelector('[class*="notch"]')).not.toBeNull();
+        rerender(<Phone notch={false} />);
+        expect(container.querySelector('[class*="notch"]')).toBeNull();
+        expect(childClasses(container)).toHaveLength(6);
     });
 
-    // ---- Ref forwarding ----
-    describe('ref forwarding', () => {
-        it('forward ref ke container query wrapper div', () => {
-            const ref = createRef<HTMLDivElement>();
-            render(<Phone ref={ref} />);
-            expect(ref.current).not.toBeNull();
-            expect(ref.current!.tagName.toLowerCase()).toBe('div');
-        });
+    // ── variant ──
+
+    it('uses the dark frame by default', () => {
+        const { container } = render(<Phone />);
+        const frame = getFrame(container);
+        expect(frame.className).toContain('frame');
+        expect(frame.className).toContain('dark');
+        expect(frame.className).not.toContain('light');
     });
 
-    // ---- displayName ----
-    describe('displayName', () => {
-        it('mempunyai displayName "Phone"', () => {
-            expect(Phone.displayName).toBe('Phone');
-        });
+    it('switches to the light frame with variant="light"', () => {
+        const { container } = render(<Phone variant="light" />);
+        const frame = getFrame(container);
+        expect(frame.className).toContain('light');
+        expect(frame.className).not.toContain('dark');
+    });
+
+    // ── address ──
+
+    it('renders no bar, no gradient and no icon without an address', () => {
+        const { container } = render(<Phone />);
+        expect(container.querySelector('[class*="bar"]')).toBeNull();
+        expect(container.querySelector('[class*="scrim"]')).toBeNull();
+        expect(container.querySelectorAll('svg')).toHaveLength(0);
+    });
+
+    it('renders the gradient and a bar of three pills with two icons when an address is set', () => {
+        const { container } = render(<Phone address="https://vercel.com" />);
+        expect(container.querySelector('[class*="scrim"]')).not.toBeNull();
+        const bar = container.querySelector('[class*="bar"]') as HTMLElement;
+        expect(bar.children).toHaveLength(3);
+        Array.from(bar.children).forEach((pill) => expect(pill.className).toContain('pill'));
+        expect(bar.children[0].querySelector('svg')).not.toBeNull();
+        expect(bar.children[1].className).toContain('pillAddress');
+        expect(bar.children[1].querySelector('svg')).toBeNull();
+        expect(bar.children[2].querySelector('svg')).not.toBeNull();
+    });
+
+    it.each([
+        ['https://vercel.com', 'vercel.com'],
+        ['http://vercel.com', 'vercel.com'],
+        ['https://www.vercel.com/', 'vercel.com'],
+        ['www.vercel.com', 'vercel.com'],
+        ['vercel.com/geist/', 'vercel.com/geist'],
+        ['vercel.com//', 'vercel.com/'],
+    ])('shows %s as %s', (address, shown) => {
+        const { container } = render(<Phone address={address} />);
+        expect(container.querySelector('[class*="addressText"]')?.textContent).toBe(shown);
+    });
+
+    // ── children ──
+
+    it('renders children inside the screen, not inside the bar', () => {
+        const { container } = render(
+            <Phone address="https://vercel.com">
+                <img alt="Vercel dashboard on iPhone" data-testid="shot" src="/shot.png" />
+            </Phone>,
+        );
+        const shot = screen.getByTestId('shot');
+        expect(container.querySelector('[class*="screenBackdrop"]')?.contains(shot)).toBe(true);
+        expect(container.querySelector('[class*="bar"]')?.contains(shot)).toBe(false);
+    });
+
+    // ── className, props, ref, displayName ──
+
+    it('appends a custom className after the module classes, on the frame', () => {
+        const { container } = render(<Phone className="custom-phone" />);
+        const frame = getFrame(container);
+        expect(frame.className).toContain('frame');
+        expect(frame.className.endsWith('custom-phone')).toBe(true);
+        expect(getWrapper(container)).not.toHaveAttribute('class');
+    });
+
+    it('forwards extra HTML attributes to the frame', () => {
+        const { container } = render(<Phone id="phone-1" style={{ width: '50%' }} title="Preview" />);
+        const frame = getFrame(container);
+        expect(frame).toHaveAttribute('id', 'phone-1');
+        expect(frame).toHaveAttribute('title', 'Preview');
+        expect(frame.style.width).toBe('50%');
+    });
+
+    it('forwards ref to the frame', () => {
+        const ref = createRef<HTMLDivElement>();
+        const { container } = render(<Phone ref={ref} />);
+        expect(ref.current).toBe(getFrame(container));
+    });
+
+    it('has the correct displayName', () => {
+        expect(Phone.displayName).toBe('Phone');
     });
 });

@@ -1,28 +1,37 @@
 /* ========================================
- *  Phone — CSS Modules
+ *  Phone: CSS Modules
  *
- *  Translated 1:1 from Geist production Tailwind
- *  Source: _nextstatic/component-inspect-element/phone.html
+ *  Flattened from the production Tailwind classes. Component source read
+ *  from the live bundle and every value below taken from the live
+ *  stylesheet (vercel.com/geist/phone, 10 Nov 2026). The production class
+ *  list is quoted above each rule.
  * ======================================== */
 
-/* Container query wrapper — container-type: inline-size */
-.containerQuery {
-    container-type: inline-size;
-}
-
-/* Bezel / case — relative w-full outline-[2px] rounded-[52px] p-[2.5%]
-   [&]:rounded-[15cqw] bg-[#000] outline-[#333]
-   (the [&] variant overrides the fixed 52px radius with a container-relative one) */
-.bezel {
+/* Frame: relative w-full outline-[2px] rounded-[52px] p-[2.5%]
+   [&]:rounded-[15cqw]. The `[&]` variant comes later in the stylesheet, so
+   the container-relative radius is the one that applies. */
+.frame {
     position: relative;
     width: 100%;
-    outline: 2px solid #333;
+    outline-style: solid;
+    outline-width: 2px;
     border-radius: 15cqw;
     padding: 2.5%;
-    background-color: #000;
 }
 
-/* Screen — rounded-[44px] overflow-hidden aspect-[9/19.5] relative
+/* variant="dark": bg-[#000] outline-[#333] */
+.dark {
+    background-color: #000;
+    outline-color: #333;
+}
+
+/* variant="light": bg-gray-100 outline-gray-alpha-400 */
+.light {
+    background-color: var(--ds-gray-100);
+    outline-color: var(--ds-gray-alpha-400);
+}
+
+/* Screen: rounded-[44px] overflow-hidden aspect-[9/19.5] relative
    [&]:rounded-[calc(15cqw-6px)] */
 .screen {
     position: relative;
@@ -31,55 +40,63 @@
     border-radius: calc(15cqw - 6px);
 }
 
-/* Screen content slot — absolute inset-0 bg-[#878787] (fallback backdrop
-   shown when no screenshot/children is supplied) */
+/* Content slot: absolute inset-0 bg-[#878787] */
 .screenBackdrop {
     position: absolute;
     inset: 0;
     background-color: #878787;
 }
 
-/* Bottom scrim — absolute bottom-0 left-0 w-full h-[18%]
-   bg-gradient-to-b from-transparent via-[#000]/20 to-[#000]/70
-   (keeps the status bar legible over bright screenshots) */
+/* Gradient behind the bottom bar: absolute bottom-0 left-0 w-full h-[18%]
+   bg-gradient-to-b from-transparent via-[#000]/20 to-[#000]/70.
+   Production writes the two blacks as hex and then, inside
+   `@supports (color: lab(0% 0 0))`, as lab(). The second declaration below
+   does the same job: a browser without lab() drops it and keeps the first. */
 .scrim {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     height: 18%;
-    background: linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.2) 50%, rgb(0 0 0 / 0.7) 100%);
+    background-image: linear-gradient(to bottom in oklab, transparent 0%, #0003 50%, #000000b3 100%);
+    background-image: linear-gradient(
+        to bottom in oklab,
+        transparent 0%,
+        lab(0% 0 0 / 0.2) 50%,
+        lab(0% 0 0 / 0.7) 100%
+    );
 }
 
-/* Dynamic island / notch — absolute top-[2.5%] left-1/2 -translate-x-1/2
-   w-[30%] h-[4%] bg-[#000] rounded-full */
+/* Dynamic island: absolute top-[2.5%] left-1/2 transform -translate-x-1/2
+   w-[30%] h-[4%] bg-[#000] rounded-full. Tailwind v4 writes the shift with
+   the `translate` property, not `transform`. */
 .notch {
     position: absolute;
     top: 2.5%;
     left: 50%;
-    transform: translateX(-50%);
+    translate: -50% 0;
     width: 30%;
     height: 4%;
     background-color: #000;
-    border-radius: 9999px;
+    border-radius: 2147483647px;
 }
 
-/* Home indicator — bg-[#fff] w-[34%] h-[0.6%] rounded-full absolute
+/* Home indicator: bg-[#fff] w-[34%] h-[0.6%] rounded-full absolute
    bottom-[3%] left-1/2 -translate-x-1/2 */
 .homeIndicator {
     position: absolute;
     bottom: 3%;
     left: 50%;
-    transform: translateX(-50%);
+    translate: -50% 0;
     width: 34%;
     height: 0.6%;
     background-color: #fff;
-    border-radius: 9999px;
+    border-radius: 2147483647px;
 }
 
-/* Status bar row — absolute bottom-[6%] left-0 w-full flex items-center
+/* Bottom bar: absolute bottom-[6%] left-0 w-full flex items-center
    justify-between px-[6%] gap-2 */
-.statusBar {
+.bar {
     position: absolute;
     bottom: 6%;
     left: 0;
@@ -87,20 +104,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-left: 6%;
-    padding-right: 6%;
+    padding-inline: 6%;
     gap: 8px;
 }
 
-/* Shared pill chrome — text-[#fff]/80 bg-[rgba(15,15,15,0.32)]
-   backdrop-blur-sm rounded-full flex items-center justify-center shadow-[...] */
-.pillIcon,
-.pillAddress {
-    color: rgb(255 255 255 / 0.8);
-    background-color: rgb(15 15 15 / 0.32);
-    /* live: backdrop-blur-sm = --blur-sm 8px (was 4px). */
+/* Pill: text-[#fff]/80 bg-[rgba(15,15,15,0.32)] backdrop-blur-sm
+   rounded-full flex items-center justify-center shadow-[...] w-[12cqw]
+   h-[12cqw]. The colour is written twice on purpose, as production does:
+   a hex fallback, then the lab() form that current browsers pick. */
+.pill {
+    color: #fffc;
+    color: lab(100% -0.0000298023 0.0000119209 / 0.8);
+    background-color: #0f0f0f52;
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
-    border-radius: 9999px;
+    border-radius: 2147483647px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -109,28 +127,23 @@
         0px 0.65px 5px rgba(0, 0, 0, 0.12),
         inset 0.65px 0.65px 1px -0.65px rgba(255, 255, 255, 0.8),
         inset -0.65px -0.65px 2px -0.65px rgba(255, 255, 255, 0.4);
-}
-
-/* Icon pill (back / more) — w-[12cqw] h-[12cqw] */
-.pillIcon {
     width: 12cqw;
     height: 12cqw;
-    flex-shrink: 0;
 }
 
-/* Address pill — h-[12cqw] w-auto flex-1 text-label-13 min-w-0 */
+/* Address pill adds: w-auto flex-1 text-label-13 min-w-0 */
 .pillAddress {
-    height: 12cqw;
     width: auto;
-    flex: 1 1 0%;
+    flex: 1;
     min-width: 0;
-    font-family: var(--font-sans, var(--font-sans-fallback)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: var(--font-geist-sans);
+    font-size: 13px;
     line-height: 16px;
-    letter-spacing: 0;
     font-weight: 400;
 }
 
-/* Address text — text-[#fff] w-full block truncate px-4 text-center text-[4.5cqw] */
+/* Address text: text-[#fff] w-full block truncate px-4 text-center
+   text-[4.5cqw] */
 .addressText {
     color: #fff;
     width: 100%;
@@ -138,64 +151,71 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-inline: 16px;
     text-align: center;
     font-size: 4.5cqw;
 }
 
-/* Back icon — -ml-0.5 w-[5cqw] h-[5cqw] */
+/* Back icon: -ml-0.5 w-[5cqw] h-[5cqw] */
 .backIcon {
     margin-left: -2px;
     width: 5cqw;
     height: 5cqw;
 }
 
-/* More icon — w-[5cqw] h-[5cqw] */
+/* More icon: w-[5cqw] h-[5cqw] */
 .moreIcon {
     width: 5cqw;
     height: 5cqw;
 }
 
-/* Side buttons — shared: absolute w-0.5 bg-[#333] */
+/* Side buttons: absolute w-0.5, colour by variant
+   (dark: bg-[#333], light: bg-gray-alpha-400) */
 .sideButton {
     position: absolute;
     width: 2px;
+}
+
+.dark .sideButton {
     background-color: #333;
 }
 
-/* Mute switch — top-[15%] -left-1 h-[3.5%] rounded-tl-full rounded-bl-full */
+.light .sideButton {
+    background-color: var(--ds-gray-alpha-400);
+}
+
+/* Mute switch: top-[15%] -left-1 h-[3.5%] rounded-tl-full rounded-bl-full */
 .buttonMute {
     top: 15%;
     left: -4px;
     height: 3.5%;
-    border-top-left-radius: 9999px;
-    border-bottom-left-radius: 9999px;
+    border-top-left-radius: 2147483647px;
+    border-bottom-left-radius: 2147483647px;
 }
 
-/* Volume up — top-[23.4%] -left-1 h-[7.1%] rounded-tl-full rounded-bl-full */
+/* Volume up: top-[23.4%] -left-1 h-[7.1%] rounded-tl-full rounded-bl-full */
 .buttonVolumeUp {
     top: 23.4%;
     left: -4px;
     height: 7.1%;
-    border-top-left-radius: 9999px;
-    border-bottom-left-radius: 9999px;
+    border-top-left-radius: 2147483647px;
+    border-bottom-left-radius: 2147483647px;
 }
 
-/* Volume down — top-[32.4%] -left-1 h-[7.1%] rounded-tl-full rounded-bl-full */
+/* Volume down: top-[32.4%] -left-1 h-[7.1%] rounded-tl-full rounded-bl-full */
 .buttonVolumeDown {
     top: 32.4%;
     left: -4px;
     height: 7.1%;
-    border-top-left-radius: 9999px;
-    border-bottom-left-radius: 9999px;
+    border-top-left-radius: 2147483647px;
+    border-bottom-left-radius: 2147483647px;
 }
 
-/* Power button — top-[28.2%] -right-1 h-[11%] rounded-tr-full rounded-br-full */
+/* Power button: top-[28.2%] -right-1 h-[11%] rounded-tr-full rounded-br-full */
 .buttonPower {
     top: 28.2%;
     right: -4px;
     height: 11%;
-    border-top-right-radius: 9999px;
-    border-bottom-right-radius: 9999px;
+    border-top-right-radius: 2147483647px;
+    border-bottom-right-radius: 2147483647px;
 }
