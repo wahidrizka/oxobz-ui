@@ -18,16 +18,18 @@
 @import './materials.css';
 @import './motion.css';
 
-/* === Font Face Definitions (Geist, variable — official metadata: weight 100 900) ===
+/* === Font Face Definitions (Geist, variable; official metadata: weight 100 900) ===
  *
- * KEPUTUSAN PENGGUNA 26 Jul 2026 — "tiru fallback mereka": produksi Geist
- * memuat font sans dengan family "GeistSans" (BUKAN "Geist"), sementara token
- * `--font-sans` mereka merujuk "Geist, Inter, …" yang tidak pernah dimuat —
- * akibatnya semua teks yang MEWARISI font body jatuh ke font sistem, dan hanya
- * utility typography (`text-heading-*` dst → --font-geist-sans) yang memakai
- * Geist Sans asli. Diverifikasi live per-elemen (body/label/tombol/toast/menu
- * = fallback; heading/copy/kbd/font-sans/font-mono = asli). Struktur di bawah
- * mereplikasi mekanisme itu 1:1. */
+ * The sans face is loaded under the family name "GeistSans" (NOT "Geist"),
+ * exactly as production does. The file is `Geist-Variable.woff2` from the
+ * official `geist` package v1.9.0, byte-identical to the file vercel.com
+ * serves (sha256 5c558802…, measured 10 Nov 2026).
+ *
+ * History: until Sep 2026 production pointed `--font-sans` at a family
+ * called "Geist" that was never loaded, so every element that merely
+ * inherited the body font fell back to the system font. We copied that on
+ * purpose (decision of 26 Jul 2026). Production has since fixed it, so the
+ * workaround is gone: body text now uses the real Geist Sans too. */
 @font-face {
     font-family: 'GeistSans';
     src: url('./fonts/Geist-Variable.woff2') format('woff2');
@@ -56,11 +58,11 @@
 
 /* === Font Variables — nilai VERBATIM computed produksi Geist === */
 :root {
-    /* Rantai warisan body: family "Geist" sengaja TIDAK dimuat (lihat catatan
-       di atas) sehingga teks pewaris jatuh ke font sistem — persis produksi. */
-    --font-sans: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    /* Body chain, verbatim production: the real Geist Sans first, then the
+       system fallbacks. */
+    --font-sans: var(--font-geist-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     --font-sans-fallback: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    /* Geist Sans ASLI — dipakai utility typography & font-sans (geistcn). */
+    /* The loaded Geist Sans face plus its metric-matched Arial fallback. */
     --font-geist-sans: 'GeistSans', 'GeistSans Fallback';
     --font-mono: 'Geist Mono', Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace;
     /* Z-index scale — verbatim chunk produksi (328y7…). */

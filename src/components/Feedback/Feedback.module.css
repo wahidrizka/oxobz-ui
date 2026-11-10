@@ -7,8 +7,8 @@
  *   value below: .inlineWrapper, .inlineTriggerWrapper, .trigger,
  *   .emojisWrapper, .emoji (+ [aria-checked=true] / :hover / :focus-visible),
  *   .formWrapper, .textarea (height 100px), .markdown-tip / .markdown-mark,
- *   .actions (padding var(--geist-gap-half), background var(--accents-1),
- *   border-top var(--accents-2), justify-content SPACE-BETWEEN — the base
+ *   .actions (padding var(--geist-gap-half), background-100, border-top
+ *   gray-400, justify-content SPACE-BETWEEN — the base
  *   rule, not the inline variant's override, see `.actionsEnd` below),
  *   .successWrapper (+ @keyframes appear, staggered .1s/.3s/.4s),
  *   .popover (background var(--ds-background-100), width 340px,
@@ -279,15 +279,14 @@
     display: flex;
     justify-content: space-between;
     padding: var(--oxobz-gap-half);
-    background: var(--accents-1);
+    background: var(--ds-background-100);
     /*
-     * `border-t border-[var(--accents-2)]` mewarnai KEEMPAT sisi dan cuma
-     * memberi lebar pada sisi atas. Menulis `border-top: 1px solid ...`
-     * menyisakan tiga sisi lain memakai warna bawaan (terukur 235,235,235
-     * di kita lawan 234,234,234 di produksi). Lebarnya nol, jadi tak terlihat,
-     * tapi nilainya tetap terbaca beda.
+     * Production: `bg-background-100 border-t border-gray-400` (measured
+     * 10 Nov 2026; it used the accents-1 / accents-2 tokens before).
+     * `border-gray-400` colours ALL FOUR sides and only the top one gets a
+     * width, so the colour is set on the shorthand and the width on the top.
      */
-    border: 0 solid var(--accents-2);
+    border: 0 solid var(--ds-gray-400);
     border-top-width: 1px;
 }
 
