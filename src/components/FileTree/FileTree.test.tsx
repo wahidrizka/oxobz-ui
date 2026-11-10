@@ -287,20 +287,22 @@ describe('File', () => {
         const paths = svg?.querySelectorAll('path') ?? [];
         expect(paths).toHaveLength(1);
         expect(paths[0]).toHaveAttribute('fill', 'currentColor');
-        // Coordinate unique to FunctionSquare's frame/glyph path among this
-        // file's icon set — not present in FunctionEdgeColor's or
-        // FunctionMiddleware's path data.
-        expect(paths[0]?.getAttribute('d')).toContain('10.2462');
+        // A stretch of the path only FunctionSquare has (the "f" inside the
+        // frame), in the glyph @oxobz/icons ships today.
+        expect(paths[0]?.getAttribute('d')).toContain('M11 5h-.75c-.83');
     });
 
-    it('renders FunctionMiddleware (clipPath-wrapped glyph) for type="middleware"', () => {
+    it('renders FunctionMiddleware (single path, "m" inside the frame) for type="middleware"', () => {
         render(
             <Tree>
                 <File name="dashboard.tsx" type="middleware" />
             </Tree>,
         );
         const svg = screen.getByText('dashboard.tsx').closest('a')?.querySelector('svg');
-        expect(svg?.querySelector('clipPath')).toBeInTheDocument();
+        const paths = svg?.querySelectorAll('path') ?? [];
+        expect(paths).toHaveLength(1);
+        // A stretch of the path only FunctionMiddleware has, in today's glyph.
+        expect(paths[0]?.getAttribute('d')).toContain('M5.5 4.92A2.4 2.4');
     });
 
     it('renders without a data-type attribute when type is omitted (default)', () => {
