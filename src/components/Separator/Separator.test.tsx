@@ -42,6 +42,18 @@ describe('Separator', () => {
 
     // ── Custom className ──
 
+    it('adds the inset class only when inset is set, for both orientations', () => {
+        const { container, rerender } = render(<Separator />);
+        expect(getRoot(container)?.className).not.toContain('inset');
+        rerender(<Separator inset />);
+        expect(getRoot(container)?.className).toContain('inset');
+        expect(getRoot(container)).toHaveAttribute('data-orientation', 'horizontal');
+        expect(getRoot(container)).not.toHaveAttribute('inset');
+        rerender(<Separator inset orientation="vertical" />);
+        expect(getRoot(container)?.className).toContain('inset');
+        expect(getRoot(container)).toHaveAttribute('data-orientation', 'vertical');
+    });
+
     it('appends a custom className after the module class', () => {
         const { container } = render(<Separator className="custom-sep" />);
         const root = getRoot(container);

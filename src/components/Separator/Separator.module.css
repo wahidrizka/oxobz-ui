@@ -35,3 +35,22 @@
     width: 1px;
     height: 100%;
 }
+
+/* ---- inset (production source, read 10 Nov 2026) ----
+ *   horizontal: bg-gray-400 mx-px w-[calc(100%-2px)]
+ *   vertical:   bg-gray-400 my-px h-[calc(100%-2px)]
+ * These come after the base classes in production's class list and win over
+ * bg-gray-200 / w-full / h-full, so the rules sit after the base ones here. */
+.inset {
+    background: var(--ds-gray-400);
+}
+
+.inset[data-orientation='horizontal'] {
+    margin-inline: 1px;
+    width: calc(100% - 2px);
+}
+
+.inset[data-orientation='vertical'] {
+    margin-block: 1px;
+    height: calc(100% - 2px);
+}

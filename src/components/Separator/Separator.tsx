@@ -12,6 +12,11 @@ export type SeparatorOrientation = 'horizontal' | 'vertical';
 export interface SeparatorProps extends HTMLAttributes<HTMLDivElement> {
     /** Axis of the divider line (default: 'horizontal'). */
     orientation?: SeparatorOrientation;
+    /**
+     * For a divider that meets a 1px frame painted over the content: reserves
+     * 1px at each end and switches to solid gray-400 (default: false).
+     */
+    inset?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -33,13 +38,13 @@ export interface SeparatorProps extends HTMLAttributes<HTMLDivElement> {
  *
  * Every separator is semantic: `role="separator"` and an `aria-orientation`
  * that always matches `orientation` (production emits it for horizontal too,
- * unlike raw Radix which omits it there). The public API is just
- * `orientation` — the documented Geist API exposes nothing else, so there is
- * no `decorative` prop and no `data-oxobz-*`/`data-version` markers (the live
- * div carries none).
+ * unlike raw Radix which omits it there). The public API is `orientation`
+ * plus `inset` (added by production in Nov 2026), exactly what the production
+ * source takes. There is no `decorative` prop and no `data-oxobz-*` or
+ * `data-version` marker, because the live div carries none.
  */
 const Separator = forwardRef<HTMLDivElement, SeparatorProps>(
-    ({ orientation = 'horizontal', className, ...rest }, ref) => (
+    ({ orientation = 'horizontal', inset = false, className, ...rest }, ref) => (
         <div
             {...rest}
             ref={ref}
@@ -48,7 +53,7 @@ const Separator = forwardRef<HTMLDivElement, SeparatorProps>(
             data-orientation={orientation}
             data-slot="separator"
             data-testid="geistcn/separator"
-            className={cn(styles.root, className)}
+            className={cn(styles.root, inset && styles.inset, className)}
         />
     ),
 );
