@@ -1,4 +1,4 @@
-import { render, fireEvent, screen, act } from '@testing-library/react';
+import { render, fireEvent, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { CalendarGrid } from './CalendarGrid';
@@ -1106,16 +1106,81 @@ describe('Calendar', () => {
 
     // ── allowClear ──
 
+    /* The clear button follows production's source (read 10 Nov 2026): it sits
+       next to the date button, is labelled "Clear input value", carries
+       data-clear-button, and exists only with a value and never on compact. */
     it('renders a clear button that empties the selection', () => {
-        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} allowClear />);
+        const onChange = vi.fn();
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} allowClear onChange={onChange} />);
         expect(trigger()).toHaveTextContent('Jul 4 - 18');
-        fireEvent.click(screen.getByTestId('calendar/clear'));
+        const clear = screen.getByRole('button', { name: 'Clear input value' });
+        expect(clear).toHaveAttribute('data-clear-button', 'true');
+        expect(clear).toHaveAttribute('type', 'button');
+        expect(clear.parentElement).toBe(trigger().parentElement);
+        fireEvent.click(clear);
         expect(trigger()).toHaveTextContent('Select Date Range');
+        expect(onChange).toHaveBeenLastCalledWith(undefined);
+        expect(screen.queryByRole('button', { name: 'Clear input value' })).not.toBeInTheDocument();
     });
 
-    it('does not render a clear button without a value', () => {
-        render(<Calendar allowClear />);
-        expect(screen.queryByTestId('calendar/clear')).not.toBeInTheDocument();
+    it('does not render a clear button without a value, or on compact', () => {
+        const { unmount } = render(<Calendar allowClear />);
+        expect(screen.queryByRole('button', { name: 'Clear input value' })).not.toBeInTheDocument();
+        unmount();
+        render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} allowClear compact />);
+        expect(screen.queryByRole('button', { name: 'Clear input value' })).not.toBeInTheDocument();
+    });
+
+    // ── Phone (<= 600px): the preset box is a button that opens its own drawer ──
+
+    describe('on a phone', () => {
+        beforeEach(() => {
+            vi.stubGlobal(
+                'matchMedia',
+                (query: string) =>
+                    ({
+                        matches: true,
+                        media: query,
+                        addEventListener: () => undefined,
+                        removeEventListener: () => undefined,
+                    }) as unknown as MediaQueryList,
+            );
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('opens a "Select Period" drawer with the presets, a search box and Done', async () => {
+            render(<Calendar presets={JUL_RANGE_PRESETS} />);
+            fireEvent.click(screen.getByRole('button', { name: 'Select Period' }));
+            const dialog = await screen.findByRole('dialog');
+            expect(dialog).toHaveAccessibleName('Select Period');
+            expect(dialog.querySelector('[cmdk-input]')).not.toBeNull();
+            expect(screen.getByRole('button', { name: 'Close menu' })).toHaveAttribute('type', 'button');
+            expect(screen.getAllByRole('option').length).toBeGreaterThan(0);
+            const done = screen.getByRole('button', { name: 'Done' });
+            expect(done.closest('footer')).not.toBeNull();
+            expect(done).toHaveAttribute('type', 'button');
+            // the date grid belongs to the other drawer
+            expect(dialog.querySelector('[role="grid"]')).toBeNull();
+        });
+
+        it('picking a preset applies it and closes the drawer', async () => {
+            render(<Calendar presets={JUL_RANGE_PRESETS} />);
+            fireEvent.click(screen.getByRole('button', { name: 'Select Period' }));
+            await screen.findByRole('dialog');
+            const first = screen.getAllByRole('option')[0];
+            const label = first.textContent ?? '';
+            fireEvent.click(first);
+            await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+            expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
+        });
+
+        it('has no clear button', () => {
+            render(<Calendar presets={JUL_RANGE_PRESETS} presetIndex={0} allowClear />);
+            expect(screen.queryByRole('button', { name: 'Clear input value' })).not.toBeInTheDocument();
+        });
     });
 
     // ── Layouts ──

@@ -20,7 +20,7 @@ import { useScrollLock } from '../../utils/scroll-lock';
 import { Skeleton } from '../Skeleton';
 import { Command } from 'cmdk';
 import { Drawer } from '@base-ui/react';
-import { Calendar as CalendarIcon, ChevronDown, Cross } from '@oxobz/icons';
+import { Calendar as CalendarIcon, ChevronDown, ChevronUp, Cross, MagnifyingGlass } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
 import { Button } from '../Button';
 import { Input } from '../Input';
@@ -90,8 +90,13 @@ export interface CalendarProps
     extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
     /** Controlled selected range. Pass `null` for an empty selection. */
     value?: RangeValue<DateValue> | null;
-    /** Fired with the completed range when the grid commits a selection. */
-    onChange?: (value: RangeValue<DateValue>) => void;
+    /**
+     * Fired with the completed range when a selection is committed, and with
+     * `undefined` when the clear button empties it. The type follows the
+     * documented demos, which hand a `useState<RangeValue<DateValue>>()`
+     * setter straight to this prop.
+     */
+    onChange?: (value: RangeValue<DateValue> | undefined) => void;
 
     /** Trigger size. Default `"medium"`. */
     size?: CalendarSize;
@@ -710,7 +715,18 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         // Kunci gulir halaman hanya saat drawer mobile benar-benar terbuka,
         // meniru util scroll-lock terpisah milik produksi (Base UI trap-focus
         // sendiri tidak mengunci gulir).
-        useScrollLock(isSmallScreen && isOpen);
+        // Drawer preset mengunci gulir dengan cara yang sama (diukur di halaman
+        // live lebar 375, 10 Nov 2026: <html> membawa overflow: clip dst.).
+        useScrollLock(isSmallScreen && (isOpen || presetsOpen));
+        const presetDrawerId = useId();
+        const presetDrawerTitleId = useId();
+        /* Di ponsel, ketikan di drawer preset tidak dibawa ke pembukaan
+           berikutnya, lewat jalan mana pun drawer itu ditutup (diukur di
+           halaman live: sesudah ditutup lalu dibuka lagi, kolom ketik kosong
+           dan daftarnya utuh kembali). */
+        useEffect(() => {
+            if (isSmallScreen && !presetsOpen) setTypedText('');
+        }, [isSmallScreen, presetsOpen]);
 
         /*
          * Timezone the time inputs are rendered in. Seeded from
@@ -888,9 +904,18 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             [isControlled, onChange],
         );
 
+        /* Tombol hapus. Produksi mengosongkan rentang sekaligus isi kotak
+           preset (nilai dan ketikannya), dibaca dari sumbernya 10 Nov 2026. */
         const clearRange = useCallback((): void => {
             if (!isControlled) setInternalRange(null);
-        }, [isControlled]);
+            /* Produksi mengosongkan nilai kalender, dan itu juga sampai ke
+               pemilik nilai terkendali (terukur: tombol kembali berbunyi
+               "Select Date Range" dan tombol hapusnya hilang). */
+            onChange?.(undefined);
+            setComboText('');
+            setTypedText('');
+            setComboError(false);
+        }, [isControlled, onChange]);
 
         /**
          * Commits the typed Start/End time-of-day (HH:MM) onto the current
@@ -1107,6 +1132,38 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * Typing a period ("45m", "Jan 1 - Jan 2") and pressing Enter — or
          * clicking a hint chip — parses and applies the range.
          */
+        /* Daftar preset. Dipakai popover (layar lebar) dan drawer (ponsel). */
+        const presetList = (
+            <Command.List className={styles.suggestions}>
+                {visiblePresets.length > 0 ? (
+                    visiblePresets.map(([id, preset]) => (
+                        <Command.Item
+                            key={id}
+                            className={styles.comboboxItem}
+                            onMouseUp={(event) => event.preventDefault()}
+                            onPointerDown={(event) => event.preventDefault()}
+                            onSelect={() => commitPeriodText(preset.text)}
+                        >
+                            <div className={styles.comboboxItemRow}>
+                                <span className={styles.comboboxItemText}>{preset.text}</span>
+                                <span className={styles.comboboxItemAside} />
+                            </div>
+                        </Command.Item>
+                    ))
+                ) : (
+                    /* Tidak ada preset yang cocok: satu butir berisi ketikan itu
+                       sendiri, dan memilihnya berarti mengurai ketikan sebagai
+                       periode. */
+                    <Command.Item
+                        className={styles.comboboxItemTyped}
+                        onSelect={() => commitPeriodText(typedText)}
+                    >
+                        <span className={styles.comboboxItemText}>{typedText}</span>
+                    </Command.Item>
+                )}
+            </Command.List>
+        );
+
         const presetCombobox: ReactNode =
             presetEntries.length > 0 ? (
                 /*
@@ -1270,38 +1327,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                     !compact && styles.suggestionsPaneBordered,
                                 )}
                             >
-                                <Command.List className={styles.suggestions}>
-                                    {visiblePresets.length > 0 ? (
-                                        visiblePresets.map(([id, preset]) => (
-                                            <Command.Item
-                                                key={id}
-                                                className={styles.comboboxItem}
-                                                onMouseUp={(event) => event.preventDefault()}
-                                                onPointerDown={(event) => event.preventDefault()}
-                                                onSelect={() => commitPeriodText(preset.text)}
-                                            >
-                                                <div className={styles.comboboxItemRow}>
-                                                    <span className={styles.comboboxItemText}>
-                                                        {preset.text}
-                                                    </span>
-                                                    <span className={styles.comboboxItemAside} />
-                                                </div>
-                                            </Command.Item>
-                                        ))
-                                    ) : (
-                                        /* Tidak ada preset yang cocok: satu butir
-                                           berisi ketikan itu sendiri, dan memilihnya
-                                           berarti mengurai ketikan sebagai periode. */
-                                        <Command.Item
-                                            className={styles.comboboxItemTyped}
-                                            onSelect={() => commitPeriodText(typedText)}
-                                        >
-                                            <span className={styles.comboboxItemText}>
-                                                {typedText}
-                                            </span>
-                                        </Command.Item>
-                                    )}
-                                </Command.List>
+                                {presetList}
                             </div>
                             {!compact ? (
                                 <div className={styles.hintPanel}>
@@ -1350,16 +1376,24 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
 
         /*
          * ---- Preset combobox: varian MOBILE (drawer, <=600px) ----
-         * Di layar sempit produksi TIDAK memakai cmdk. Comboboxnya jadi sebuah
-         * <button> polos (teks "Select Period") yang membuka drawer preset,
-         * dibungkus <div> biasa (bukan cmdk-root), plus ikon jam/chevron dan
-         * garis tepi. Diukur dari DOM live 375: button tanpa data-testid/aria,
-         * hanya type=button + gaya inline `text-align:left; padding-right:0`.
-         * Non-compact mengisi lebar (w-full), compact menyusut jadi kotak
-         * chevron (width --ds-size-small, teks transparan).
+         * Di layar sempit comboboxnya jadi sebuah <button> polos (teks "Select
+         * Period") dibungkus <div> biasa (bukan cmdk-root), plus ikon
+         * jam/chevron dan garis tepi. Diukur dari DOM live 375: button tanpa
+         * data-testid/aria, hanya type=button + gaya inline
+         * `text-align:left; padding-right:0`. Non-compact mengisi lebar
+         * (w-full), compact menyusut jadi kotak chevron (width
+         * --ds-size-small, teks transparan).
+         *
+         * Tombol itu membuka DRAWER PRESET-nya sendiri, bukan drawer tanggal.
+         * Susunannya disalin dari sumber produksi (bundel live, 10 Nov 2026):
+         * Modal (di ponsel berupa drawer Base UI) berjudul "Select Period"
+         * yang tersembunyi, isinya cmdk dengan kolom ketik (ikon kaca pembesar
+         * di kiri, tombol "Close menu" di kanan) dan daftar preset, lalu kaki
+         * berisi tombol "Done".
          */
         const presetComboboxMobile: ReactNode =
             presetEntries.length > 0 ? (
+                <>
                 <div
                     className={cn(
                         styles.comboboxMobile,
@@ -1390,7 +1424,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                   }
                                 : {}),
                         }}
-                        onClick={() => setIsOpen(true)}
+                        onClick={() => setPresetsOpen(true)}
                     >
                         {comboText || COMBOBOX_PLACEHOLDER}
                     </button>
@@ -1398,6 +1432,92 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     <ChevronDown size={16} color="gray-700" className={styles.comboboxInputSuffix} />
                     <div aria-hidden="true" className={styles.comboboxDivider} />
                 </div>
+                <Drawer.Root
+                    open={presetsOpen}
+                    onOpenChange={(open) => {
+                        /* Diukur di halaman live: sesudah ditutup lalu dibuka
+                           lagi, kolom ketik kosong dan daftarnya utuh kembali. */
+                        setTypedText('');
+                        setPresetsOpen(open);
+                    }}
+                    modal="trap-focus"
+                >
+                    <Drawer.Portal>
+                        <Drawer.Backdrop className={styles.drawerBackdrop} />
+                        <Drawer.Viewport className={styles.drawerViewport}>
+                            <Drawer.Popup
+                                id={presetDrawerId}
+                                aria-labelledby={presetDrawerTitleId}
+                                data-oxobz-modal=""
+                                className={styles.drawer}
+                                /* Produksi: `initialFocus: initialFocusRef ?? true`.
+                                   Tanpa ini Base UI memfokus kotak drawer-nya
+                                   sendiri; dengan `true` fokus masuk ke elemen
+                                   pertama yang bisa difokus (di drawer preset:
+                                   kolom ketik, terukur di halaman live). */
+                                initialFocus
+                            >
+                                <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                                    <div className={styles.drawerHandleGradient} />
+                                </div>
+                                <h3
+                                    id={presetDrawerTitleId}
+                                    data-oxobz-modal-title=""
+                                    className={cn('text-heading-20', 'oxobz-sr-only', styles.drawerTitle)}
+                                >
+                                    Select Period
+                                </h3>
+                                <div
+                                    data-oxobz-modal-body=""
+                                    className={cn('text-copy-14', styles.drawerBody, styles.drawerBodyFlush)}
+                                    style={{ '--modal-padding': '0px' } as CSSProperties}
+                                >
+                                    <div>
+                                        <Command label="Combobox Menu" shouldFilter={false}>
+                                            <div className={styles.presetSearch}>
+                                                <Command.Input
+                                                    className={styles.presetSearchInput}
+                                                    onValueChange={(text) => {
+                                                        setPresetsOpen(true);
+                                                        setComboError(false);
+                                                        setTypedText(text);
+                                                    }}
+                                                />
+                                                <div aria-hidden="true" className={styles.presetSearchIcon}>
+                                                    <MagnifyingGlass size={18} />
+                                                </div>
+                                                <button
+                                                    aria-label="Close menu"
+                                                    className={styles.presetSearchClose}
+                                                    onClick={() => setPresetsOpen(false)}
+                                                    type="button"
+                                                >
+                                                    <ChevronUp size={18} />
+                                                </button>
+                                            </div>
+                                            {presetList}
+                                        </Command>
+                                    </div>
+                                    <div aria-hidden="true" className={styles.scrollSentinelTop} />
+                                    <div aria-hidden="true" className={styles.scrollSentinelBottom} />
+                                </div>
+                                <footer data-oxobz-modal-actions="" className={styles.drawerActions}>
+                                    <Button
+                                        className={styles.drawerAction}
+                                        data-oxobz-modal-action=""
+                                        onClick={() => setPresetsOpen(false)}
+                                        size="small"
+                                        typeName="button"
+                                        variant="secondary"
+                                    >
+                                        Done
+                                    </Button>
+                                </footer>
+                            </Drawer.Popup>
+                        </Drawer.Viewport>
+                    </Drawer.Portal>
+                </Drawer.Root>
+                </>
             ) : null;
 
         /*
@@ -1775,7 +1895,29 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                 {isSmallScreen ? (
                     triggerButton
                 ) : (
-                    <div className={styles.calendarRoot}>{triggerButton}</div>
+                    <div className={styles.calendarRoot}>
+                        {triggerButton}
+                        {/*
+                         * Tombol hapus, disalin dari sumber produksi (bundel
+                         * live, 10 Nov 2026). Hanya ada di layar lebar, hanya
+                         * bila ada rentang terpilih, dan tidak pada compact.
+                         * Letaknya di dalam pembungkus tombol tanggal, sesudah
+                         * tombolnya. Di ponsel produksi tidak merendernya.
+                         */}
+                        {allowClear && range?.start && !compact ? (
+                            <button
+                                aria-label="Clear input value"
+                                className={cn(styles.clearButton, small && styles.clearButtonSmall)}
+                                data-clear-button="true"
+                                onClick={() => {
+                                    clearRange();
+                                }}
+                                type="button"
+                            >
+                                <Cross color="currentColor" className={styles.clearIcon} />
+                            </button>
+                        ) : null}
+                    </div>
                 )}
             </Skeleton>
         );
@@ -1806,21 +1948,6 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     </>
                 )}
 
-                {allowClear && range ? (
-                    <button
-                        type="button"
-                        aria-label="Clear"
-                        data-testid="calendar/clear"
-                        className={cn(styles.clearButton, small && styles.clearButtonSmall)}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            clearRange();
-                        }}
-                    >
-                        <Cross size={16} />
-                    </button>
-                ) : null}
-
             </div>
         );
 
@@ -1846,9 +1973,13 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
              * Viewport, tanpa InternalBackdrop terpisah, dan tanpa kompensasi
              * scrollbar) sambil tetap menjebak fokus.
              */
+            /* Root tidak membungkus kontrol: buka-tutupnya lewat state, dan
+               dengan begitu drawer preset (yang hidup di dalam kontrol) tidak
+               dianggap Base UI sebagai drawer bersarang di dalam drawer ini. */
             return (
+                <>
+                {kontrol}
                 <Drawer.Root open={isOpen} onOpenChange={setIsOpen} modal="trap-focus">
-                    {kontrol}
                     <Drawer.Portal>
                         <Drawer.Backdrop className={styles.drawerBackdrop} />
                         <Drawer.Viewport className={styles.drawerViewport}>
@@ -1857,6 +1988,12 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 aria-labelledby={drawerTitleId}
                                 data-oxobz-modal=""
                                 className={styles.drawer}
+                                /* Produksi: `initialFocus: initialFocusRef ?? true`.
+                                   Tanpa ini Base UI memfokus kotak drawer-nya
+                                   sendiri; dengan `true` fokus masuk ke elemen
+                                   pertama yang bisa difokus (di drawer preset:
+                                   kolom ketik, terukur di halaman live). */
+                                initialFocus
                             >
                                 {/* Pembungkus handle: produksi memakai INLINE
                                     style (bukan class) — sticky, top 0, z 10. */}
@@ -1915,6 +2052,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         </Drawer.Viewport>
                     </Drawer.Portal>
                 </Drawer.Root>
+                </>
             );
         }
 

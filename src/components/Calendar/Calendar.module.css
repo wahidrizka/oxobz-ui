@@ -186,6 +186,24 @@
     box-shadow: 0 0 0 1px var(--ds-gray-500) !important;
 }
 
+/* `hover:z-1`: tombol tanggal naik satu lapis saat kursor di atasnya, supaya
+   cincinnya tidak tertutup kotak preset di sebelahnya (terukur di 16 tombol
+   halaman live, 10 Nov 2026). */
+@media (hover: hover) {
+    .trigger:hover {
+        z-index: 1;
+    }
+}
+
+/* Di layar lebar cincin gray-500 itu milik pembungkusnya: produksi menulis
+   `group-hover/calendar:shadow-[0_0_0_1px_var(--ds-gray-500)]`, jadi cincin
+   juga menyala saat kursor ada di tombol hapus (terukur 10 Nov 2026). */
+@media (hover: hover) {
+    .calendarRoot:hover .trigger:not(:disabled) {
+        box-shadow: 0 0 0 1px var(--ds-gray-500);
+    }
+}
+
 /* Placeholder tetap gray-700 saat hover (override teks gray-1000 secondary). */
 .triggerPlaceholder[data-hover] {
     color: var(--ds-gray-700) !important;
@@ -734,27 +752,42 @@
 }
 
 /* ---- Clear button (calendar-module __clearButton) ---- */
+/* Tombol hapus. Kelas produksi (sumber bundel live, 10 Nov 2026):
+   transition-colors text-gray-700! group-hover/calendar:text-gray-1000!
+   right-[2px] absolute top-1/2 z-25 flex -translate-x-1/2 -translate-y-1/2
+   cursor-pointer border-none bg-none p-[1.5px], dan -right-[2px] untuk small.
+   Ikonnya size-(--ds-control-decoration-size). */
 .clearButton {
     position: absolute;
     top: 50%;
-    right: -0.25rem;
-    z-index: 50;
+    right: 2px;
+    z-index: 25;
     display: flex;
-    padding: 4px;
-    border: none;
-    background: transparent;
-    color: var(--ds-gray-700);
+    padding: 1.5px;
+    border-style: none;
+    background-color: transparent;
+    background-image: none;
+    color: var(--ds-gray-700) !important;
     cursor: pointer;
-    transition: color 0.2s;
-    transform: translate(-50%, -50%);
+    translate: -50% -50%;
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.clearButton:hover {
-    color: var(--ds-gray-1000);
+@media (hover: hover) {
+    .calendarRoot:hover .clearButton {
+        color: var(--ds-gray-1000) !important;
+    }
 }
 
 .clearButtonSmall {
-    right: -0.5rem;
+    right: -2px;
+}
+
+.clearIcon {
+    width: var(--ds-control-decoration-size);
+    height: var(--ds-control-decoration-size);
 }
 
 /* ---- Popover (role="dialog") ---- */
@@ -1210,7 +1243,7 @@
 /* Minimized compact box keeps the desktop offset on mobile too: production
    picks right-[9px] (small) or right-[11px] (medium) whenever the box is
    minimized, and right-2 / right-3 only when it is not. */
-.calendar.mobile.compact.sizeSmall .comboboxInputSuffix {
+.calendar.mobile.sizeSmall .comboboxMinimized .comboboxInputSuffix {
     right: 9px;
 }
 
@@ -1338,6 +1371,148 @@
 /* Di tema gelap produksi memberi body drawer background-200. */
 :global(.dark-theme) .drawerBody {
     background: var(--ds-background-200);
+}
+
+/* Body drawer preset: `p-0`, tingginya mengikuti isinya, dan tanpa latar
+   sendiri di tema gelap (diukur di halaman live: transparan). */
+.drawerBodyFlush {
+    padding: 0;
+    min-height: 0;
+}
+
+:global(.dark-theme) .drawerBody.drawerBodyFlush {
+    background: transparent;
+}
+
+/* ---- Drawer preset (ponsel) ----
+   Kelas produksi dari sumber bundel live, 10 Nov 2026. */
+
+/* pembungkus kolom ketik: `sticky` */
+.presetSearch {
+    position: sticky;
+}
+
+/* font-normal w-[var(--width)] transition-[box-shadow] duration-150 px-10 h-12
+   border-gray-400 relative w-full border-b text-[16px] focus:outline-none */
+.presetSearchInput {
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    height: 3rem;
+    margin: 0;
+    padding-block: 0;
+    padding-inline: 2.5rem;
+    border: 0 solid var(--ds-gray-400);
+    border-bottom-width: 1px;
+    border-radius: 0;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 400;
+    transition-property: box-shadow;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 0.15s;
+}
+
+.presetSearchInput:focus {
+    outline-style: none;
+}
+
+/* left-2 absolute top-1/2 flex -translate-y-1/2 */
+.presetSearchIcon {
+    position: absolute;
+    top: 50%;
+    left: 0.5rem;
+    display: flex;
+    translate: 0 -50%;
+}
+
+/* right-0 p-0 absolute top-1/2 h-[30px] w-[40px] -translate-y-1/2 border-none
+   bg-transparent text-[var(--ds-gray-700)] */
+.presetSearchClose {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    border-style: none;
+    background-color: transparent;
+    color: var(--ds-gray-700);
+    /* tombol di produksi berkursor pointer dari aturan dasarnya */
+    cursor: pointer;
+    translate: 0 -50%;
+}
+
+/* ---- Kaki drawer ----
+   sticky bottom-0 p-3 flex shrink-0 justify-between [&>div]:flex [&>div]:gap-4
+   before:{left-0 bottom-full absolute w-full h-3 bg-black/[0.075] blur-[3px]
+   translate-y-[275%] -z-10 transition-transform duration-200}
+   dark-theme:before:bg-white/10
+   after:{absolute inset-0 bg-[var(--ds-background-200)]
+   shadow-[0_-1px_0_0_var(--ds-gray-alpha-400)] -z-10 rounded-none
+   sm:rounded-b-xl} */
+.drawerActions {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: space-between;
+    padding: 0.75rem;
+}
+
+.drawerActions > div {
+    display: flex;
+    gap: 1rem;
+}
+
+.drawerActions::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    z-index: -10;
+    width: 100%;
+    height: 0.75rem;
+    /* bg-black/[0.075], verbatim produksi: color-mix di oklab atas token
+       --ds-black. Karena lewat var(), pengolah CSS tidak menghitungnya lebih
+       dulu (kalau dihitung, hasilnya jadi lab() dan beda dari produksi). */
+    background-color: color-mix(in oklab, var(--ds-black) 7.5%, transparent);
+    filter: blur(3px);
+    translate: 0 275%;
+    transition-property: transform, translate, scale, rotate;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 0.2s;
+}
+
+/* dark-theme:before:bg-white/10 */
+:global(.dark-theme) .drawerActions::before {
+    background-color: color-mix(in oklab, var(--ds-white) 10%, transparent);
+}
+
+.drawerActions::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -10;
+    border-radius: 0;
+    background-color: var(--ds-background-200);
+    box-shadow: 0 -1px 0 0 var(--ds-gray-alpha-400);
+}
+
+@media (min-width: 40rem) {
+    .drawerActions::after {
+        border-bottom-right-radius: 0.75rem;
+        border-bottom-left-radius: 0.75rem;
+    }
+}
+
+/* tombol "Done": Modal.Action fullWidth */
+.drawerAction {
+    width: 100%;
 }
 
 /*
