@@ -198,6 +198,22 @@ describe('Grid', () => {
 
     // ---- hideGuides ----
     describe('hideGuides', () => {
+        it('hideGuides (boolean) renders no guides element at all', () => {
+            const { container, rerender } = render(
+                <Grid.System>
+                    <Grid columns={3} rows={2} />
+                </Grid.System>,
+            );
+            expect(container.querySelector('[data-grid-guides]')).not.toBeNull();
+            rerender(
+                <Grid.System>
+                    <Grid columns={3} rows={2} hideGuides />
+                </Grid.System>,
+            );
+            expect(container.querySelector('[data-grid-guides]')).toBeNull();
+            expect(container.querySelector('[data-grid]')).not.toBeNull();
+        });
+
         it('hideGuides="row" menghapus semua border bawah', () => {
             const { container } = render(
                 <Grid.System>
@@ -486,6 +502,20 @@ describe('Grid', () => {
 
     // ---- CSS vars ----
     describe('CSS variables', () => {
+        it('sets --guide-color and --cross-color only when the props are given', () => {
+            const { container, rerender } = render(<Grid.System>content</Grid.System>);
+            const system = container.firstChild as HTMLElement;
+            expect(system.style.getPropertyValue('--guide-color')).toBe('');
+            expect(system.style.getPropertyValue('--cross-color')).toBe('');
+            rerender(
+                <Grid.System guideColor="var(--ds-gray-400)" crossColor="red">
+                    content
+                </Grid.System>,
+            );
+            expect(system.style.getPropertyValue('--guide-color')).toBe('var(--ds-gray-400)');
+            expect(system.style.getPropertyValue('--cross-color')).toBe('red');
+        });
+
         it('set --guide-width ketika guideWidth prop diberikan', () => {
             const { container } = render(
                 <Grid.System guideWidth={2}>

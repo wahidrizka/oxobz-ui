@@ -30,7 +30,12 @@ type ResolvedResponsive<T> = { sm?: T; smd?: T; md?: T; lg?: T };
 type GridHeight = 'fit-content' | 'preserve-aspect-ratio';
 
 /** Which guide lines to hide */
-type HideGuides = 'row' | 'column' | 'both';
+/*
+ * `true` is production's own value (read from its bundle): the guides element
+ * is not rendered at all. 'row' / 'column' keep the element and only drop the
+ * bottom / right lines. 'both' drops both kinds of line but keeps the element.
+ */
+type HideGuides = boolean | 'row' | 'column' | 'both';
 
 export interface GridSystemProps extends HTMLAttributes<HTMLDivElement> {
     /** Content to render inside the grid system */
@@ -41,6 +46,10 @@ export interface GridSystemProps extends HTMLAttributes<HTMLDivElement> {
     dashedGuides?: boolean;
     /** Width of guide lines in pixels */
     guideWidth?: number;
+    /** Colour of the guide lines (any CSS colour). Sets `--guide-color`. */
+    guideColor?: string;
+    /** Colour of the crosshair markers (any CSS colour). Sets `--cross-color`. */
+    crossColor?: string;
     /** Use container queries instead of media queries */
     unstable_useContainer?: boolean;
     /**
@@ -396,6 +405,8 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
             debug = false,
             dashedGuides = false,
             guideWidth,
+            guideColor,
+            crossColor,
             unstable_useContainer = false,
             lazyChildren,
             maxWidth,
@@ -409,6 +420,9 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
         if (guideWidth !== undefined) systemStyle['--guide-width'] = `${guideWidth}px`;
         if (maxWidth !== undefined) systemStyle['--max-width'] = `${maxWidth}px`;
         if (minWidth !== undefined) systemStyle['--min-width'] = `${minWidth}px`;
+        /* Same two inline variables production's Grid.System writes. */
+        if (guideColor !== undefined) systemStyle['--guide-color'] = guideColor;
+        if (crossColor !== undefined) systemStyle['--cross-color'] = crossColor;
 
         const systemClasses = cn(
             styles.gridSystem,
@@ -499,7 +513,9 @@ const GridRoot = forwardRef<HTMLElement, GridProps>(
         const solidCells = collectSolidCells(children);
 
         let guides: ReactNode = null;
-        if (isResponsive) {
+        if (hideGuides === true) {
+            /* No guides element at all, as production does for `hideGuides`. */
+        } else if (isResponsive) {
             const colResolved = resolveResponsive(columns);
             const rowResolved = resolveResponsive(rows);
             guides = GUIDE_BREAKPOINTS.map((bp) => {
