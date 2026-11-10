@@ -370,6 +370,13 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                     hideLineNumbers && styles.hideLineNumbers,
                     className,
                 )}
+                /* Production labels every code block for agents (measured
+                   10 Nov 2026): the content kind, the filename when there is
+                   one, and the language, where a filename containing
+                   "tailwind" wins over the language itself. */
+                data-agent-content="code"
+                data-agent-filename={filename}
+                data-agent-language={filename?.includes('tailwind') ? 'tailwind' : language}
                 data-oxobz-code-block=""
             >
                 {/* Header (with filename) */}

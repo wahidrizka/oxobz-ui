@@ -90,6 +90,28 @@ describe('CodeBlock', () => {
         expect(container.querySelector('pre')?.className).toContain('language-tsx');
     });
 
+    it('labels the root for agents with the content kind and the language', () => {
+        const { container } = render(<CodeBlock language="html">{'<p>hi</p>'}</CodeBlock>);
+        const root = getRoot(container);
+        expect(root).toHaveAttribute('data-agent-content', 'code');
+        expect(root).toHaveAttribute('data-agent-language', 'html');
+        expect(root).not.toHaveAttribute('data-agent-filename');
+    });
+
+    it('adds the filename label, and "tailwind" in the filename wins as the language', () => {
+        const { container, rerender } = render(
+            <CodeBlock filename="Table.jsx">{'const a = 1;'}</CodeBlock>,
+        );
+        expect(getRoot(container)).toHaveAttribute('data-agent-filename', 'Table.jsx');
+        expect(getRoot(container)).toHaveAttribute('data-agent-language', 'jsx');
+        rerender(
+            <CodeBlock filename="tailwind.config.js" language="js">
+                {'const a = 1;'}
+            </CodeBlock>,
+        );
+        expect(getRoot(container)).toHaveAttribute('data-agent-language', 'tailwind');
+    });
+
     it('tokenizes code — keyword tokens get the prism token class', () => {
         const { container } = render(<CodeBlock>{'const a = 1;'}</CodeBlock>);
         const keyword = container.querySelector('.token.keyword');
