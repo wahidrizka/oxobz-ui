@@ -4,6 +4,7 @@ import { forwardRef, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Command, useCommandState } from 'cmdk';
 import { cn } from '../../utils/cn';
+import { useScrollLock } from '../../utils/scroll-lock';
 import styles from './CommandMenu.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -96,6 +97,10 @@ const CommandMenu = forwardRef<HTMLDivElement, CommandMenuProps>(
         },
         ref,
     ) => {
+        /* Production locks the page with its own util on top of Radix's
+           (see utils/scroll-lock.ts for the measurement). */
+        useScrollLock(open);
+
         return (
             <Dialog.Root open={open} onOpenChange={onOpenChange}>
                 <Dialog.Portal>

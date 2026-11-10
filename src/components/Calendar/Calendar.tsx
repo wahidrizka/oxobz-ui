@@ -16,6 +16,7 @@ import {
 } from 'react';
 import { DateTime } from 'luxon';
 import * as Popover from '@radix-ui/react-popover';
+import { useScrollLock } from '../../utils/scroll-lock';
 import { Skeleton } from '../Skeleton';
 import { Command } from 'cmdk';
 import { Drawer } from '@base-ui/react';
@@ -51,57 +52,6 @@ function useIsSmallScreen(): boolean {
     // Awalnya selalu false supaya render di server dan render pertama di
     // browser sama persis; media query baru dibaca setelah komponen terpasang.
     return kecil;
-}
-
-/*
- * Kunci gulir halaman saat drawer mobile terbuka.
- *
- * Base UI Drawer dengan modal="trap-focus" TIDAK mengunci gulir (di Base UI,
- * scroll-lock hanya jalan saat modal===true). Produksi Geist memakai util
- * scroll-lock TERPISAH di atas Base UI Drawer. Diambil apa adanya dari bundel
- * produksi (chunk 2h38obwtw-sfa.js), sebuah pengunci ber-hitung-acuan yang saat
- * mengunci menulis ke <html>: overflow:clip, border-right:<lebar scrollbar>px
- * solid transparent, dan scrollbar-width:none (menghapus gutter sehingga konten
- * melebar dari 360 ke 375), serta ke <body>: overflow:clip. Semua nilai inline
- * sebelumnya disimpan dan dikembalikan saat membuka kunci. Hitung-acuan memakai
- * modul supaya beberapa drawer di satu halaman tidak saling menimpa.
- */
-let scrollLockCount = 0;
-let savedBodyOverflow = '';
-let savedHtmlOverflow = '';
-let savedHtmlBorderRight = '';
-let savedHtmlScrollbarWidth = '';
-
-function useDrawerScrollLock(active: boolean): void {
-    useEffect(() => {
-        if (!active) return;
-        if (scrollLockCount === 0) {
-            const html = document.documentElement;
-            const body = document.body;
-            savedBodyOverflow = body.style.overflow;
-            savedHtmlOverflow = html.style.overflow;
-            savedHtmlBorderRight = html.style.borderRight;
-            savedHtmlScrollbarWidth = html.style.getPropertyValue('scrollbar-width');
-            const scrollbarWidth = window.innerWidth - html.clientWidth;
-            body.style.overflow = 'clip';
-            html.style.overflow = 'clip';
-            html.style.borderRight = `${scrollbarWidth}px solid transparent`;
-            html.style.setProperty('scrollbar-width', 'none');
-        }
-        scrollLockCount += 1;
-
-        return () => {
-            scrollLockCount -= 1;
-            if (scrollLockCount === 0) {
-                const html = document.documentElement;
-                const body = document.body;
-                body.style.overflow = savedBodyOverflow;
-                html.style.overflow = savedHtmlOverflow;
-                html.style.borderRight = savedHtmlBorderRight;
-                html.style.setProperty('scrollbar-width', savedHtmlScrollbarWidth);
-            }
-        };
-    }, [active]);
 }
 
 export type { DateValue, RangeValue, WeekDayIndex };
@@ -760,7 +710,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         // Kunci gulir halaman hanya saat drawer mobile benar-benar terbuka,
         // meniru util scroll-lock terpisah milik produksi (Base UI trap-focus
         // sendiri tidak mengunci gulir).
-        useDrawerScrollLock(isSmallScreen && isOpen);
+        useScrollLock(isSmallScreen && isOpen);
 
         /*
          * Timezone the time inputs are rendered in. Seeded from
