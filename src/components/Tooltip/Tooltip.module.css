@@ -1,272 +1,285 @@
 /**
  * Tooltip — CSS Module
  *
- * Production sources:
- * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
- *   Module: tooltip-module__VEGyfq (container, absolute, relative, backdrop,
- *   tooltip, faster, delay, wrap, center, tip, triangle, box-align-left,
- *   box-align-right, fadeIn keyframes)
- * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   Themed presets .geist-themed.geist-{success,error,warning,violet}-fill →
- *   translated to the .success/.error/.warning/.violet type classes below
- *   (colors via the existing --oxobz-* legacy palette tokens).
- * - _nextstatic/component-inspect-element/tooltip.html
- *   Trigger snapshot: <span class="inline-flex items-center h-fit"
- *   data-version="v1" tabindex="0"> — the open popup is not captured (it only
- *   mounts on hover), so popup structure follows the module class chain.
+ * Source: live vercel.com/geist/tooltip and its stylesheet, fetched
+ * 10 Nov 2026. Production's Tooltip is a geistcn (Tailwind) component now;
+ * the classic `tooltip-module__VEGyfq` it used to ship is gone. Each rule
+ * below is the flattened form of the utility classes written in production's
+ * own source (turbopack module 684445), and the utility is named beside it.
  *
- * Positioning note: production portals the popup to <body> and measures the
- * trigger rect with JS (inline top/left on the .absolute proxy). We keep the
- * same element chain (.absolute > .relative > .tooltip) but anchor it inside
- * the trigger container so placement is pure CSS (absolute + transform).
- * Every rule marked "oxobz positioning" is ours; everything else is
- * production-exact.
- *
- * No .dark-theme override exists in production for this module — colors
- * resolve through --ds-* / --oxobz-* / --dropdown-triangle-stroke tokens
- * which flip with the theme automatically.
+ * Tailwind's preflight is part of what production renders, so its effect is
+ * written out where it matters (box-sizing, `svg { display: block }`).
  */
 
-/* ---- Trigger container (tooltip-module __container) ---- */
+/* ---- Trigger: `inline-flex h-fit items-center` ---- */
 .container {
-    align-items: center;
     display: inline-flex;
-    /* Snapshot: h-fit on the trigger span */
     height: fit-content;
+    align-items: center;
 }
 
-/* The container (trigger) stays `position: static` always — like live, whose
-   trigger never anchors the popup. The popup is portaled to <body> and placed
-   by JS (Tooltip.tsx computePopupStyle), so no positioning context is needed
-   here and there is no `.absolute`/`.relative` proxy anymore. */
-
-/* Production ships the legacy focus-visible polyfill class
-   (.container.focus-visible:focus); we use the native pseudo-class. */
-.container:focus-visible {
-    box-shadow: var(--ds-focus-ring);
-    border-radius: 2px;
-    outline: none;
-}
-
-/* ---- Backdrop (tooltip-module __backdrop) ----
-   Kept for production fidelity; not rendered by this implementation
-   (hover/focus tooltips need no click-away layer). */
-.backdrop {
-    z-index: 99998;
+/* ---- Touch layer: `inset-0 fixed z-[calc(var(--ds-z-tooltip)-1)]` ---- */
+.overlay {
     position: fixed;
     inset: 0;
+    z-index: calc(var(--ds-z-tooltip) - 1);
 }
 
-/* ---- Tooltip box (tooltip-module __tooltip) ---- */
+/* ---- Box ----
+   font-normal rounded-lg px-2 py-1.5 pointer-events-none absolute
+   z-[var(--ds-z-tooltip)] h-fit w-fit bg-[var(--ds-background-100)] text-left
+   text-[13px] leading-[1.3] text-balance text-[var(--ds-gray-1000)] opacity-0
+   [--tooltip-arrow-offset:clamp(12px,20%,20px)] animate-fadeInTooltip
+   (--animate-fadeInTooltip: fadeInTooltip .1s ease-in .4s forwards) */
 .tooltip {
-    /* Default theme vars — production: .tooltip:not(.geist-themed) */
-    --themed-fg: var(--ds-gray-1000);
-    --themed-bg: var(--ds-background-100);
-    --themed-border: var(--themed-bg);
-    --tooltip-stroke: var(--dropdown-triangle-stroke);
-    --tooltip-color: var(--themed-fg);
-    --tooltip-background: var(--themed-bg);
+    --tooltip-arrow-offset: clamp(12px, 20%, 20px);
 
-    opacity: 0;
-    z-index: 99999;
-    color: var(--themed-fg);
-    text-transform: initial;
-    background: var(--themed-bg);
-    text-align: left;
-    pointer-events: none;
-    /* live geistcn (26 Jul): rounded-lg, px-2 py-1.5, max-width 250px */
-    border-radius: 8px;
-    /* max-content, bukan fit-content: popup kita berjangkar di dalam trigger
-       (produksi portal ke body), fit-content akan menyusut ke lebar trigger
-       dan memecah teks per karakter. max-content + max-width 250px = perilaku
-       ukur-di-body milik produksi. */
-    width: max-content;
-    max-width: 250px;
-    padding: 6px 8px;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.3;
-    animation: 0.1s ease-in 0.4s forwards fadeIn;
+    box-sizing: border-box;
     position: absolute;
-    /* live geistcn: break-words + whitespace-pre-line + text-balance adalah
-       DEFAULT (bukan opt-in .wrap lagi). */
-    overflow-wrap: break-word;
-    white-space: pre-line;
+    z-index: var(--ds-z-tooltip);
+    width: fit-content;
+    height: fit-content;
+    border-radius: 0.5rem;
+    background-color: var(--ds-background-100);
+    padding-inline: 0.5rem;
+    padding-block: 0.375rem;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 400;
     text-wrap: balance;
+    color: var(--ds-gray-1000);
+    opacity: 0;
+    pointer-events: none;
+    animation: fadeInTooltip 0.1s ease-in 0.4s forwards;
 }
 
-/* Re-shown shortly after another tooltip was hidden */
-.tooltip.faster {
-    animation: 0.1s ease-in 0.1s forwards fadeIn;
+/* animate-fadeInTooltipFaster
+   (--animate-fadeInTooltipFaster: fadeInTooltip .1s ease-in .1s forwards) */
+.faster {
+    animation: fadeInTooltip 0.1s ease-in 0.1s forwards;
 }
 
-/* delay={false} — no entry delay */
-.tooltip:not(.delay) {
+/* [animation-delay:0s] — sits after both animations in production's sheet,
+   so it also wins over the faster one. */
+.noDelay {
     animation-delay: 0s;
 }
 
-.tooltip.wrap {
-    word-wrap: break-word;
+/* break-words whitespace-pre-line */
+.wrap {
+    overflow-wrap: break-word;
     white-space: pre-line;
-    border-collapse: separate;
 }
 
-.tooltip.center {
+/* text-center (production drops `text-left` when this one is present) */
+.center {
     text-align: center;
 }
 
-/* tip={false} hides the triangle indicator */
-.tooltip:not(.tip):before,
-.tooltip:not(.tip) .triangle {
-    display: none;
+/* ---- Keyboard hint inside the box ----
+   has-[kbd]:gap-1 has-[kbd]:pr-1.5 has-[kbd]:inline-flex has-[kbd]:items-center
+   [&>kbd]:bg-gray-400! [&>kbd]:rounded-sm [&>kbd]:min-w-5! [&>kbd]:h-5!
+   [&>kbd]:min-h-0! [&>kbd]:text-xs [&>kbd]:shadow-none! */
+.tooltip:has(:is(kbd)) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding-right: 0.375rem;
 }
 
-/* Invisible hover bridge across the gap between popup and trigger */
-.tooltip:after {
+.tooltip > kbd {
+    height: 1.25rem !important;
+    min-height: 0 !important;
+    min-width: 1.25rem !important;
+    border-radius: 0.25rem;
+    background-color: var(--ds-gray-400) !important;
+    font-size: 0.75rem;
+    line-height: calc(1 / 0.75);
+    box-shadow: none !important;
+}
+
+/* ---- Side ----
+   Each side carries `<side>-full` on the box plus an invisible 10px bridge
+   across the gap to the trigger. `top-full` and `left-full` are overridden by
+   the inline top/left; `right-full` is not, and squeezing the box to its
+   narrowest width on the right side is what production renders too. */
+
+/* top-full after:left-0 after:absolute after:top-full after:z-[-1]
+   after:h-[10px] after:w-full after:content-[''] */
+.top {
+    top: 100%;
+}
+
+.top::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
     z-index: -1;
-    content: "";
     width: 100%;
     height: 10px;
-    position: absolute;
-    top: -10px;
-    left: 0;
 }
 
-/* ---- Arrow (live geistcn 26 Jul: SVG 14×6 berlekuk, bukan border-triangle) --
-   Wrapper live: `absolute z-[-1] flex h-fit [--arrow-bg:var(--themed-bg)]
-   top-full left-1/2 -translate-x-1/2 -translate-y-[0.6px]`. Path fill live =
-   var(--ds-background-100); di sini var(--tooltip-background) agar varian type
-   tetap ikut — nilai default-nya identik (background-100, ikut terbalik oleh
-   invert-theme pada popup). */
-.triangle {
+/* bottom-full before:left-0 before:absolute before:bottom-full before:z-[-1]
+   before:h-[10px] before:w-full before:content-[''] */
+.bottom {
+    bottom: 100%;
+}
+
+.bottom::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    z-index: -1;
+    width: 100%;
+    height: 10px;
+}
+
+/* left-full after:top-0 after:absolute after:left-full after:z-[-1]
+   after:h-full after:w-[10px] after:content-[''] */
+.left {
+    left: 100%;
+}
+
+.left::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 100%;
+    z-index: -1;
+    width: 10px;
+    height: 100%;
+}
+
+/* right-full before:top-0 before:absolute before:right-full before:z-[-1]
+   before:h-full before:w-[10px] before:content-[''] */
+.right {
+    right: 100%;
+}
+
+.right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 100%;
+    z-index: -1;
+    width: 10px;
+    height: 100%;
+}
+
+/* ---- Arrow: `absolute z-[-1] flex h-fit [--arrow-bg:var(--themed-bg)]` ---- */
+.arrow {
     --arrow-bg: var(--themed-bg);
 
-    z-index: -1;
-    height: fit-content;
-    display: flex;
+    box-sizing: border-box;
     position: absolute;
-    transform-origin: center;
+    z-index: -1;
+    display: flex;
+    height: fit-content;
 }
 
-.trianglePath {
-    fill: var(--tooltip-background);
+/* preflight: svg { display: block; vertical-align: middle } */
+.arrow svg {
+    display: block;
+    vertical-align: middle;
 }
 
-/* ---- Position: left ---- */
-.tooltip.left .triangle {
-    /* arrow menunjuk kanan: svg default menunjuk bawah, diputar -90deg
-       (INFERENSI - bukti live hanya posisi top; ditandai). */
-    top: 50%;
-    bottom: 50%;
-    left: calc(100% - 4px);
-    transform: translateY(-50%) rotate(-90deg);
+/* fill-[var(--ds-background-100)] */
+.arrowPath {
+    fill: var(--ds-background-100);
 }
 
-.tooltip.left:after {
-    height: 100%;
-    top: 0;
-    left: 10px;
-}
-
-/* ---- Position: right ---- */
-.tooltip.right:after {
-    height: 100%;
-    margin-left: -10px;
-    top: 0;
-}
-
-.tooltip.right .triangle {
-    top: 50%;
-    bottom: 50%;
-    right: calc(100% - 4px);
-    transform: translateY(-50%) rotate(90deg);
-}
-
-/* ---- Position: top ---- */
-.tooltip.top:after {
+/* top-full left-1/2 -translate-x-1/2 -translate-y-[0.6px] */
+.arrow-top-center {
     top: 100%;
-}
-
-/* Production merges `.tooltip.top` into this rule (same declarations);
-   on the box itself they are inert — the box position comes from the JS
-   inline styles there and from the oxobz positioning section here. */
-.tooltip.top .triangle {
-    top: 100%;
-}
-
-.tooltip.top .triangle {
-    transform: translate(-50%) translateY(-0.6px);
-}
-
-.tooltip.top:not(.box-align-right):not(.box-align-left) .triangle {
     left: 50%;
+    translate: -50% -0.6px;
 }
 
-/* ---- Position: bottom ---- */
-.tooltip.bottom .triangle {
+/* top-full left-[var(--tooltip-arrow-offset)] -translate-x-1/2 -translate-y-[0.6px] */
+.arrow-top-left {
+    top: 100%;
+    left: var(--tooltip-arrow-offset);
+    translate: -50% -0.6px;
+}
+
+/* top-full right-[var(--tooltip-arrow-offset)] left-auto translate-x-1/2 -translate-y-[0.6px] */
+.arrow-top-right {
+    top: 100%;
+    right: var(--tooltip-arrow-offset);
+    left: auto;
+    translate: 50% -0.6px;
+}
+
+/* bottom-full left-1/2 -translate-x-1/2 */
+.arrow-bottom-center {
     bottom: 100%;
     left: 50%;
-    transform: translate(-50%) rotate(180deg);
+    translate: -50% 0;
 }
 
-.tooltip.bottom .triangle:before {
-    content: "";
-    background: 0 0;
-    width: 100%;
-    height: 16px;
-    position: absolute;
-    top: 0;
+/* bottom-full left-[var(--tooltip-arrow-offset)] -translate-x-1/2 */
+.arrow-bottom-left {
+    bottom: 100%;
+    left: var(--tooltip-arrow-offset);
+    translate: -50% 0;
 }
 
-/* ---- Box align (production shifts the triangle; box shift is JS-side) ---- */
-.tooltip.box-align-left .triangle {
-    left: 10%;
+/* right-[var(--tooltip-arrow-offset)] bottom-full left-auto translate-x-1/2 */
+.arrow-bottom-right {
+    right: var(--tooltip-arrow-offset);
+    bottom: 100%;
+    left: auto;
+    translate: 50% 0;
 }
 
-.tooltip.box-align-right:before,
-.tooltip.box-align-right .triangle {
-    left: unset;
-    right: calc(10% - 14px);
+/* right-0 top-1/2 translate-x-full -translate-y-1/2 */
+.arrow-left {
+    top: 50%;
+    right: 0;
+    translate: 100% -50%;
 }
 
-/* ==== Popup placement ====
-   Like live geistcn, the popup is portaled to <body> and placed by JS with
-   the measured trigger rect (top/left/transform set inline in Tooltip.tsx →
-   computePopupStyle). No CSS popup-position rules here anymore; the inline
-   styles own top/left/transform. The `.tooltip.<side>` classes still drive the
-   ARROW placement (below) and side-specific hover bridge only.
-   NOTE: boxAlign left/right currently only shifts the arrow (see box-align
-   rules), not the JS-placed popup (default center covers every built page). */
+/* left-0 top-1/2 -translate-x-full -translate-y-1/2 */
+.arrow-right {
+    top: 50%;
+    left: 0;
+    translate: -100% -50%;
+}
 
 /* ---- Types ----
-   1c419a75d7e589ae.css: .geist-themed.geist-{type}-fill presets.
-   Declared after .tooltip so the custom-property defaults are overridden. */
-.success {
-    --themed-fg: #fff;
-    --themed-bg: var(--oxobz-success);
-    --themed-border: var(--oxobz-success);
+   Production adds `geist-new-themed geist-new-<type> geist-new-<type>-fill
+   geist-new-tooltip`. Those classes only set --themed-* variables, and
+   nothing in the box reads them (its colors are fixed utilities), so all four
+   types look exactly like the default one. Measured on the live page: each of
+   the four renders background rgb(10, 10, 10).
+   Kept here: the tooltip's own rule, verbatim
+   (`.geist-new-themed.geist-new-<type>.geist-new-<type>-fill.geist-new-tooltip`).
+   Not reproduced: the shared non-fill presets, which nothing reads either. */
+.success.fill {
+    --themed-fg: var(--ds-contrast-fg);
+    --themed-bg: var(--ds-blue-700);
 }
 
-.error {
-    --themed-fg: #fff;
-    --themed-bg: var(--oxobz-error);
-    --themed-border: var(--oxobz-error);
+.error.fill {
+    --themed-fg: var(--ds-contrast-fg);
+    --themed-bg: var(--ds-red-700);
 }
 
-.warning {
-    --themed-fg: #fff;
-    --themed-bg: var(--oxobz-warning);
-    --themed-border: var(--oxobz-warning);
+.warning.fill {
+    --themed-fg: #000;
+    --themed-bg: var(--ds-amber-700);
 }
 
-.violet {
-    --themed-fg: #fff;
-    --themed-bg: var(--oxobz-violet);
-    --themed-border: var(--oxobz-violet);
+.violet.fill {
+    --themed-fg: var(--ds-contrast-fg);
+    --themed-bg: var(--ds-purple-700);
 }
 
-/* ---- Entry animation (tooltip-module fadeIn) ---- */
-@keyframes fadeIn {
+/* ---- Entry animation: @keyframes fadeInTooltip ---- */
+@keyframes fadeInTooltip {
     0% {
         opacity: 0;
     }

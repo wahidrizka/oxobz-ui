@@ -103,16 +103,18 @@ describe('Description', () => {
         expect(trigger).toBeInTheDocument();
     });
 
-    it('shows the tooltip text on hover of the info icon', () => {
+    /* The Tooltip opens from a pointer event through a 0ms timer, and drops
+       the trailing period of plain text (both read from production's source). */
+    it('shows the tooltip text on hover of the info icon', async () => {
         const { container } = render(
             <Description content="Value" title="Section Title" tooltip="A one-sentence definition." />,
         );
         const trigger = container.querySelector(
             '[data-testid="legacy/tooltip-trigger"]',
         ) as HTMLElement;
-        fireEvent.mouseEnter(trigger);
-        expect(screen.getByRole('tooltip')).toHaveTextContent(
-            'A one-sentence definition.',
+        fireEvent.pointerEnter(trigger);
+        expect(await screen.findByRole('tooltip')).toHaveTextContent(
+            /^A one-sentence definition$/,
         );
     });
 

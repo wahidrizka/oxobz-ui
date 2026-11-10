@@ -285,15 +285,15 @@ describe('Progress', () => {
         expect(marker.style.left).toBe('calc(25% - 7px)');
     });
 
-    it('shows a stop tooltip on hover', () => {
+    it('shows a stop tooltip on hover', async () => {
         const { container } = render(
             <Progress stops={[{ value: 10, tooltip: 'ten' }]} value={30} />,
         );
         // hidden until the trigger is hovered/focused
         expect(screen.queryByText('ten')).not.toBeInTheDocument();
         const trigger = container.querySelector('.stopTrigger') as HTMLElement;
-        fireEvent.mouseEnter(trigger);
-        expect(screen.getByText('ten')).toBeInTheDocument();
+        fireEvent.pointerEnter(trigger);
+        expect(await screen.findByText('ten')).toBeInTheDocument();
     });
 
     // ── displayName ──
