@@ -228,7 +228,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         return (
             <button
                 ref={(node) => setRefs(node, ref, localRef)}
-                type={typeName}
                 tabIndex={0}
                 className={buttonClasses}
                 data-oxobz-button=""
@@ -239,6 +238,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 disabled={isDisabled || undefined}
                 {...stateAttrs}
                 {...mergeProps(stateProps, props)}
+                /* After the spread on purpose: `typeName` wins over a `type`
+                   handed in from outside. A Radix `Trigger asChild` passes
+                   type="button" to its child, and production's trigger button
+                   (the Calendar one) still renders type="submit". */
+                type={typeName}
             >
                 <ButtonSlots
                     loading={loading}

@@ -68,6 +68,14 @@ describe('Button', () => {
         expect(el).toHaveAttribute('type', 'reset');
     });
 
+    it('typeName wins over a type handed in from outside (as a Radix Trigger does)', () => {
+        // A wrapper using `asChild` passes type="button" straight to its child.
+        const fromWrapper = { type: 'button' } as Record<string, string>;
+        render(<Button {...fromWrapper}>wrapped</Button>);
+        const el = screen.getByText('wrapped').closest('[data-oxobz-button]');
+        expect(el).toHaveAttribute('type', 'submit');
+    });
+
     // ---- Variants ----
 
     it('default variant does not apply secondary/tertiary class', () => {
