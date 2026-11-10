@@ -269,19 +269,25 @@
        #fff saat gelap (override ada di bawah). */
     --themed-fg: #f5f5f5;
     --themed-bg: var(--ds-red-800);
-    --themed-hover-bg: var(--ds-red-900);
-    --themed-press-bg: #ffaba3;
-    --themed-border: var(--themed-bg);
-    --themed-focus-ring: #ffaba3;
-}
-
-:global(.dark-theme) .error {
-    /* Kedua nilai ini dulu tertukar: kita pakai #fff saat terang dan #f5f5f5
-       saat gelap, produksi justru kebalikannya. */
-    --themed-fg: #fff;
+    /* Tiga nilai berikut milik tema TERANG. Produksi menulisnya di
+       `html:not(.dark-theme) .geist-new-themed.geist-new-error-fill`
+       (stylesheet live, 10 Nov 2026), dan terukur di halaman live: latar
+       tombol error saat hover rgb(174, 41, 47) = #ae292f. Sebelumnya ketiganya
+       tertukar dengan nilai tema gelap. */
     --themed-hover-bg: #ae292f;
     --themed-press-bg: #7c1316;
+    --themed-border: var(--themed-bg);
     --themed-focus-ring: #7c1316;
+}
+
+/* Tema gelap memakai nilai dasar produksi
+   (`.geist-new-themed.geist-new-error-fill`): teks --ds-contrast-fg (#fff),
+   hover red-900, tekan dan cincin fokus #ffaba3. */
+:global(.dark-theme) .error {
+    --themed-fg: #fff;
+    --themed-hover-bg: var(--ds-red-900);
+    --themed-press-bg: #ffaba3;
+    --themed-focus-ring: #ffaba3;
 }
 
 /* warning (fill): preset .geist-new-warning-fill.geist-new-themed */
