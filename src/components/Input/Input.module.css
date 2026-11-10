@@ -28,7 +28,7 @@
  * --geist-form-*-height -> --ds-form-*-height,
  * --geist-gap-half (12px) -> literal 12px (px-3 in the snapshot),
  * --geist-gap-quarter (8px) -> --oxobz-gap-quarter (inline style on error),
- * geist-themed/geist-error --themed-fg -> var(--ds-red-900).
+ * geist-themed/geist-error --themed-fg -> var(--oxobz-error).
  * ========================================================================== */
 
 /* ---- Wrapper (div[data-geist-input-wrapper]) ------------------------------
@@ -307,27 +307,36 @@
 }
 
 /*
- * [&>:first-child:not([disabled])]:text-[var(--themed-fg)]
+ * Themed text colour on affixed inputs.
  *
- * Aturan ini mengenai SEMUA input beraffix, bukan cuma yang error. Saat
- * --themed-fg tidak didefinisikan, deklarasinya tidak sah pada saat
- * penghitungan nilai; dan karena `color` itu properti yang diwariskan,
- * hasilnya jadi warna induknya (gray-1000), bukan dibuang begitu saja.
+ *   prefix: [&>:first-child:not([disabled])]:text-[var(--themed-fg)]
+ *   suffix: [&>:last-child:not([disabled])]:text-[var(--themed-fg)]
  *
- * Terukur di halaman live Clearable Input: begitu tombol hapusnya muncul
- * (input berubah jadi beraffix), warna teksnya berpindah dari hitam bawaan
- * peramban rgb(0, 0, 0) ke rgb(23, 23, 23). Catatan lama di sini menduga
- * aturannya hanya kelihatan pada input error; itu keliru.
+ * The first child is always the input, the last child is the suffix. So a
+ * prefix recolours the INPUT and a suffix recolours the SUFFIX itself; a
+ * suffix alone leaves the input on the browser default black.
+ *
+ * Without an error --themed-fg is undefined, the declaration is invalid at
+ * computed-value time and, `color` being inherited, the element takes its
+ * parent's colour (gray-1000). With an error the wrapper carries
+ * `geist-themed geist-error`, which sets --themed-fg to var(--geist-error).
+ *
+ * Measured on the live Input page, 10 Nov 2026 (light / dark):
+ *   prefix          input 23,23,23      prefix 143,143,143
+ *   suffix          input 0,0,0         suffix 23,23,23
+ *   both            input 23,23,23      suffix 23,23,23
+ *   error + prefix  input #e00 / red
+ *   error + suffix  input unchanged     suffix #e00 / red
+ * Until Sep 2026 production used the first-child rule for suffixes too.
  */
 .container.prefix > .input:first-child:not(:disabled),
-.container.suffix > .input:first-child:not(:disabled) {
+.container.suffix > :last-child:not([disabled]) {
     color: var(--themed-fg);
 }
 
-/* Material geist-themed geist-error yang mendefinisikan --themed-fg. */
 .container.error.prefix > .input:first-child:not(:disabled),
-.container.error.suffix > .input:first-child:not(:disabled) {
-    color: var(--ds-red-900);
+.container.error.suffix > :last-child:not([disabled]) {
+    color: var(--oxobz-error);
 }
 
 /* ---- prefixStyling={false} / suffixStyling={false} --------------------------
