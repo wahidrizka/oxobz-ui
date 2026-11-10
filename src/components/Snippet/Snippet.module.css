@@ -1,146 +1,135 @@
 /**
  * Snippet — CSS Module
  *
- * Production sources:
- * - _nextstatic/chunks/b4b9d0dd5348b0c3.css
- *   Module: snippet-module__7Mr-qq — .snippet, .prompt, .dark,
- *   .isUsingPlaceholder, button.copyIcon (+ svg / :hover), pre rules.
- * - _nextstatic/chunks/1c419a75d7e589ae.css
- *   Global variant classes referenced by the production DOM
- *   (.geist-new-themed.geist-new-<type>) → folded into the per-type
- *   classes below as --themed-* overrides.
- * - _nextstatic/component-inspect-element/snippet.html
- *   Snapshot-only detail translated here: the copy/check icon cross-fade
- *   ("relative size-4" stack, layers "transition-all duration-200
- *   ease-in-out" toggling opacity 0/100 + scale 50%/100%) and the focus
- *   ring on the copy button.
+ * Source: the live stylesheet and bundle of vercel.com/geist, fetched
+ * 10 Nov 2026. Production's Snippet is a geistcn (Tailwind) component now;
+ * each rule below is the flattened form of the utility classes written in
+ * production's own source (turbopack module 19020), named beside it.
  *
- * Var mapping: --geist-gap-double → --oxobz-gap-double (48px),
- * --geist-radius → --oxobz-radius, --geist-selection → --oxobz-selection.
- *
- * Note: production snippet-module has no :global(.dark-theme) block —
- * theme switching is handled by the --ds-* tokens; `.dark` here is the
- * `dark` prop (inverted color scheme), not the app theme.
+ * Token names: --geist-radius is --oxobz-radius here, --geist-selection is
+ * --oxobz-selection.
  */
 
-/* ---- Root (snippet-module __snippet) ---- */
+/* ---- Root ----
+   relative w-fit text-[var(--themed-fg)] max-w-full rounded-[6px] border
+   border-[var(--themed-border,_var(--ds-gray-alpha-400))]
+   [--themed-fg:_var(--ds-gray-1000)]
+   bg-[var(--themed-bg,_var(--ds-background-100))] py-2.5 pr-12 pl-3 */
 .snippet {
-    /* Themed defaults (gray). Type variants override --themed-*. */
     --themed-fg: var(--ds-gray-1000);
 
+    box-sizing: border-box;
+    position: relative;
     width: fit-content;
     max-width: 100%;
-    padding: 10px var(--oxobz-gap-double) 10px 12px;
-    border-radius: 6px;
-    position: relative;
-
     border: 1px solid var(--themed-border, var(--ds-gray-alpha-400));
-    background: var(--themed-bg, var(--ds-background-100));
+    border-radius: 6px;
+    background-color: var(--themed-bg, var(--ds-background-100));
+    padding: 0.625rem 3rem 0.625rem 0.75rem;
     color: var(--themed-fg);
 }
 
-/* ---- Placeholder empty state (snippet-module __isUsingPlaceholder) ---- */
-.snippet.isUsingPlaceholder pre {
+/* opacity-50 — only the placeholder is showing */
+.isUsingPlaceholder {
     opacity: 0.5;
 }
 
-/* ---- Inverted color scheme (snippet-module __dark) ---- */
-.snippet.dark {
-    background: var(--ds-gray-1000);
-    color: var(--ds-gray-100);
+/* bg-[var(--ds-gray-1000)]! text-[var(--ds-gray-100)]! */
+.dark {
+    background-color: var(--ds-gray-1000) !important;
+    color: var(--ds-gray-100) !important;
 }
 
-/* ---- Lines (snippet-module __snippet pre) ---- */
+/* ---- Lines ----
+   [&_pre]:text-left [&_pre]:m-0 [&_pre]:font-mono [&_pre]:text-[13px]
+   [&_pre]:leading-[20px] [&_pre]:no-scrollbar
+   [&_pre]:selection:bg-[var(--geist-selection)] */
 .snippet pre {
+    margin: 0;
     text-align: left;
     font-family: var(--font-mono);
-    margin: 0;
     font-size: 13px;
     line-height: 20px;
-    /* Long commands scroll horizontally; scrollbar hidden below. */
-    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* The class on each <pre>. Production: the global geist-overflow-scroll-y
+   (-webkit-overflow-scrolling: touch; overflow-y: auto). */
+.line {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .snippet pre::-webkit-scrollbar {
-    background: transparent;
-    width: 0;
-    height: 0;
     display: none;
 }
 
-.snippet pre::selection {
-    background: var(--oxobz-selection);
+.snippet pre::selection,
+.snippet pre ::selection {
+    background-color: var(--oxobz-selection);
 }
 
-/* ---- Prompt prefix (snippet-module __prompt) ---- */
-.snippet.prompt pre::before {
+/* [&_pre]:before:content-['$_'] [&_pre]:before:select-none */
+.prompt pre::before {
     content: '$ ';
     -webkit-user-select: none;
     user-select: none;
 }
 
-/* ---- Copy button (snippet-module button __copyIcon) ---- */
-.snippet button.copyIcon {
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 0;
-    box-shadow: none;
-    border-radius: var(--oxobz-radius);
-    outline: none;
-    align-items: center;
-    justify-content: center;
-    /* live: transition-opacity duration-150 ease-in-out = cubic-bezier(.4,0,.2,1). */
-    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
+/* ---- Copy button holder ----
+   hover:opacity-80 outline-none cursor-pointer absolute size-8 right-1 flex
+   top-1/2 -translate-y-1/2 items-center text-inherit
+   rounded-[var(--geist-radius)_var(--geist-radius)] transition-opacity
+   duration-150 ease-in-out */
+.copy {
     position: absolute;
     top: 50%;
-    right: 4px;
-    transform: translateY(-50%);
-    color: inherit !important;
-    background: transparent !important;
-}
-
-.snippet button.copyIcon svg {
-    width: 16px;
-    height: 16px;
-}
-
-.snippet button.copyIcon:hover {
-    opacity: 0.8;
-}
-
-.snippet button.copyIcon:focus-visible {
-    box-shadow: var(--ds-focus-ring);
-}
-
-/* ---- Icon cross-fade stack (snapshot: "relative size-4" + layers) ---- */
-.iconStack {
-    position: relative;
-    width: 16px;
-    height: 16px;
-}
-
-.iconLayer {
-    position: absolute;
-    top: 0;
-    left: 0;
+    right: 0.25rem;
     display: flex;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 2rem;
+    height: 2rem;
+    translate: 0 -50%;
+    cursor: pointer;
+    align-items: center;
+    border-radius: var(--oxobz-radius) var(--oxobz-radius);
+    color: inherit;
+    outline-style: none;
+    transition-property: opacity;
+    transition-duration: 0.15s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-duration: 0.15s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.iconVisible {
-    opacity: 1;
-    transform: scale(1);
+@media (hover: hover) {
+    .copy:hover {
+        opacity: 0.8;
+    }
 }
 
-.iconHidden {
-    opacity: 0;
-    transform: scale(0.5);
+/* ---- The CopyButton inside ----
+   text-inherit shadow-none! bg-transparent!
+   hover:shadow-[0_0_0_1px_var(--themed-border)]!
+   `text-inherit` replaces only the button's resting color in production; its
+   disabled color (gray-700) still applies, hence the :not() here. */
+.copyButton:not(:disabled):not([aria-disabled='true']) {
+    color: inherit;
 }
 
-/* ---- Type variants (folded from .geist-new-themed.geist-new-<type>) ---- */
+.copy .copyButton {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+@media (hover: hover) {
+    .copy .copyButton:hover {
+        box-shadow: 0 0 0 1px var(--themed-border) !important;
+    }
+}
+
+/* ---- Types ----
+   .geist-new-themed.geist-new-<type> in production's sheet */
 .success {
     --themed-fg: var(--ds-blue-900);
     --themed-bg: var(--ds-blue-100);

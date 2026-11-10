@@ -7,135 +7,206 @@ import {
     useRef,
     useState,
     type ButtonHTMLAttributes,
-    type MouseEventHandler,
+    type MouseEvent,
+    type ReactNode,
 } from 'react';
 import { Check, Copy } from '@oxobz/icons';
 import { cn } from '../../utils/cn';
-import { Button } from '../Button';
+import {
+    Button,
+    CustomButton,
+    type ButtonShape,
+    type ButtonSize,
+    type ButtonVariant,
+    type CustomButtonColors,
+} from '../Button';
+import { useToasts } from '../Toast';
 import styles from './CopyButton.module.css';
+
+/*
+ * Port of production's own CopyButton, read from the live bundle of
+ * vercel.com/geist on 10 Nov 2026 (turbopack module 700680).
+ *
+ * What it does, as there: writes `textToCopy` to the clipboard; on success
+ * shows the check mark for 1000ms and announces `copiedLabel` to screen
+ * readers; on failure calls `onCopyError`, or shows the error toast
+ * "Failed to copy to clipboard" when there is none; `onClick` runs last,
+ * whether the copy worked or not.
+ *
+ * Not ported: production also forwards a `type` color preset to its Button.
+ * Our Button has no such prop (its presets are variants).
+ */
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
 export interface CopyButtonProps
-    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onCopy'> {
-    /** String written to the clipboard when the button is clicked. */
+    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'prefix' | 'onClick'> {
+    /** The string written to the clipboard on click. */
     textToCopy: string;
 
-    /** Accessible label of the button. Default `'copy text'`. */
+    /** Accessible name of the button. */
     label?: string;
 
-    /**
-     * Controlled copied state. When provided, the checkmark feedback is
-     * driven by this prop instead of the internal 2s timer.
-     */
+    /** Announced to screen readers while the check mark shows. */
+    copiedLabel?: string;
+
+    /** Forces the copied state (check mark) from outside. */
     copied?: boolean;
 
-    /** Called with the copied string after a successful copy. */
-    onCopy?: (text: string) => void;
+    /** Icon shown instead of the copy icon. */
+    icon?: ReactNode;
+
+    variant?: ButtonVariant;
+
+    shape?: ButtonShape;
+
+    size?: ButtonSize;
+
+    /** Custom colors. Passing any of the three renders a CustomButton. */
+    normal?: CustomButtonColors;
+
+    hover?: CustomButtonColors;
+
+    active?: CustomButtonColors;
+
+    /** Runs after every click, once the copy has succeeded or failed. */
+    onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+
+    onCopySuccess?: () => void;
+
+    /** Replaces the default error toast. */
+    onCopyError?: (error: unknown) => void;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-/** Auto-revert delay of the internal (uncontrolled) copied state. */
-const COPIED_RESET_MS = 2000;
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-/**
- * A button that copies a given string to the clipboard and provides
- * feedback when copied by cross-fading a Copy icon into a Check icon.
- *
- * The root IS a Button: production composes this out of a `secondary`,
- * `shape="square"`, `size="medium"` Button, which is where
- * `data-geist-button`, `data-react-aria-pressable`, `data-prefix`,
- * `data-suffix`, `data-version` and `--geist-icon-size` all come from. An
- * older build here hand-rolled the button element and re-implemented those
- * styles in this module instead; the measured DOM shows production does not.
- *
- * Rendered DOM, measured off the live page on 11 Sep 2026:
- * ```html
- * <button aria-label="copy text" data-testid="copy/button" data-oxobz-button="" …>
- *   <span class="content flex">
- *     <div class="iconStack">
- *       <div class="icon iconHidden">{check}</div>
- *       <div class="icon iconShown">{copy}</div>
- *     </div>
- *   </span>
- * </button>
- * ```
- * Check comes FIRST in the DOM and Copy second; only their opacity/scale
- * swap when the copied state flips.
- */
 const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(
-    ({ textToCopy, label = 'copy text', copied, onCopy, className, onClick, ...rest }, ref) => {
-        const isControlled = copied !== undefined;
-        const [internalCopied, setInternalCopied] = useState(false);
-        const showCopied = isControlled ? copied : internalCopied;
-
+    (
+        {
+            className,
+            textToCopy,
+            onClick,
+            onCopySuccess,
+            onCopyError,
+            copiedLabel = 'Copied!',
+            label,
+            title,
+            variant = 'secondary',
+            normal,
+            hover,
+            active,
+            shape = 'square',
+            size,
+            icon,
+            copied,
+            ...rest
+        },
+        ref,
+    ) => {
+        const toasts = useToasts();
+        const [copiedText, setCopiedText] = useState<string | null>(null);
+        /* True until the first click or the first forced `copied`. */
+        const [untouched, setUntouched] = useState(true);
         const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-        useEffect(
-            () => () => {
+
+        const isCopied = copied || copiedText === textToCopy;
+        const resting = untouched && !copied;
+
+        useEffect(() => {
+            if (copied) setUntouched(false);
+        }, [copied]);
+
+        const handleClick = useCallback(
+            (event: MouseEvent<HTMLButtonElement>) => {
+                setUntouched(false);
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                /*
+                 * Production calls navigator.clipboard.writeText unguarded. The
+                 * guard only routes a missing Clipboard API (insecure context,
+                 * jsdom) into the same failure path instead of a TypeError; in
+                 * a browser the two behave identically.
+                 */
+                const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+                const write = clipboard
+                    ? clipboard.writeText(textToCopy)
+                    : Promise.reject(new Error('Clipboard API unavailable'));
+                write
+                    .then(() => {
+                        setCopiedText(textToCopy);
+                        onCopySuccess?.();
+                        timeoutRef.current = setTimeout(() => {
+                            setCopiedText(null);
+                        }, 1000);
+                    })
+                    .catch((error: unknown) => {
+                        if (onCopyError) onCopyError(error);
+                        else toasts.error('Failed to copy to clipboard');
+                    })
+                    .finally(() => onClick?.(event));
             },
-            [],
+            [textToCopy, toasts, onCopySuccess, onCopyError, onClick],
         );
 
-        const handleClick = useCallback<MouseEventHandler<HTMLButtonElement>>(
-            (event) => {
-                onClick?.(event);
-                if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                    void navigator.clipboard.writeText(textToCopy);
-                }
-                onCopy?.(textToCopy);
-                if (!isControlled) {
-                    setInternalCopied(true);
-                    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                    timeoutRef.current = setTimeout(
-                        () => setInternalCopied(false),
-                        COPIED_RESET_MS,
-                    );
-                }
-            },
-            [onClick, textToCopy, onCopy, isControlled],
+        const showCheck = !resting && isCopied;
+        const icons = (
+            <div className={styles.iconStack}>
+                <div className={cn(styles.icon, showCheck ? styles.iconShown : styles.iconHidden)}>
+                    <Check />
+                </div>
+                <div className={cn(styles.icon, showCheck ? styles.iconHidden : styles.iconShown)}>
+                    {icon || <Copy />}
+                </div>
+            </div>
         );
+
+        if (normal || hover || active) {
+            return (
+                <CustomButton
+                    active={active}
+                    aria-label={label}
+                    className={className}
+                    data-testid="copy/button"
+                    hover={hover}
+                    normal={normal}
+                    onClick={handleClick}
+                    shape={shape}
+                    size={size}
+                    svgOnly
+                    title={title}
+                    typeName="button"
+                    {...rest}
+                    ref={ref}
+                >
+                    {icons}
+                </CustomButton>
+            );
+        }
 
         return (
             <Button
-                {...rest}
-                ref={ref}
                 aria-label={label}
                 className={className}
                 data-testid="copy/button"
                 onClick={handleClick}
-                shape="square"
+                shape={shape}
+                size={size}
                 svgOnly
+                title={title}
                 typeName="button"
-                variant="secondary"
+                variant={variant}
+                {...rest}
+                ref={ref}
             >
-                <div className={styles.iconStack}>
-                    <div
-                        className={cn(
-                            styles.icon,
-                            showCopied ? styles.iconShown : styles.iconHidden,
-                        )}
-                    >
-                        <Check size={16} />
+                {isCopied ? (
+                    <div aria-live="assertive" className="oxobz-sr-only" role="status">
+                        {copiedLabel}
                     </div>
-                    <div
-                        className={cn(
-                            styles.icon,
-                            showCopied ? styles.iconHidden : styles.iconShown,
-                        )}
-                    >
-                        <Copy size={16} />
-                    </div>
-                </div>
+                ) : null}
+                {icons}
             </Button>
         );
     },

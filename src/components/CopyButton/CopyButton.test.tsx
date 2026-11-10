@@ -1,177 +1,184 @@
-import { render, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRef } from 'react';
 import { CopyButton } from './CopyButton';
 
-/**
- * Selects the root button. Production reaches it by its test id, which is the
- * only identifier the rendered button carries beyond the Button's own markers.
+/*
+ * Behaviour under test is production's own, read from the live bundle
+ * (10 Nov 2026): check mark for 1000ms after a successful copy, an error
+ * toast (or onCopyError) after a failed one, onClick last in both cases.
  */
-function getRoot(container: HTMLElement) {
-    return container.querySelector('[data-testid="copy/button"]');
+
+const toasts = vi.hoisted(() => ({ error: vi.fn(), message: vi.fn() }));
+vi.mock('../Toast', () => ({ useToasts: () => toasts }));
+
+const writeText = vi.fn<(text: string) => Promise<void>>();
+
+/** Click and let the clipboard promise (then / catch / finally) settle. */
+async function click(button: HTMLElement) {
+    await act(async () => {
+        fireEvent.click(button);
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+    });
 }
 
-/**
- * Selects the two icon layers: [0] = Check, [1] = Copy. Check comes FIRST in
- * the DOM on the live page; only opacity and scale swap between them.
- */
-function getLayers(container: HTMLElement) {
-    return container.querySelectorAll('[data-testid="copy/button"] div > div');
-}
+const layers = (button: HTMLElement) =>
+    Array.from(button.querySelectorAll<HTMLElement>('.icon')).map((layer) =>
+        layer.classList.contains('iconShown') ? 'shown' : 'hidden',
+    );
 
 describe('CopyButton', () => {
-    // ── Rendering ──
-
-    it('renders a Button root with the production test id and no copy-button marker', () => {
-        const { container } = render(<CopyButton textToCopy="hello" />);
-        const root = getRoot(container);
-        expect(root).toBeInTheDocument();
-        expect(root?.tagName).toBe('BUTTON');
-        expect(root).toHaveAttribute('type', 'button');
-        expect(root).toHaveAttribute('data-oxobz-button');
-        expect(root).not.toHaveAttribute('data-oxobz-copy-button');
-    });
-
-    it('renders the Check and Copy icon layers inside a stack, in that order', () => {
-        const { container } = render(<CopyButton textToCopy="hello" />);
-        const layers = getLayers(container);
-        expect(layers).toHaveLength(2);
-        layers.forEach((layer) => expect(layer.className).toContain('icon'));
-        expect(container.querySelectorAll('svg[data-slot="oxobz-icon"]')).toHaveLength(2);
-    });
-
-    // ── aria-label ──
-
-    it('defaults aria-label to "copy text"', () => {
-        const { container } = render(<CopyButton textToCopy="hello" />);
-        expect(getRoot(container)).toHaveAttribute('aria-label', 'copy text');
-    });
-
-    it('allows a custom aria-label', () => {
-        const { container } = render(<CopyButton label="Copy code" textToCopy="hello" />);
-        expect(getRoot(container)).toHaveAttribute('aria-label', 'Copy code');
-    });
-
-    // ── Icon state (uncontrolled) ──
-
     beforeEach(() => {
         vi.useFakeTimers();
+        writeText.mockReset().mockResolvedValue(undefined);
+        toasts.error.mockClear();
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     });
 
     afterEach(() => {
         vi.useRealTimers();
     });
 
-    it('shows the Copy layer and hides the Check layer before any interaction', () => {
-        const { container } = render(<CopyButton textToCopy="hello" />);
-        const [checkLayer, copyLayer] = getLayers(container);
-        expect(copyLayer.className).toContain('iconShown');
-        expect(checkLayer.className).toContain('iconHidden');
+    // ── Rendering ──
+
+    it('renders a square secondary button with the production markers', () => {
+        render(<CopyButton label="copy text" textToCopy="lipsum" />);
+        const button = screen.getByRole('button', { name: 'copy text' });
+        expect(button).toHaveAttribute('type', 'button');
+        expect(button).toHaveAttribute('data-testid', 'copy/button');
+        expect(button.className).toContain('secondary');
+        expect(button.className).toContain('shape');
+        expect(button.querySelector('.iconStack')).not.toBeNull();
     });
 
-    it('swaps to the Check layer after a click, then reverts after 2s', () => {
-        const { container } = render(<CopyButton textToCopy="hello" />);
-        const root = getRoot(container) as HTMLElement;
-
-        fireEvent.click(root);
-        const [checkLayer, copyLayer] = getLayers(container);
-        expect(copyLayer.className).toContain('iconHidden');
-        expect(checkLayer.className).toContain('iconShown');
-
-        act(() => {
-            vi.advanceTimersByTime(2000);
-        });
-        const [checkLayerAfter, copyLayerAfter] = getLayers(container);
-        expect(copyLayerAfter.className).toContain('iconShown');
-        expect(checkLayerAfter.className).toContain('iconHidden');
+    it('has no accessible name unless `label` is given', () => {
+        render(<CopyButton textToCopy="lipsum" />);
+        expect(screen.getByRole('button')).not.toHaveAttribute('aria-label');
     });
 
-    // ── Copy behavior ──
-
-    it('writes to the clipboard and calls onCopy with the text on click', () => {
-        const writeText = vi.fn().mockResolvedValue(undefined);
-        Object.defineProperty(navigator, 'clipboard', {
-            value: { writeText },
-            configurable: true,
-        });
-        const onCopy = vi.fn();
-        const { container } = render(<CopyButton onCopy={onCopy} textToCopy="npm install oxobz" />);
-        fireEvent.click(getRoot(container) as HTMLElement);
-        expect(writeText).toHaveBeenCalledWith('npm install oxobz');
-        expect(onCopy).toHaveBeenCalledWith('npm install oxobz');
+    it('starts with the copy icon shown and the check hidden', () => {
+        render(<CopyButton label="copy" textToCopy="lipsum" />);
+        expect(layers(screen.getByRole('button'))).toEqual(['hidden', 'shown']);
+        expect(screen.queryByRole('status')).toBeNull();
     });
 
-    it('forwards the click handler passed by the consumer', () => {
-        const onClick = vi.fn();
-        const { container } = render(<CopyButton onClick={onClick} textToCopy="hello" />);
-        fireEvent.click(getRoot(container) as HTMLElement);
-        expect(onClick).toHaveBeenCalledTimes(1);
+    it('passes variant, shape, size, title, disabled and className on to the button', () => {
+        render(
+            <CopyButton
+                className="mine"
+                disabled
+                label="copy"
+                shape="rounded"
+                size="small"
+                textToCopy="lipsum"
+                title="Copy it"
+                variant="tertiary"
+            />,
+        );
+        const button = screen.getByRole('button');
+        expect(button.className).toContain('tertiary');
+        expect(button.className).toContain('rounded');
+        expect(button.className).toContain('small');
+        expect(button.className).toContain('mine');
+        expect(button).toHaveAttribute('title', 'Copy it');
+        expect(button).toBeDisabled();
     });
 
-    // ── Controlled copied ──
-
-    it('uses the controlled copied prop instead of the internal timer', () => {
-        const { container, rerender } = render(<CopyButton copied textToCopy="hello" />);
-        const [checkLayer, copyLayer] = getLayers(container);
-        expect(checkLayer.className).toContain('iconShown');
-        expect(copyLayer.className).toContain('iconHidden');
-
-        // Clicking does not flip the controlled state, and no internal
-        // timer reverts it.
-        fireEvent.click(getRoot(container) as HTMLElement);
-        act(() => {
-            vi.advanceTimersByTime(5000);
-        });
-        const [checkLayerAfter, copyLayerAfter] = getLayers(container);
-        expect(checkLayerAfter.className).toContain('iconShown');
-        expect(copyLayerAfter.className).toContain('iconHidden');
-
-        rerender(<CopyButton copied={false} textToCopy="hello" />);
-        const [checkLayer2, copyLayer2] = getLayers(container);
-        expect(checkLayer2.className).toContain('iconHidden');
-        expect(copyLayer2.className).toContain('iconShown');
+    it('renders a custom icon in place of the copy icon', () => {
+        render(<CopyButton icon={<i data-testid="mine" />} label="copy" textToCopy="lipsum" />);
+        expect(screen.getByTestId('mine').parentElement?.className).toContain('iconShown');
     });
 
-    // ── Disabled state ──
-
-    it('renders disabled and does not fire the click handler', () => {
-        const onCopy = vi.fn();
-        const { container } = render(<CopyButton disabled onCopy={onCopy} textToCopy="hello" />);
-        const root = getRoot(container) as HTMLButtonElement;
-        expect(root).toBeDisabled();
-        fireEvent.click(root);
-        expect(onCopy).not.toHaveBeenCalled();
+    it('uses a CustomButton when custom colors are given', () => {
+        render(<CopyButton label="copy" normal={{ foreground: 'red' }} textToCopy="lipsum" />);
+        const button = screen.getByRole('button');
+        expect(button).toHaveAttribute('data-custom-button');
+        expect(button.style.getPropertyValue('--button-custom-fg')).toBe('red');
     });
 
-    // ── Custom className ──
-
-    it('appends a custom className after the module class', () => {
-        const { container } = render(<CopyButton className="custom-copy" textToCopy="hello" />);
-        const root = getRoot(container);
-        expect(root?.className).toContain('button');
-        expect(root?.className).toContain('custom-copy');
-        expect(root?.className.endsWith('custom-copy')).toBe(true);
-    });
-
-    // ── Ref forwarding ──
-
-    it('forwards ref to the root button', () => {
+    it('forwards ref to the button', () => {
         const ref = createRef<HTMLButtonElement>();
-        const { container } = render(<CopyButton ref={ref} textToCopy="hello" />);
-        expect(ref.current).toBeInstanceOf(HTMLButtonElement);
-        expect(ref.current).toBe(getRoot(container));
+        render(<CopyButton label="copy" ref={ref} textToCopy="lipsum" />);
+        expect(ref.current).toBe(screen.getByRole('button'));
     });
 
-    // ── Prop forwarding ──
+    // ── Copying ──
 
-    it('forwards extra HTML attributes (id, title)', () => {
-        const { container } = render(<CopyButton id="copy-1" textToCopy="hello" title="Copy" />);
-        const root = getRoot(container);
-        expect(root).toHaveAttribute('id', 'copy-1');
-        expect(root).toHaveAttribute('title', 'Copy');
+    it('writes the text and shows the check mark for 1000ms', async () => {
+        const onCopySuccess = vi.fn();
+        render(<CopyButton label="copy" onCopySuccess={onCopySuccess} textToCopy="lipsum" />);
+        const button = screen.getByRole('button', { name: 'copy' });
+        await click(button);
+        expect(writeText).toHaveBeenCalledWith('lipsum');
+        expect(onCopySuccess).toHaveBeenCalledTimes(1);
+        expect(layers(button)).toEqual(['shown', 'hidden']);
+        expect(screen.getByRole('status')).toHaveTextContent('Copied!');
+        expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'assertive');
+        act(() => {
+            vi.advanceTimersByTime(999);
+        });
+        expect(layers(button)).toEqual(['shown', 'hidden']);
+        act(() => {
+            vi.advanceTimersByTime(1);
+        });
+        expect(layers(button)).toEqual(['hidden', 'shown']);
+        expect(screen.queryByRole('status')).toBeNull();
     });
 
-    // ── displayName ──
+    it('announces a custom `copiedLabel`', async () => {
+        render(<CopyButton copiedLabel="Token copied" label="copy" textToCopy="lipsum" />);
+        await click(screen.getByRole('button', { name: 'copy' }));
+        expect(screen.getByRole('status')).toHaveTextContent('Token copied');
+    });
+
+    it('shows the error toast when the copy fails', async () => {
+        writeText.mockRejectedValue(new Error('denied'));
+        render(<CopyButton label="copy" textToCopy="lipsum" />);
+        const button = screen.getByRole('button');
+        await click(button);
+        expect(toasts.error).toHaveBeenCalledWith('Failed to copy to clipboard');
+        expect(layers(button)).toEqual(['hidden', 'shown']);
+    });
+
+    it('calls onCopyError instead of the toast when given', async () => {
+        const error = new Error('denied');
+        writeText.mockRejectedValue(error);
+        const onCopyError = vi.fn();
+        render(<CopyButton label="copy" onCopyError={onCopyError} textToCopy="lipsum" />);
+        await click(screen.getByRole('button'));
+        expect(onCopyError).toHaveBeenCalledWith(error);
+        expect(toasts.error).not.toHaveBeenCalled();
+    });
+
+    it('fails the same way when there is no Clipboard API', async () => {
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+        render(<CopyButton label="copy" textToCopy="lipsum" />);
+        await click(screen.getByRole('button'));
+        expect(toasts.error).toHaveBeenCalledWith('Failed to copy to clipboard');
+    });
+
+    it('calls onClick after the copy, whether it worked or not', async () => {
+        const onClick = vi.fn();
+        render(<CopyButton label="copy" onClick={onClick} textToCopy="lipsum" />);
+        await click(screen.getByRole('button'));
+        expect(onClick).toHaveBeenCalledTimes(1);
+        writeText.mockRejectedValue(new Error('denied'));
+        await click(screen.getByRole('button'));
+        expect(onClick).toHaveBeenCalledTimes(2);
+    });
+
+    // ── Forced state ──
+
+    it('shows the check mark while `copied` is true', () => {
+        const { rerender } = render(<CopyButton copied label="copy" textToCopy="lipsum" />);
+        const button = screen.getByRole('button', { name: 'copy' });
+        expect(layers(button)).toEqual(['shown', 'hidden']);
+        expect(screen.getByRole('status')).toHaveTextContent('Copied!');
+        rerender(<CopyButton copied={false} label="copy" textToCopy="lipsum" />);
+        expect(layers(button)).toEqual(['hidden', 'shown']);
+    });
 
     it('has the correct displayName', () => {
         expect(CopyButton.displayName).toBe('CopyButton');

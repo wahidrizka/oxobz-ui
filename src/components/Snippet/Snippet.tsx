@@ -1,236 +1,153 @@
 'use client';
 
-import {
-    forwardRef,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-    type HTMLAttributes,
-    type ReactNode,
-} from 'react';
-import { Check, Copy } from '@oxobz/icons';
+import { forwardRef, memo, useMemo, type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../utils/cn';
+import { CopyButton } from '../CopyButton';
 import styles from './Snippet.module.css';
+
+/*
+ * Port of production's own Snippet, read from the live bundle of
+ * vercel.com/geist on 10 Nov 2026 (turbopack module 19020). The copy control
+ * is production's CopyButton inside a positioned wrapper, so copying, the
+ * check mark and the failure toast all come from there.
+ *
+ * Not ported:
+ *   - `fill` and `variant`, which only pick other --themed-* presets from
+ *     production's shared helper classes.
+ *     ponytail: add them when a page needs a filled snippet.
+ *   - the `DisabledContext` provider around the copy button. Nothing in this
+ *     library provides that context, so there is nothing to shield from.
+ */
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-/**
- * Color variant of the snippet. Only the three demonstrated in the Geist
- * docs ("Variants" example) have dedicated colors; omit for the default
- * gray look. Sets the shared `--themed-*` custom properties consumed by
- * the root.
- */
 export type SnippetType = 'success' | 'error' | 'warning';
 
-export interface SnippetProps
-    extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onCopy'> {
-    /**
-     * Command(s) to display and copy. A string renders a single line; an
-     * array renders one `<pre>` per item (multi-line). Rich nodes are
-     * allowed but then `copyText` should carry the plain-text payload.
-     */
-    text: ReactNode;
+export interface SnippetProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'onCopy'> {
+    /** One line, or an array of lines. */
+    text?: ReactNode;
 
-    /** CSS width applied inline, e.g. "300px" or "100%". */
-    width?: string;
-
-    /** Inverted (dark) color scheme. */
-    dark?: boolean;
-
-    /** Render the leading "$ " shell prompt (default: true). */
-    prompt?: boolean;
-
-    /** Color variant. Omit for the default look. */
-    type?: SnippetType;
-
-    /**
-     * Plain-text payload written to the clipboard. Only needed when `text`
-     * contains rich nodes; for a string/array `text` it is redundant.
-     */
+    /** Copied instead of `text`. */
     copyText?: string;
 
-    /**
-     * Informational empty-state text, shown dimmed when `text` is empty.
-     * The placeholder itself is never copied.
-     */
+    /** Runs after every click on the copy button. */
+    onCopy?: () => void;
+
+    /** Width of the snippet, e.g. "300px". */
+    width?: string;
+
+    /** Fixed 36px height. */
+    compact?: boolean;
+
+    /** Shows the `$ ` prompt before each line. */
+    prompt?: boolean;
+
+    /** Shows the copy button. */
+    icon?: boolean;
+
+    /** Inverted color scheme. */
+    dark?: boolean;
+
+    /** Color preset. */
+    type?: SnippetType;
+
+    /** Shown, dimmed, while there is no text. */
     placeholder?: string;
 
-    /**
-     * Controlled copied state. When provided, the checkmark feedback is
-     * driven by this prop instead of the internal timer.
-     */
+    /** Disables the copy button. */
+    notFocusable?: boolean;
+
+    /** Forces the copied state of the copy button. */
     copied?: boolean;
-
-    /** Called with the copied string after a successful copy. */
-    onCopy?: (text: string) => void;
-
-    /** data-version attribute matching Geist production output. */
-    'data-version'?: string;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-/**
- * Resolve the plain-text clipboard payload. `copyText` wins; otherwise a
- * string/number `text` is used verbatim and an array is joined with
- * newlines (matching the multi-line rendering).
- */
-function resolveClipboardText(text: ReactNode, copyText?: string): string {
-    if (copyText != null) return copyText;
-    if (typeof text === 'string') return text;
-    if (typeof text === 'number') return String(text);
-    if (Array.isArray(text)) {
-        return text
-            .filter(
-                (line): line is string | number =>
-                    typeof line === 'string' || typeof line === 'number',
-            )
-            .join('\n');
-    }
-    return '';
-}
-
-/** Auto-revert delay of the internal (uncontrolled) copied state. */
-const COPIED_RESET_MS = 2000;
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-/**
- * Display a snippet of copyable code for the command line.
- *
- * Rendered DOM (Geist production structure):
- * ```html
- * <div class="snippet [prompt] [dark] [type] [isUsingPlaceholder]"
- *      data-oxobz-snippet="" data-version="v1" style="width:…;height:auto">
- *   <pre>{line}</pre>
- *   <button class="copyIcon" type="button" aria-label="Copy to clipboard">
- *     <span class="iconStack">
- *       <span class="iconLayer …">{check}</span>
- *       <span class="iconLayer …">{copy}</span>
- *     </span>
- *   </button>
- * </div>
- * ```
- */
-const Snippet = forwardRef<HTMLDivElement, SnippetProps>(
-    (
-        {
-            className,
-            copied,
-            copyText,
-            dark = false,
-            onCopy,
-            placeholder,
-            prompt = true,
-            style,
-            text,
-            type,
-            width,
-            'data-version': dataVersion = 'v1',
-            ...rest
-        },
-        ref,
-    ) => {
-        const isControlled = copied !== undefined;
-        const [internalCopied, setInternalCopied] = useState(false);
-        const showCopied = isControlled ? copied : internalCopied;
-
-        const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-        useEffect(
-            () => () => {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+const Snippet = memo(
+    forwardRef<HTMLDivElement, SnippetProps>(
+        (
+            {
+                text,
+                copyText,
+                onCopy,
+                width,
+                compact = false,
+                prompt = true,
+                icon = true,
+                dark,
+                type,
+                className,
+                placeholder,
+                notFocusable,
+                copied,
+                style,
+                ...rest
             },
-            [],
-        );
+            ref,
+        ) => {
+            const textToCopy = useMemo(() => {
+                if (copyText) return copyText;
+                if (Array.isArray(text)) return text.join('\n');
+                return typeof text === 'string' ? text : '';
+            }, [text, copyText]);
 
-        const handleCopy = useCallback(() => {
-            const value = resolveClipboardText(text, copyText);
-            if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                void navigator.clipboard.writeText(value);
-            }
-            onCopy?.(value);
-            if (!isControlled) {
-                setInternalCopied(true);
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                timeoutRef.current = setTimeout(
-                    () => setInternalCopied(false),
-                    COPIED_RESET_MS,
-                );
-            }
-        }, [text, copyText, onCopy, isControlled]);
+            const usesPlaceholder = !!(!text && placeholder);
 
-        const isEmpty =
-            text == null ||
-            text === '' ||
-            (Array.isArray(text) && text.length === 0);
-        const usePlaceholder = isEmpty && placeholder != null;
-
-        const lines = usePlaceholder ? (
-            <pre>{placeholder}</pre>
-        ) : Array.isArray(text) ? (
-            text.map((line: ReactNode, index: number) => (
-                <pre key={index}>{line}</pre>
-            ))
-        ) : (
-            <pre>{text}</pre>
-        );
-
-        return (
-            <div
-                {...rest}
-                className={cn(
-                    styles.snippet,
-                    prompt && styles.prompt,
-                    dark && styles.dark,
-                    type && styles[type],
-                    usePlaceholder && styles.isUsingPlaceholder,
-                    className,
-                )}
-                data-oxobz-snippet=""
-                data-version={dataVersion}
-                ref={ref}
-                style={{ width, height: 'auto', ...style }}
-            >
-                {lines}
-                <button
-                    type="button"
-                    className={styles.copyIcon}
-                    aria-label="Copy to clipboard"
-                    onClick={handleCopy}
+            return (
+                <div
+                    className={cn(
+                        styles.snippet,
+                        prompt && styles.prompt,
+                        dark && styles.dark,
+                        usesPlaceholder && styles.isUsingPlaceholder,
+                        type && styles[type],
+                        className,
+                    )}
+                    {...rest}
+                    data-oxobz-snippet=""
+                    data-version="v1"
+                    ref={ref}
+                    style={{ width, height: compact ? '36px' : 'auto', ...style }}
                 >
-                    <span className={styles.iconStack}>
-                        <span
-                            className={cn(
-                                styles.iconLayer,
-                                showCopied
-                                    ? styles.iconVisible
-                                    : styles.iconHidden,
-                            )}
+                    {Array.isArray(text) ? (
+                        text.map((line: ReactNode, index: number) => (
+                            <pre className={styles.line} key={index}>
+                                {line}
+                            </pre>
+                        ))
+                    ) : (
+                        <pre
+                            className={styles.line}
+                            style={compact ? { height: '36px', lineHeight: 1 } : undefined}
                         >
-                            <Check size={16} />
-                        </span>
-                        <span
-                            className={cn(
-                                styles.iconLayer,
-                                showCopied
-                                    ? styles.iconHidden
-                                    : styles.iconVisible,
-                            )}
-                        >
-                            <Copy size={16} />
-                        </span>
-                    </span>
-                </button>
-            </div>
-        );
-    },
+                            {text || placeholder}
+                        </pre>
+                    )}
+                    {icon ? (
+                        <div className={styles.copy}>
+                            <CopyButton
+                                className={styles.copyButton}
+                                copied={copied}
+                                disabled={notFocusable}
+                                label="Copy to clipboard"
+                                onClick={() => {
+                                    onCopy?.();
+                                }}
+                                shape="square"
+                                size="small"
+                                textToCopy={textToCopy}
+                                variant="secondary"
+                            />
+                        </div>
+                    ) : null}
+                </div>
+            );
+        },
+    ),
 );
 
 Snippet.displayName = 'Snippet';
