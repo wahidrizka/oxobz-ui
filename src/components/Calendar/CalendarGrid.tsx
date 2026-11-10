@@ -71,6 +71,12 @@ export interface CalendarGridProps
     isDisabled?: boolean;
     /** Size token (kept for Geist API parity; the day grid is 32px either way). */
     size?: CalendarGridSize;
+    /**
+     * Tighter rows, used by the compact calendar. Production: rows
+     * `my-0.5` instead of `my-2`, and the body `!pt-[3px]` instead of
+     * `!mt-[14.5px]`.
+     */
+    compact?: boolean;
     /** First day of the week. Default 0 (Sunday), matching production. */
     weekStartsOn?: WeekDayIndex;
     /** Month rendered first when uncontrolled and no value is set. */
@@ -319,6 +325,11 @@ function Cell({
                     isTodayCell && !isEndpoint && styles.highlight,
                     isEndpoint && styles.selected,
                     isDisabled && styles.disabled,
+                    /* Produksi menandai sel yang sedang jadi titik fokus kisi
+                       dengan kelas (cincin gelap), dan khusus hari ini menimpanya
+                       dengan cincin fokus biru saat sel itu benar-benar difokus. */
+                    isFocused && styles.focused,
+                    isTodayCell && styles.today,
                 )}
             >
                 {String(date.day)}
@@ -347,7 +358,13 @@ function NavButton({
      * Button Geist). type dilepas di sini agar `typeName="submit"` yang dipakai.
      */
     const { buttonProps: rawButtonProps } = useButton(props, ref);
-    const { type: _navType, ...buttonProps } = rawButtonProps;
+    /*
+     * tabIndex juga dilepas: react-aria mengosongkannya saat tombol disabled,
+     * sedangkan panah bulan produksi tetap membawa tabindex="0" walau sudah
+     * mentok di batas min/max (diukur 10 Nov 2026). Tanpa nilai dari sini,
+     * tabIndex bawaan Button (0) yang dipakai.
+     */
+    const { type: _navType, tabIndex: _navTabIndex, ...buttonProps } = rawButtonProps;
     /*
      * Ini komponen Button, bukan <button> polos. Produksi memakainya dengan
      * `type="unstyled" shape="circle" svgOnly`, dan ukurannya lahir dari
@@ -413,6 +430,7 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
             isDateUnavailable,
             isDisabled,
             size = 'large',
+            compact = false,
             weekStartsOn = 0,
             defaultFocusedMonth,
             autoFocus,
@@ -426,6 +444,8 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
         const firstDayOfWeek = WEEK_START[weekStartsOn];
         const gridLabelId = useId();
         const captionId = useId();
+        const captionFormatter = useDateFormatter({ dateStyle: 'long' });
+        const captionFullFormatter = useDateFormatter({ dateStyle: 'full' });
         const minCal = minValue ? toCal(minValue) : undefined;
         const maxCal = maxValue ? toCal(maxValue) : undefined;
 
@@ -447,6 +467,21 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                 ? (r) => onChange({ start: toDate(r.start), end: toDate(r.end) })
                 : undefined,
         });
+
+        /*
+         * Production's two messages (read from its bundle):
+         *   "Selected Date: {date, date, full}" when start and end are one day
+         *   "Selected Range: {start, date, long} to {end, date, long}" otherwise
+         * and nothing while there is no range or a selection is in progress.
+         */
+        const picked = state.anchorDate ? null : state.highlightedRange;
+        const selectedRangeText = !picked
+            ? null
+            : isSameDay(picked.start, picked.end)
+              ? `Selected Date: ${captionFullFormatter.format(picked.start.toDate(state.timeZone))}`
+              : `Selected Range: ${captionFormatter.format(
+                    picked.start.toDate(state.timeZone),
+                )} to ${captionFormatter.format(picked.end.toDate(state.timeZone))}`;
 
         const localRef = useRef<HTMLDivElement>(null);
         const { calendarProps, prevButtonProps, nextButtonProps, title } = useRangeCalendar(
@@ -554,13 +589,21 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                     {...gridProps}
                     aria-label={undefined}
                     aria-labelledby={gridLabelId}
+                    /* Menunjuk keterangan rentang terpilih, hanya saat keterangannya
+                       ada (diukur di popover yang punya rentang bawaan). */
+                    aria-describedby={selectedRangeText ? captionId : undefined}
                     id={undefined}
                     className={styles.table}
                 >
-                    <caption id={captionId} className="oxobz-sr-only" />
+                    {/* Keterangan khusus pembaca layar. Kosong selama belum ada
+                        rentang; begitu ada, produksi mengisinya dengan
+                        "Selected Range: {start, date, long} to {end, date, long}". */}
+                    <caption id={captionId} className="oxobz-sr-only">
+                        {selectedRangeText}
+                    </caption>
                     {/* Produksi tak menaruh aria-hidden di thead (react-aria menaruhnya). */}
                     <thead {...headerProps} aria-hidden={undefined} className={styles.thead}>
-                        <tr className={styles.row}>
+                        <tr className={cn(styles.row, compact && styles.rowCompact)}>
                             {weekDays.map((day, i) => (
                                 <th key={i} abbr={longWeekDays[i]} className={styles.weekday}>
                                     {day}
@@ -568,12 +611,14 @@ const CalendarGrid = forwardRef<HTMLDivElement, CalendarGridProps>(
                             ))}
                         </tr>
                     </thead>
-                    <tbody
-                        className={styles.tbody}
-                        style={{ opacity: 1, transform: 'none' }}
-                    >
+                    {/* No inline style: production dropped the animated body, the
+                        tbody is a plain `block !mt-[14.5px]` (measured 10 Nov 2026). */}
+                    <tbody className={cn(styles.tbody, compact && styles.tbodyCompact)}>
                         {weeks.map((weekIndex) => (
-                            <tr key={weekIndex} className={styles.row}>
+                            <tr
+                                key={weekIndex}
+                                className={cn(styles.row, compact && styles.rowCompact)}
+                            >
                                 {state
                                     .getDatesInWeek(weekIndex)
                                     .map((date, i) =>

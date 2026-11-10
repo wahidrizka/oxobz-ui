@@ -117,11 +117,10 @@
        align-items:center untuk tata letak baris; di stacked produksi memakai
        nilai bawaan (normal), jadi dikembalikan di sini. */
     align-items: normal;
-    height: var(--ds-size-medium);
-}
-
-.calendar.stacked.sizeSmall {
-    height: var(--ds-size-small);
+    /* No fixed height. Until Sep 2026 production locked this column to one
+       control height and let the trigger overflow it; measured 10 Nov 2026 the
+       class list is just `inline-flex flex-col` and the column is as tall as
+       its two rows (72px medium, 64px small). */
 }
 
 /* ---- Trigger button (reuses <Button variant="secondary">) ---- */
@@ -140,6 +139,34 @@
     transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     /* text-gray-1000! when a range is committed (see .triggerPlaceholder). */
     color: var(--ds-gray-1000);
+}
+
+/*
+ * Minimized trigger (compact layout while the preset box is expanded).
+ * Production: width = the control size, `justify-content: center`, and
+ *   !px-0 [&>span:first-child]:mr-0 [&>span:nth-of-type(2)]:hidden
+ * so only the calendar icon is left.
+ */
+.trigger.triggerMinimized {
+    justify-content: center;
+    /* The Button `width` prop lands as min-width + max-width in production,
+       never as `width` itself. */
+    min-width: var(--ds-size-medium);
+    max-width: var(--ds-size-medium);
+    padding-inline: 0 !important;
+}
+
+.calendar.sizeSmall .trigger.triggerMinimized {
+    min-width: var(--ds-size-small);
+    max-width: var(--ds-size-small);
+}
+
+.trigger.triggerMinimized > span:first-child {
+    margin-right: 0;
+}
+
+.trigger.triggerMinimized > span:nth-of-type(2) {
+    display: none;
 }
 
 /* No range yet: production swaps text-gray-1000! for text-gray-700!. */
@@ -246,12 +273,15 @@
     width: var(--width, 250px);
     height: var(--ds-size-medium);
     /*
-     * Ruang kiri saja. Terukur di SEPULUH combobox halaman live: padding kanan
-     * SELALU 0px, sedangkan padding kiri 36px (medium), 34px (small), dan 8px
-     * saat compact. Ikon chevron di kanan menumpang di atas teks, tidak
-     * memesan tempat.
+     * Production class list (source read 10 Nov 2026): `px-9` plus `pr-9`,
+     * so 36px on both sides at medium. The right padding is back: the chevron
+     * now has its own room instead of sitting on top of the text. Only the
+     * minimized compact box zeroes it again, with an inline style.
+     * `truncate` is part of the same list.
      */
-    padding: 0 0 0 36px;
+    padding: 0 36px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     /*
      * Lebar garis tepi 0, tapi gaya dan warnanya tetap ditulis supaya sama
      * persis dengan produksi (`solid` + gray-400). Tidak terlihat di layar,
@@ -260,7 +290,11 @@
     border: 0 solid var(--ds-gray-200);
     border-radius: 5px;
     display: inline-block;
-    outline: none;
+    /* Only the STYLE is switched off, as `outline-none` does. The shorthand
+       `outline: none` would also reset width and colour, and on a focused
+       input those two still read as the browser's own focus values (1px,
+       focus-ring colour) in production. */
+    outline-style: none;
     background: var(--ds-background-100);
     background-clip: padding-box;
     box-shadow: 0 0 0 1px var(--ds-gray-400);
@@ -270,8 +304,8 @@
     font-family: var(--font-sans, inherit);
     font-size: 14px;
     font-weight: 400;
-    /* Produksi menulis text-left di sini; hanya varian compact yang dibiarkan
-       memakai nilai bawaan `start`. */
+    /* `text-left` sits in the base class list, so every variant gets it,
+       compact included. */
     text-align: left;
     /* Kursor teks saat diam (ini input teks sungguhan), berubah jadi pointer
        hanya saat hover. Terukur di produksi: cursor=text (diam), class
@@ -281,9 +315,17 @@
     transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* small: `px-[34px]` (while no range is picked) plus `pr-[34px]`. */
 .calendar.sizeSmall .comboboxInput {
     height: 32px;
-    padding: 0 0 0 34px;
+    padding: 0 34px;
+}
+
+/* small WITH a range picked: production drops `px-[34px]` (its condition is
+   `!value`), so the left side falls back to the base `px-9`. The right side
+   stays 34px through `pr-[34px]`. */
+.calendar.sizeSmall .comboboxInput.comboboxHasRange {
+    padding-left: 36px;
 }
 
 .comboboxInput::placeholder {
@@ -300,17 +342,32 @@
 }
 
 .comboboxInput:hover:not(:disabled) {
-    background: var(--ds-gray-100);
+    /* background-color, not the shorthand: `hover:!bg-[…]` leaves
+       background-clip at padding-box. */
+    background-color: var(--ds-gray-100);
     box-shadow: 0 0 0 1px var(--ds-gray-500);
     cursor: pointer;
     z-index: 10;
 }
 
-.comboboxInput:focus {
+/*
+ * Focus wins over hover (Tailwind emits focus: after hover:), so the selector
+ * carries the same weight as the hover rule and comes after it.
+ * A focused box also reads gray-1000: production adds
+ * `text-[var(--ds-gray-1000)]` while the input has focus.
+ */
+.comboboxInput:focus:not(:disabled) {
     box-shadow:
         0 0 0 1px var(--ds-gray-600),
         0px 0px 0px 4px rgba(0, 0, 0, 0.16);
+    color: var(--ds-gray-1000);
     z-index: 10;
+}
+
+:global(.dark-theme) .comboboxInput:focus:not(:disabled) {
+    box-shadow:
+        0 0 0 1px var(--ds-gray-600),
+        0px 0px 0px 4px rgba(255, 255, 255, 0.24);
 }
 
 /* Compact: combobox is the right-hand element (button renders first), so
@@ -321,16 +378,10 @@
     border-bottom-left-radius: 0;
     padding-left: 8px;
     /*
-     * Di tata letak compact combobox menyusut jadi kotak chevron saja: lebarnya
-     * sama dengan tinggi baris (36px medium, 32px small) dan teksnya
-     * ditransparankan. Terukur langsung dari halaman live.
+     * The minimized look (a box as wide as the row is tall, transparent text,
+     * no right padding) is NOT here: production sets those three with an inline
+     * style on the input, and only while the box is minimized. See Calendar.tsx.
      */
-    width: var(--ds-size-medium);
-    color: transparent;
-}
-
-.compact .comboboxInput {
-    text-align: start;
 }
 
 /*
@@ -340,7 +391,6 @@
  * menahan lebar kotak di 34px meski lebarnya sudah disetel 32px.
  */
 .calendar.compact.sizeSmall .comboboxInput {
-    width: var(--ds-size-small);
     padding-left: 8px;
 }
 
@@ -356,6 +406,38 @@
 .stacked .comboboxInput {
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
+}
+
+/* Stacked and not compact: `pl-[39px]` at medium, `pl-[35px]` at small. The
+   selectors carry enough classes to win over the size and range rules above. */
+.calendar.stacked:not(.compact) .comboboxInput.comboboxInput {
+    padding-left: 39px;
+}
+
+.calendar.stacked.sizeSmall:not(.compact) .comboboxInput.comboboxInput {
+    padding-left: 35px;
+}
+
+/* At 600px and below production swaps the left padding with
+   `[@media(max-width:600px)]:pl-*`:
+     compact:      medium 12px (pl-3), small 34px
+     not compact:  medium 39px,        small 35px */
+@media (max-width: 600px) {
+    .calendar .comboboxInput.comboboxInput.comboboxInput {
+        padding-left: 39px;
+    }
+
+    .calendar.sizeSmall .comboboxInput.comboboxInput.comboboxInput {
+        padding-left: 35px;
+    }
+
+    .calendar.compact .comboboxInput.comboboxInput.comboboxInput {
+        padding-left: 12px;
+    }
+
+    .calendar.compact.sizeSmall .comboboxInput.comboboxInput.comboboxInput {
+        padding-left: 34px;
+    }
 }
 
 /* Clock prefix icon — medium: top-[11px] left-[13px]; small: top/left 9px
@@ -380,6 +462,12 @@
 .calendar.sizeSmall .comboboxInputPrefix {
     top: 9px;
     left: 9px;
+}
+
+/* Minimized compact box, medium: `right-[11px]` instead of `right-3`. The
+   small size keeps its own 9px through the rule below. */
+.comboboxMinimized .comboboxInputSuffix {
+    right: 11px;
 }
 
 .calendar.sizeSmall .comboboxInputSuffix {
@@ -445,49 +533,150 @@
     right: auto;
 }
 
-.comboboxWrapper[data-open='true'] .comboboxInputSuffix {
+/* `peer-focus/comboboxInput:rotate-180`: the chevron flips while the INPUT
+   has focus, which is not the same as the list being open. */
+.comboboxInput:focus ~ .comboboxInputSuffix {
     rotate: 180deg;
 }
 
-/* ---- Preset dropdown: two-column dialog (listbox + typing hints) ---- */
+/* ---- Preset dropdown (Radix Popover content, portaled to <body>) ----
+ * Production (source read 10 Nov 2026):
+ *   grid bg-[var(--ds-background-100)] rounded-[8px]
+ *   shadow-[var(--ds-shadow-menu)] overflow-hidden absolute left-0
+ *   z-[99999999] data-[state='closed']:animate-fadeOutPopover
+ *   grid-cols-2 (with typing hints) or grid-cols-1 (compact)
+ * Width and min-width are inline styles there, set from Calendar.tsx. */
 .comboboxPopover {
     position: absolute;
-    top: calc(100% + 4px);
     left: 0;
     z-index: 99999999;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    /* width: calc(var(--radix-popover-trigger-width) * 2 + 2px), min 370px. */
-    width: calc(var(--width, 250px) * 2 + 2px);
-    min-width: 370px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     overflow: hidden;
     border-radius: 8px;
-    background: var(--ds-background-100);
+    background-color: var(--ds-background-100);
     box-shadow: var(--ds-shadow-menu);
 }
 
-/* Left column — the preset listbox (cmdk list). */
-.suggestions {
-    padding: 8px;
-    border-right: 1px solid var(--ds-gray-alpha-400);
+.comboboxPopoverSingle {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
 }
 
+/* --animate-fadeOutPopover: fadeOut <popover timing> <popover duration> */
+.comboboxPopover[data-state='closed'] {
+    animation: calendarPresetFadeOut var(--ds-motion-popover-timing) var(--ds-motion-popover-duration);
+}
+
+@keyframes calendarPresetFadeOut {
+    0% {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* Left column: `p-2`, plus `border-r border-[var(--ds-gray-alpha-400)]` when
+   the hints column is shown. The colour class paints all four sides and only
+   the right one gets a width. */
+.suggestionsPane {
+    padding: 8px;
+}
+
+.suggestionsPaneBordered {
+    border: 0 solid var(--ds-gray-alpha-400);
+    border-right-width: 1px;
+}
+
+/* cmdk list: `max-md:p-2! max-sm:min-h-[256px]` */
+@media (width < 48rem) {
+    .suggestions {
+        padding: 8px !important;
+    }
+}
+
+@media (width < 40rem) {
+    .suggestions {
+        min-height: 256px;
+    }
+}
+
+/* cmdk item: max-sm:h-12 max-sm:text-[16px] h-9 text-[14px] px-2 rounded-[5px]
+   flex scroll-m-2 cursor-pointer items-center overflow-hidden font-normal
+   text-[var(--ds-gray-1000)] aria-selected:bg-[var(--ds-gray-alpha-300)].
+   There is no hover rule: cmdk marks the item under the pointer as selected. */
 .comboboxItem {
     display: flex;
     align-items: center;
     height: 36px;
-    padding: 0 8px;
+    padding-inline: 8px;
     border-radius: 5px;
     scroll-margin: 8px;
+    overflow: hidden;
     color: var(--ds-gray-1000);
     font-size: 14px;
     font-weight: 400;
     cursor: pointer;
 }
 
-.comboboxItem[aria-selected='true'],
-.comboboxItem:hover {
+@media (width < 40rem) {
+    .comboboxItem {
+        height: 48px;
+        font-size: 16px;
+    }
+}
+
+.comboboxItem[aria-selected='true'] {
     background-color: var(--ds-gray-alpha-300);
+}
+
+/* The fallback item that carries the typed text when no preset matches:
+   h-9 text-sm px-2 rounded-[var(--geist-radius)] flex scroll-m-2
+   cursor-pointer items-center overflow-hidden font-normal text-gray-1000
+   [&[aria-selected='true']]:bg-gray-300 */
+.comboboxItemTyped {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding-inline: 8px;
+    border-radius: var(--oxobz-radius);
+    scroll-margin: 8px;
+    overflow: hidden;
+    color: var(--ds-gray-1000);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.comboboxItemTyped[aria-selected='true'] {
+    background-color: var(--ds-gray-300);
+}
+
+/* flex w-full min-w-0 items-center justify-between gap-1 */
+.comboboxItemRow {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+/* min-w-0 flex-1 truncate */
+.comboboxItemText {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* flex-none text-gray-900 (holds the lock icon of a locked preset) */
+.comboboxItemAside {
+    flex: none;
+    color: var(--ds-gray-900);
 }
 
 /* Right column — "Type relative/fixed times" hint panel (p-4 pr-[30px]). */
@@ -495,18 +684,15 @@
     padding: 16px 30px 16px 16px;
 }
 
-/* text-copy-14: 14px / 20px line-height, gray-900. */
+/* text-copy-14: Geist Sans 14px / 20px line-height, gray-900. The second
+   title gets its 16px top margin from an inline style, as in production. */
 .hintTitle {
     margin: 0;
     color: var(--ds-gray-900);
+    font-family: var(--font-geist-sans);
     font-size: 14px;
     line-height: 20px;
     font-weight: 400;
-}
-
-.hintTitle + .hintChips + .hintTitle,
-.hintPanel .hintTitle:not(:first-child) {
-    margin-top: 16px;
 }
 
 .hintChips {
@@ -521,11 +707,16 @@
     align-items: center;
     height: 20px;
     padding: 0 6px;
-    border: none;
+    /* `border-none` only switches the style off. Width is already 0 and the
+       colour stays the page default (gray-200); the shorthand `border: none`
+       would reset the colour to the text colour. */
+    border: 0 none var(--ds-gray-200);
     border-radius: 4px;
     background: var(--accents-2);
     color: var(--ds-gray-1000);
-    font-family: var(--font-mono, var(--font-mono-fallback, monospace));
+    /* No font-family. The production class is `font-[var(--font-mono)]`, which
+       Tailwind reads as a font-WEIGHT, so the chips keep the inherited Geist
+       Sans (measured on the live page, 10 Nov 2026). */
     font-size: 13px;
     cursor: pointer;
 }
@@ -599,14 +790,17 @@
     flex-direction: column;
 }
 
-/* side=top inputs header: the non-reversed variant — mb-3 pb-3 border-b
-   (below the header), no top border/margin. */
+/* side=top inputs header: the non-reversed variant, mb-3 pb-3, no top
+   margin. It has NO divider line: the production class meant to draw it is
+   `not:group-data-[side='bottom']/popover:border-b`, which is not a valid
+   Tailwind variant and produces no rule. Measured 10 Nov 2026 with the popover
+   above the trigger: all four border widths are 0. The colour class
+   (border-gray-100) still applies. */
 .popover[data-side='top'] .inputsWrapper {
     margin-top: 0;
     margin-bottom: 12px;
     padding: 0 12px 12px;
-    border-top: none;
-    border-bottom: 1px solid var(--ds-gray-100);
+    border: 0 solid var(--ds-gray-100);
 }
 
 .content {
@@ -650,12 +844,10 @@
     border-top-width: 1px;
 }
 
-/* In horizontal layout the inputs sit in their own column, no full-bleed border. */
-.calendarContentWrapperHorizontal .inputsWrapper {
-    margin: 0;
-    padding: 0;
-    border-top: none;
-}
+/* horizontalLayout has NO rule of its own for this block. Production puts the
+   same class list on it in both layouts, so the full-bleed margins, padding and
+   side-dependent border above apply to the inputs column as well (measured
+   10 Nov 2026 with the popover above the trigger: margin 0 -12px 12px). */
 
 /*
  * Produksi membungkus keempat baris dalam satu div `space-y-2`. Jaraknya 8px
@@ -664,12 +856,32 @@
  * Start/End/Apply margin-bottom 8px, timezone margin-top 4px margin-bottom 0.
  * Antar-baris margin-nya kolaps jadi gap tetap 8px.
  */
-.inputGroups > *:not(:last-child) {
-    margin-bottom: 8px;
+/* Written with :where() like Tailwind's own `space-y-2` rule, so it carries
+   no weight: a child with its own margin class keeps it. That matters in the
+   horizontal layout, where the "End" label row is a direct child and keeps its
+   `mb-1` (4px) instead of taking the 8px. */
+:where(.inputGroups > :not(:last-child)) {
+    margin-block-start: 0;
+    margin-block-end: 8px;
 }
 
-.inputGroups > .timezoneRow {
-    margin-top: 4px;
+/* horizontalLayout on desktop: "flex flex-col justify-between h-full" around
+   two blocks, the fields on top and Apply + timezone at the bottom. */
+.inputsColumns {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+/* "flex gap-2" > "flex-1" around the Apply button in that layout. */
+.applyRow {
+    display: flex;
+    gap: 8px;
+}
+
+.applyCell {
+    flex: 1;
 }
 
 /* Label wrapper (`mb-1 flex items-center justify-between`). */
@@ -767,20 +979,13 @@
 }
 
 /* ---- Timezone row (`mt-1 flex justify-center`, + pl-4 select-only) ---- */
+/* mt-1 flex justify-center (the margin is on the row itself, wherever it sits) */
 .timezoneRow {
     display: flex;
     justify-content: center;
+    margin-top: 4px;
 }
 
-.timezoneRowSelect {
-    padding-left: 16px;
-}
-
-/* Label pembungkus select. Sebagai anak flex .timezoneRow ia menyusut ke lebar
-   select. Transisinya terukur `all 0.2s ease` (default) di produksi. */
-.timezoneLabel {
-    transition: all 0.2s;
-}
 
 /*
  * Built-in timezone select — the `geist-ghost` preset: no ring
@@ -811,11 +1016,10 @@
     color: var(--ds-gray-800);
     font-size: 14px;
     cursor: pointer;
-    /* Production sizes the select via a JS-measured inline width capped so
-       long zone labels truncate ("Local (Asia/Ja…" at width:146px in the
-       snapshot); the ellipsis + cap live here, the measurement in
-       Calendar.tsx. transition-width mirrors the label's own class. */
-    width: var(--tz-width, auto);
+    /* `w-full`: the select fills its label, which production stretches to
+       the full row with an inline `width: 100%`. `truncate` is in the same
+       class list. */
+    width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -865,10 +1069,12 @@
     color: var(--ds-gray-1000);
 }
 
-/* Pinned variant — a bare `text-xs text-gray-800` span. */
+/* Pinned variant: a bare `text-xs text-gray-800` span. `text-xs` is
+   12px with a 16px line height. */
 .pinnedTimezone {
     color: var(--ds-gray-800);
     font-size: 12px;
+    line-height: 16px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -887,11 +1093,8 @@
     display: inline-flex;
     flex-direction: column;
     align-items: normal;
-    height: var(--ds-size-medium);
-}
-
-.mobile.sizeSmall.hasSelect:not(.compact) {
-    height: var(--ds-size-small);
+    /* No fixed height, same change as .stacked: the column is as tall as its
+       two rows (measured 10 Nov 2026). */
 }
 
 /* Pemicu di bawah combobox → hanya sisi bawahnya yang membulat. */
@@ -917,8 +1120,12 @@
     position: relative;
     width: 100%;
     height: var(--ds-size-medium);
-    /* padding-left 40px (medium, produksi px-10); small 34px di bawah. */
-    padding: 0 0 0 40px;
+    /* Production (source read 10 Nov 2026): `px-10` then `pl-[39px]` and
+       `pr-10` at medium, so 39px left and 40px right. `truncate` is in the
+       base class list. */
+    padding: 0 40px 0 39px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     border: 0 solid var(--ds-gray-200);
     border-radius: 5px 5px 0 0;
     background: var(--ds-background-100);
@@ -939,9 +1146,10 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* small: `px-[34px]` then `pl-[35px]` and `pr-[34px]`. */
 .sizeSmall .comboboxMobileButton {
     height: var(--ds-size-small);
-    padding-left: 34px;
+    padding: 0 34px 0 35px;
 }
 
 .comboboxMobileButton:hover:not(:disabled) {
@@ -969,14 +1177,16 @@
    (teks transparan, tanpa padding), hanya membulat kanan. */
 .compact .comboboxMobileButton {
     border-radius: 0 5px 5px 0;
-    width: var(--ds-size-medium);
-    padding: 0;
-    color: transparent;
-    overflow: hidden;
+    /* Not minimized: `pl-3 w-[var(--width)]` with `pr-10`. The minimized
+       look (box as wide as the row is tall, no padding, transparent text) is
+       an inline style in production, set from Calendar.tsx. */
+    width: var(--width);
+    padding: 0 40px 0 12px;
 }
 
+/* small compact: `px-[34px]` comes after `pl-3` in the class list and wins. */
 .compact.sizeSmall .comboboxMobileButton {
-    width: var(--ds-size-small);
+    padding: 0 34px;
 }
 
 /* Ikon combobox mobile — nilai hand-tuned produksi, BEDA per-ukuran (diukur
@@ -995,6 +1205,13 @@
 
 .calendar.mobile.sizeSmall .comboboxInputSuffix {
     right: 8px;
+}
+
+/* Minimized compact box keeps the desktop offset on mobile too: production
+   picks right-[9px] (small) or right-[11px] (medium) whenever the box is
+   minimized, and right-2 / right-3 only when it is not. */
+.calendar.mobile.compact.sizeSmall .comboboxInputSuffix {
+    right: 9px;
 }
 
 /* Compact mobile: garis tepi di kiri 0 (produksi memakai kelas `left-1px`

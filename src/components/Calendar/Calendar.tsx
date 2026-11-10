@@ -243,28 +243,6 @@ function formatDate(date: Date): string {
 }
 
 /**
- * A bare time of day for the time inputs when there is no range yet, using
- * the same shape as {@link formatTimeInZone} (2-digit, clock style from the
- * locale) so the two never disagree. No zone is applied because there is no
- * instant to convert, only an hour and a minute.
- *
- * Production always has a value here, so this fallback has no counterpart to
- * compare against.
- */
-function formatTime(hours: number, minutes: number): string {
-    try {
-        return new Intl.DateTimeFormat(navigator.language, {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: prefersTwelveHourClock(),
-            numberingSystem: 'latn',
-        }).format(new Date(2000, 0, 1, hours, minutes));
-    } catch {
-        return `${`${hours}`.padStart(2, '0')}:${`${minutes}`.padStart(2, '0')}`;
-    }
-}
-
-/**
  * Time of day as the *trigger label* writes it, which is not the same shape
  * as the time inputs.
  *
@@ -418,6 +396,28 @@ function prefersTwelveHourClock(): boolean {
  *
  * Source: `ui()` in the live Geist bundle (chunk 3waw-tvb0x__9.js).
  */
+/**
+ * The date shown in a date input, read in the given zone. Production:
+ * `DateTime.fromJSDate(date).setZone(zone).toFormat('MMM d, yyyy')`.
+ */
+function formatDateInZone(date: Date, timeZone: string): string {
+    return DateTime.fromJSDate(date).setZone(timeZone).toFormat('MMM d, yyyy');
+}
+
+/**
+ * The instants the popover fields describe while no range is picked:
+ * today's first and last moment in the VIEWER's zone, exactly as production
+ * builds them (`DateTime.local().startOf('day')` / `.endOf('day')`). They are
+ * then displayed in the selected or pinned zone like any other instant, so a
+ * pinned zone far from the viewer shows a different date and hour.
+ */
+function defaultFieldInstants(): { start: Date; end: Date } {
+    return {
+        start: DateTime.local().startOf('day').toJSDate(),
+        end: DateTime.local().endOf('day').toJSDate(),
+    };
+}
+
 function formatTimeInZone(date: Date, timeZone: string): string {
     try {
         return new Intl.DateTimeFormat(navigator.language, {
@@ -530,6 +530,57 @@ function ClockGlyph({ className }: { className?: string }): React.JSX.Element {
 const COMBOBOX_PLACEHOLDER = 'Select Period';
 
 /** Hint-panel chips, verbatim from the two-column preset dropdown. */
+/*
+ * Daftar saran untuk teks yang sedang diketik. Diport apa adanya dari sumber
+ * produksi (fungsi di dalam `tq`, dibaca 10 Nov 2026):
+ *   1. preset yang teksnya memuat ketikan (tanpa peduli huruf besar-kecil);
+ *   2. kalau tidak ada dan ketikannya cuma angka: "Last N Days/Weeks/…";
+ *   3. kalau tidak ada: buang angka dan spasi, cari kata kunci yang memuat
+ *      sisanya, lalu isi angkanya ke pola kata kunci itu.
+ * Pemanggilnya hanya menampilkan saran yang MEMANG salah satu preset.
+ */
+const SUGGESTION_KEYWORDS: Record<string, string | string[]> = {
+    past: ['Past month', 'Past week', 'Past day', 'Past hour'],
+    last: ['Last month', 'Last week', 'Last day', 'Last hour'],
+    days: ['Last %i Days'],
+    weeks: ['Last %i Weeks'],
+    months: ['Last %i Months'],
+    years: ['Last %i Years'],
+    yesterday: 'Yesterday',
+    today: 'Today',
+    january: 'January',
+    february: 'February',
+    march: 'March',
+    april: 'April',
+    may: 'May',
+    june: 'June',
+    july: 'July',
+    august: 'August',
+    september: 'September',
+    october: 'October',
+    november: 'November',
+    december: 'December',
+};
+const NUMBER_ONLY_SUGGESTIONS = ['Last %i Days', 'Last %i Weeks', 'Last %i Months', 'Last %i Years'];
+
+function suggestPresetTexts(typed: string, presetTexts: string[]): string[] {
+    const matches = presetTexts.filter((text) => text.toLowerCase().includes(typed.toLowerCase()));
+    if (!typed || matches.length > 0) return matches;
+    const numberOnly = /^\s*(\d+)\s*$/.exec(typed);
+    if (numberOnly) return NUMBER_ONLY_SUGGESTIONS.map((p) => p.replace('%i', numberOnly[1]));
+    const letters = typed.replace(/\d|\s/g, '').toLowerCase();
+    const key = Object.keys(SUGGESTION_KEYWORDS).find((k) => k.includes(letters));
+    if (key) {
+        const entry = SUGGESTION_KEYWORDS[key];
+        const patterns = Array.isArray(entry) ? entry : [entry];
+        const number = /\d+/.exec(typed);
+        return number
+            ? patterns.filter((p) => p.includes('%i')).map((p) => p.split('%i').join(number[0]))
+            : patterns.filter((p) => !p.includes('%i'));
+    }
+    return [];
+}
+
 const RELATIVE_CHIPS = ['45m', '12 hours', '10d', '2 weeks', 'last month', 'yesterday', 'today'] as const;
 const FIXED_CHIPS = ['Jan 1', 'Jan 1 - Jan 2', '1/1', '1/1 - 1/2'] as const;
 
@@ -722,13 +773,14 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         /*
          * Time inputs. Seeded from the range, rendered in `tzValue`, and
          * re-derived below whenever the range or the zone changes. Without a
-         * range there is nothing to convert, so the day's bounds are shown.
+         * range the fields describe today's bounds in the viewer's zone, shown
+         * in `tzValue` like everything else (see defaultFieldInstants).
          */
         const [startTime, setStartTime] = useState(() =>
-            range ? formatTimeInZone(range.start, tzValue) : formatTime(0, 0),
+            formatTimeInZone(range ? range.start : defaultFieldInstants().start, tzValue),
         );
         const [endTime, setEndTime] = useState(() =>
-            range ? formatTimeInZone(range.end, tzValue) : formatTime(23, 59),
+            formatTimeInZone(range ? range.end : defaultFieldInstants().end, tzValue),
         );
 
         /*
@@ -740,9 +792,11 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const startMs = range ? range.start.getTime() : null;
         const endMs = range ? range.end.getTime() : null;
         useEffect(() => {
-            if (startMs == null || endMs == null) return;
-            setStartTime(formatTimeInZone(new Date(startMs), tzValue));
-            setEndTime(formatTimeInZone(new Date(endMs), tzValue));
+            const fallback = defaultFieldInstants();
+            setStartTime(
+                formatTimeInZone(startMs == null ? fallback.start : new Date(startMs), tzValue),
+            );
+            setEndTime(formatTimeInZone(endMs == null ? fallback.end : new Date(endMs), tzValue));
         }, [startMs, endMs, tzValue]);
 
         /*
@@ -757,18 +811,28 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * punya kita dulu ["", "12:00 AM", "", "11:59 PM"]. Kolom jamnya memang
          * sudah terisi sejak awal, hanya tanggalnya yang tertinggal.
          */
-        const teksHariIni = () => formatDate(new Date());
+        /*
+         * Tanggalnya dibaca di zona `tzValue`, sama seperti jamnya, dan ikut
+         * dihitung ulang saat zonanya diganti (sumber produksi: pengubah zona
+         * menulis ulang keempat kolom sekaligus). Diukur 10 Nov 2026 pada
+         * kalender ber-zona-dipaku, penonton di Asia/Jakarta, belum ada
+         * rentang: ["Nov 9, 2026", "09:00 AM", "Nov 10, 2026", "08:59 AM"].
+         */
         const [startDateText, setStartDateText] = useState(() =>
-            range ? formatDate(range.start) : teksHariIni(),
+            formatDateInZone(range ? range.start : defaultFieldInstants().start, tzValue),
         );
         const [endDateText, setEndDateText] = useState(() =>
-            range ? formatDate(range.end) : teksHariIni(),
+            formatDateInZone(range ? range.end : defaultFieldInstants().end, tzValue),
         );
         useEffect(() => {
-            setStartDateText(startMs == null ? teksHariIni() : formatDate(new Date(startMs)));
-            setEndDateText(endMs == null ? teksHariIni() : formatDate(new Date(endMs)));
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [startMs, endMs]);
+            const fallback = defaultFieldInstants();
+            setStartDateText(
+                formatDateInZone(startMs == null ? fallback.start : new Date(startMs), tzValue),
+            );
+            setEndDateText(
+                formatDateInZone(endMs == null ? fallback.end : new Date(endMs), tzValue),
+            );
+        }, [startMs, endMs, tzValue]);
 
         /*
          * Validation messages, keyed the way production keys them. Empty means
@@ -791,9 +855,50 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             return presetEntries[presetIndex]?.[1].text ?? '';
         });
 
+        /*
+         * Tata letak compact punya dua keadaan, dan produksi memilihnya begini
+         * (sumber dibaca 10 Nov 2026):
+         *
+         *   mode = presetTerpilih || comboboxSedangFokus ? 'preset' : 'calendar'
+         *
+         * Mode 'calendar': tombol tanggal lebar penuh, combobox menyusut jadi
+         * kotak chevron. Mode 'preset': kebalikannya, combobox melebar dan
+         * tombol tanggal menyusut jadi kotak ikon. "Preset terpilih" artinya
+         * rentang yang sedang aktif sama persis (sampai menit) dengan salah
+         * satu preset.
+         */
+        const [comboFocused, setComboFocused] = useState(false);
+        /*
+         * Teks yang sedang diketik, terpisah dari teks yang ditampilkan.
+         * Produksi: `value: fokus ? typedValue : inputValue`. Jadi begitu
+         * combobox difokuskan nilainya kosong (label preset yang terpilih
+         * pindah jadi placeholder), dan baru terisi oleh ketikan.
+         */
+        const [typedText, setTypedText] = useState('');
+        /** Ketikan terakhir tidak bisa dibaca sebagai periode (data-error). */
+        const [comboError, setComboError] = useState(false);
+        const matchedPresetKey = useMemo<string | null>(() => {
+            if (!range) return null;
+            const samaMenit = (a: Date, b: Date): boolean =>
+                new Date(a).setSeconds(0, 0) === new Date(b).setSeconds(0, 0);
+            const cocok = presetEntries.find(
+                ([, preset]) =>
+                    samaMenit(preset.start, range.start) &&
+                    (!preset.end || samaMenit(preset.end, range.end)),
+            );
+            return cocok ? cocok[0] : null;
+        }, [range, presetEntries]);
+        const presetMode = matchedPresetKey !== null || comboFocused;
+        /** Combobox diperkecil (kotak chevron): hanya di compact, mode calendar. */
+        const comboMinimized = compact && !presetMode;
+        /** Tombol tanggal diperkecil (kotak ikon): hanya di compact, mode preset. */
+        const triggerMinimized = compact && presetMode;
+
         const rootRef = useRef<HTMLDivElement | null>(null);
         const dialogId = useId();
-        const listboxId = useId();
+        /* Input combobox preset: dipakai untuk mengembalikan fokus dari isi
+           popover (lihat onFocusOutside di bawah). */
+        const comboInputRef = useRef<HTMLInputElement>(null);
         const tzSelectId = useId();
         const drawerTitleId = useId();
 
@@ -822,11 +927,6 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             [],
         );
 
-        const tzWidth = useMemo(() => {
-            const label =
-                TIMEZONE_OPTIONS.find((tz) => tz.value === tzValue)?.label ?? tzValue;
-            return label.length === 3 ? 54 : 8 + 6 * label.length + 18;
-        }, [tzValue]);
 
         const small = size === 'small';
 
@@ -958,22 +1058,6 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
             errors.startOutOfRange ?? errors.startDate ?? errors.startTime;
         const endError = errors.endOutOfRange ?? errors.endDate ?? errors.endTime;
 
-        /*
-         * Menutup daftar preset saat menekan di luar. Popover dan drawer TIDAK
-         * ditangani di sini lagi: Radix dan Base UI sudah mengurus klik-di-luar,
-         * tombol Escape, dan jebakan fokusnya masing-masing.
-         */
-        useEffect(() => {
-            if (!presetsOpen) return;
-            const onPointerDown = (event: PointerEvent): void => {
-                const target = event.target as Node;
-                if (rootRef.current?.contains(target)) return;
-                setPresetsOpen(false);
-            };
-            document.addEventListener('pointerdown', onPointerDown, true);
-            return () => document.removeEventListener('pointerdown', onPointerDown, true);
-        }, [presetsOpen]);
-
         const handleTriggerKeyDown = useCallback(
             (event: KeyboardEvent<HTMLElement>): void => {
                 if (event.key === 'Escape' && presetsOpen) {
@@ -986,30 +1070,45 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
 
         const triggerLabel = range ? formatRangeLabel(range) : TRIGGER_PLACEHOLDER;
 
-        const pickPreset = useCallback(
-            (preset: CalendarPresetEntry): void => {
-                applyRange({ start: preset.start, end: preset.end });
-                setComboText(preset.text);
-                setPresetsOpen(false);
-            },
-            [applyRange],
-        );
-
         /**
-         * Free-typed period text (or a clicked hint chip) → parsed range.
-         * The dropdown closes on a successful parse, same as picking a
-         * preset; unparsable text is left in place (decision — the static
-         * snapshot shows the input and chips, not the failure behaviour).
+         * Satu pintu untuk memilih periode lewat teks: klik preset, klik chip
+         * petunjuk, atau Enter pada ketikan. Urutannya mengikuti produksi
+         * (`changeCalendarState` + pembungkusnya, dibaca 10 Nov 2026): galat
+         * dihapus, teksnya jadi nilai combobox, daftar ditutup, fokus dilepas;
+         * lalu teks yang persis sama dengan sebuah preset memakai rentang
+         * preset itu, selain itu diurai sebagai periode. Kalau tidak bisa
+         * diurai, combobox ditandai galat dan rentangnya tidak berubah.
          */
         const commitPeriodText = useCallback(
             (text: string): void => {
-                const parsed = parsePeriodInput(text, new Date());
-                if (!parsed) return;
-                applyRange(parsed);
+                setComboError(false);
+                setComboText(text);
                 setPresetsOpen(false);
+                setTimeout(() => comboInputRef.current?.blur());
+                const preset = presetEntries.find(([, entry]) => entry.text === text)?.[1];
+                if (preset) {
+                    applyRange({ start: preset.start, end: preset.end });
+                    return;
+                }
+                const parsed = parsePeriodInput(text, new Date());
+                if (!parsed) {
+                    setComboError(true);
+                    return;
+                }
+                applyRange(parsed);
+                setTypedText('');
             },
-            [applyRange],
+            [applyRange, presetEntries],
         );
+
+        /** Preset yang lolos saringan ketikan (lihat suggestPresetTexts). */
+        const visiblePresets = useMemo(() => {
+            const texts = suggestPresetTexts(
+                typedText,
+                presetEntries.map(([, entry]) => entry.text),
+            );
+            return presetEntries.filter(([, entry]) => texts.includes(entry.text));
+        }, [typedText, presetEntries]);
 
         const handleTimezoneChange = useCallback(
             (event: ChangeEvent<HTMLSelectElement>): void => {
@@ -1069,31 +1168,70 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                  * "Combobox Menu"; penyaringan dimatikan karena daftar preset
                  * kita kelola sendiri.
                  */
+                /*
+                 * Daftar presetnya sebuah Radix Popover, sama seperti produksi
+                 * (sumber dibaca 10 Nov 2026): Root membungkus cmdk, pembungkus
+                 * input jadi Anchor, input-nya jadi Trigger, dan isinya dipindah
+                 * ke ujung <body> lewat Portal. Buktinya di DOM live saat
+                 * terbuka: data-radix-popper-content-wrapper sebagai anak
+                 * langsung body, diapit dua data-radix-focus-guard, dan
+                 * isinya membawa role="dialog", data-side, data-align,
+                 * data-state. Sampai Sep 2026 kotak ini kita buat sendiri dan
+                 * menempel di dalam combobox.
+                 */
+                <Popover.Root
+                    open={presetsOpen}
+                    onOpenChange={(open) => {
+                        setTypedText('');
+                        setPresetsOpen(open);
+                    }}
+                >
                 <Command
                     label="Combobox Menu"
                     shouldFilter={false}
                     className={styles.comboboxRoot}
                 >
-                <div className={styles.comboboxWrapper} data-open={presetsOpen || undefined}>
+                <Popover.Anchor asChild>
+                <div
+                    className={cn(
+                        styles.comboboxWrapper,
+                        comboMinimized && styles.comboboxMinimized,
+                    )}
+                >
+                    <Popover.Trigger asChild>
                     <Command.Input
-                        role="combobox"
-                        aria-haspopup="dialog"
-                        aria-expanded={presetsOpen}
-                        aria-controls={listboxId}
-                        aria-autocomplete="list"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck={false}
+                        ref={comboInputRef}
                         disabled={disabled}
                         /*
-                         * Atribut yang dibawa combobox produksi apa adanya:
-                         * data-error dari komponen Input Geist, data-state dari
-                         * pemicu popover-nya, dan gaya inline padding-right:0.
-                         * Diukur di DOM live tiap combobox (tertutup).
+                         * role, aria-expanded, aria-controls, aria-autocomplete
+                         * dan kawan-kawannya dipasang cmdk sendiri; aria-haspopup
+                         * dan data-state datang dari Trigger Radix. Yang ditulis
+                         * tangan di sini hanya data-error (dari komponen Input
+                         * Geist) dan gaya inline.
+                         *
+                         * Gaya inline HANYA ada saat kotaknya diperkecil
+                         * (compact, mode calendar): lebar setinggi baris, tanpa
+                         * padding kanan, teks transparan. Combobox lain tidak
+                         * membawa atribut style sama sekali (diukur 10 Nov
+                         * 2026; sebelumnya semuanya membawa padding-right:0).
                          */
-                        data-error="false"
-                        data-state={presetsOpen ? 'open' : 'closed'}
-                        style={{ paddingRight: 0 }}
+                        data-error={comboError ? 'true' : 'false'}
+                        onFocus={() => setComboFocused(true)}
+                        onBlur={() => setComboFocused(false)}
+                        onMouseDown={() => {
+                            setTimeout(() => comboInputRef.current?.select());
+                        }}
+                        style={
+                            comboMinimized
+                                ? {
+                                      width: small
+                                          ? 'var(--ds-size-small)'
+                                          : 'var(--ds-size-medium)',
+                                      paddingRight: 0,
+                                      color: 'transparent',
+                                  }
+                                : undefined
+                        }
                         /*
                          * Compact tidak punya placeholder sama sekali, dan saat
                          * sebuah preset terpilih produksi menuliskan label
@@ -1101,21 +1239,24 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                          * jadi tidak terlihat). Keduanya terbaca dari halaman
                          * live.
                          */
-                        placeholder={compact ? '' : comboText || COMBOBOX_PLACEHOLDER}
-                        value={comboText}
+                        placeholder={comboMinimized ? '' : comboText || COMBOBOX_PLACEHOLDER}
+                        value={comboFocused ? typedText : comboText}
                         data-testid="calendar/combobox-input"
-                        className={cn(styles.comboboxInput, comboText && styles.comboboxInputFilled)}
-                        onValueChange={setComboText}
-                        onClick={() => setPresetsOpen(true)}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                                event.preventDefault();
-                                commitPeriodText(comboText);
-                                return;
-                            }
-                            handleTriggerKeyDown(event);
+                        className={cn(
+                            styles.comboboxInput,
+                            comboText && styles.comboboxInputFilled,
+                            range && styles.comboboxHasRange,
+                        )}
+                        /* Enter tidak ditangani di sini: cmdk memilih butir
+                           yang sedang tersorot, termasuk butir cadangan berisi
+                           ketikan itu sendiri saat tidak ada preset yang cocok. */
+                        onValueChange={(text) => {
+                            setPresetsOpen(true);
+                            setComboError(false);
+                            setTypedText(text);
                         }}
                     />
+                    </Popover.Trigger>
                     {/*
                      * Ikon ditempel LANGSUNG, tanpa pembungkus span. Di produksi
                      * svg-nya sendiri yang diberi position absolute dan ukuran
@@ -1132,68 +1273,129 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                      * pada kotak input dengan sisi -1px di tiga arah.
                      */}
                     <div aria-hidden="true" className={styles.comboboxDivider} />
-                    {presetsOpen ? (
-                        <div
-                            role="dialog"
-                            aria-label="Select a period"
-                            className={styles.comboboxPopover}
-                        >
-                            <Command.List
-                                aria-label="Suggestions"
-                                id={listboxId}
-                                className={styles.suggestions}
-                            >
-                                {presetEntries.map(([id, preset]) => (
-                                    <Command.Item
-                                        key={id}
-                                        value={preset.text}
-                                        className={styles.comboboxItem}
-                                        data-testid={`calendar/preset/${id}`}
-                                        onSelect={() => pickPreset(preset)}
-                                        onClick={() => pickPreset(preset)}
-                                    >
-                                        {preset.text}
-                                    </Command.Item>
-                                ))}
-                            </Command.List>
-                            <div className={styles.hintPanel}>
-                                <p className={styles.hintTitle}>Type relative times</p>
-                                <div className={styles.hintChips}>
-                                    {RELATIVE_CHIPS.map((chip) => (
-                                        <button
-                                            key={chip}
-                                            type="button"
-                                            className={styles.hintChip}
-                                            onClick={() => {
-                                                setComboText(chip);
-                                                commitPeriodText(chip);
-                                            }}
-                                        >
-                                            {chip}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className={styles.hintTitle}>Type fixed times</p>
-                                <div className={styles.hintChips}>
-                                    {FIXED_CHIPS.map((chip) => (
-                                        <button
-                                            key={chip}
-                                            type="button"
-                                            className={styles.hintChip}
-                                            onClick={() => {
-                                                setComboText(chip);
-                                                commitPeriodText(chip);
-                                            }}
-                                        >
-                                            {chip}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    ) : null}
                 </div>
+                </Popover.Anchor>
+                <Popover.Portal>
+                    <Popover.Content
+                        asChild
+                        align="start"
+                        sideOffset={8}
+                        style={{ width: '100%' }}
+                        onCloseAutoFocus={(event) => event.preventDefault()}
+                        onOpenAutoFocus={(event) => event.preventDefault()}
+                        onFocusOutside={(event) => {
+                            /* Verbatim produksi: fokus yang pindah ke tombol
+                               hapus tidak menutup daftar. */
+                            const target = event.target as HTMLElement;
+                            if (
+                                target.getAttribute('data-clear-button') ||
+                                target.getAttribute('cmdk-input')
+                            ) {
+                                setPresetsOpen(true);
+                                comboInputRef.current?.focus();
+                                event.preventDefault();
+                            }
+                        }}
+                    >
+                        {/*
+                         * Dua kolom (daftar preset + petunjuk ketik) kecuali
+                         * compact, yang hanya menampilkan daftarnya. Lebar dan
+                         * lebar minimumnya gaya inline di produksi.
+                         */}
+                        <div
+                            className={cn(
+                                styles.comboboxPopover,
+                                compact && styles.comboboxPopoverSingle,
+                            )}
+                            style={{
+                                width: compact
+                                    ? 'var(--radix-popover-trigger-width)'
+                                    : 'calc(var(--radix-popover-trigger-width) * 2 + 2px)',
+                                minWidth: compact ? '165px' : '370px',
+                            }}
+                        >
+                            <div
+                                className={cn(
+                                    styles.suggestionsPane,
+                                    !compact && styles.suggestionsPaneBordered,
+                                )}
+                            >
+                                <Command.List className={styles.suggestions}>
+                                    {visiblePresets.length > 0 ? (
+                                        visiblePresets.map(([id, preset]) => (
+                                            <Command.Item
+                                                key={id}
+                                                className={styles.comboboxItem}
+                                                onMouseUp={(event) => event.preventDefault()}
+                                                onPointerDown={(event) => event.preventDefault()}
+                                                onSelect={() => commitPeriodText(preset.text)}
+                                            >
+                                                <div className={styles.comboboxItemRow}>
+                                                    <span className={styles.comboboxItemText}>
+                                                        {preset.text}
+                                                    </span>
+                                                    <span className={styles.comboboxItemAside} />
+                                                </div>
+                                            </Command.Item>
+                                        ))
+                                    ) : (
+                                        /* Tidak ada preset yang cocok: satu butir
+                                           berisi ketikan itu sendiri, dan memilihnya
+                                           berarti mengurai ketikan sebagai periode. */
+                                        <Command.Item
+                                            className={styles.comboboxItemTyped}
+                                            onSelect={() => commitPeriodText(typedText)}
+                                        >
+                                            <span className={styles.comboboxItemText}>
+                                                {typedText}
+                                            </span>
+                                        </Command.Item>
+                                    )}
+                                </Command.List>
+                            </div>
+                            {!compact ? (
+                                <div className={styles.hintPanel}>
+                                    <p className={styles.hintTitle}>Type relative times</p>
+                                    <div className={styles.hintChips}>
+                                        {RELATIVE_CHIPS.map((chip) => (
+                                            <button
+                                                key={chip}
+                                                type="button"
+                                                className={styles.hintChip}
+                                                onClick={() => commitPeriodText(chip)}
+                                                onMouseUp={(event) => event.preventDefault()}
+                                                onPointerDown={(event) => event.preventDefault()}
+                                            >
+                                                {chip}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {/* Jarak atas judul kedua ditulis produksi
+                                        sebagai gaya inline, bukan kelas. */}
+                                    <p className={styles.hintTitle} style={{ marginTop: 16 }}>
+                                        Type fixed times
+                                    </p>
+                                    <div className={styles.hintChips}>
+                                        {FIXED_CHIPS.map((chip) => (
+                                            <button
+                                                key={chip}
+                                                type="button"
+                                                className={styles.hintChip}
+                                                onClick={() => commitPeriodText(chip)}
+                                                onMouseUp={(event) => event.preventDefault()}
+                                                onPointerDown={(event) => event.preventDefault()}
+                                            >
+                                                {chip}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </Popover.Content>
+                </Popover.Portal>
                 </Command>
+                </Popover.Root>
             ) : null;
 
         /*
@@ -1209,8 +1411,11 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
         const presetComboboxMobile: ReactNode =
             presetEntries.length > 0 ? (
                 <div
-                    className={styles.comboboxMobile}
-                    style={compact ? undefined : { width: 'var(--width)' }}
+                    className={cn(
+                        styles.comboboxMobile,
+                        comboMinimized && styles.comboboxMinimized,
+                    )}
+                    style={comboMinimized ? undefined : { width: 'var(--width)' }}
                 >
                     <button
                         type="button"
@@ -1218,7 +1423,23 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             styles.comboboxMobileButton,
                             comboText && styles.comboboxInputFilled,
                         )}
-                        style={{ textAlign: 'left', paddingRight: 0 }}
+                        /* Produksi: `textAlign: 'left'` selalu, dan saat
+                           kotaknya diperkecil (compact) ditambah lebar setinggi
+                           baris, padding 0, teks transparan, overflow hidden. */
+                        style={{
+                            textAlign: 'left',
+                            ...(comboMinimized
+                                ? {
+                                      width: small
+                                          ? 'var(--ds-size-small)'
+                                          : 'var(--ds-size-medium)',
+                                      padding: 0,
+                                      paddingRight: 0,
+                                      color: 'transparent',
+                                      overflow: 'hidden',
+                                  }
+                                : {}),
+                        }}
                         onClick={() => setIsOpen(true)}
                     >
                         {comboText || COMBOBOX_PLACEHOLDER}
@@ -1241,7 +1462,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * own arbitrary-variant classes are overridden by these `!important`
          * utilities, so the element's own class list is what actually wins).
          */
-        const triggerButton: ReactNode = (
+        const tombolPemicu = (
             <Button
                 variant="secondary"
                 typeName="submit"
@@ -1252,20 +1473,48 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                  * Di MOBILE (drawer) produksi TIDAK memasang atribut dialog di
                  * pemicu: tanpa aria-haspopup/aria-expanded/aria-controls,
                  * data-state, data-testid, atau title (itu milik pemicu popover
-                 * desktop). Diukur di DOM live 375. Di desktop semua tetap ada.
+                 * desktop). Diukur di DOM live 375. Di desktop keempat atribut
+                 * dialog itu datang dari Trigger Radix yang membungkus tombol
+                 * ini (lihat di bawah), bukan ditulis tangan.
                  */
-                aria-haspopup={isSmallScreen ? undefined : 'dialog'}
-                aria-expanded={isSmallScreen ? undefined : isOpen}
+                /*
+                 * aria-controls tetap ditulis tangan. Versi Radix yang terpasang
+                 * di sini hanya memasangnya saat popover TERBUKA, sedangkan di
+                 * halaman live ke-16 pemicu membawanya juga saat tertutup
+                 * (diukur 10 Nov 2026), menunjuk id isi popover yang belum ada
+                 * di DOM. Id yang sama dipasang di Popover.Content di bawah.
+                 */
                 aria-controls={isSmallScreen ? undefined : dialogId}
-                data-state={isSmallScreen ? undefined : isOpen ? 'open' : 'closed'}
                 data-testid={isSmallScreen ? undefined : 'calendar/trigger/button'}
                 title={isSmallScreen ? undefined : triggerLabel}
-                className={cn(styles.trigger, !range && styles.triggerPlaceholder)}
-                onClick={() => setIsOpen((o) => !o)}
+                className={cn(
+                    styles.trigger,
+                    !range && styles.triggerPlaceholder,
+                    triggerMinimized && styles.triggerMinimized,
+                )}
+                /* Di desktop buka-tutupnya urusan Trigger Radix. Di mobile
+                   tidak ada Popover, jadi drawer dibuka dari sini. */
+                onClick={isSmallScreen ? () => setIsOpen((o) => !o) : undefined}
                 onKeyDown={handleTriggerKeyDown}
             >
-                {triggerLabel}
+                {/* Diperkecil: produksi mengosongkan isi tombol (children null)
+                    dan menyisakan ikonnya saja; labelnya tetap ada di title. */}
+                {triggerMinimized ? null : triggerLabel}
             </Button>
+        );
+
+        /*
+         * Di desktop tombol tanggal adalah Trigger popover-nya, persis sumber
+         * produksi (`<Popover.Trigger asChild><Button …/></Popover.Trigger>`).
+         * Akibat yang terukur: popover menempel ke TOMBOL, bukan ke seluruh
+         * kontrol. Pada tata letak ber-preset tombolnya ada di kanan atau di
+         * bawah combobox, jadi popover ikut bergeser 250px atau satu baris
+         * dibanding kalau ditautkan ke pembungkus luar (diukur 10 Nov 2026).
+         */
+        const triggerButton: ReactNode = isSmallScreen ? (
+            tombolPemicu
+        ) : (
+            <Popover.Trigger asChild>{tombolPemicu}</Popover.Trigger>
         );
 
         /*
@@ -1277,15 +1526,14 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * not the date row or the timezone control. Neither is gated behind
          * a prop.
          */
-        const inputsSection: ReactNode = (
-            <div className={styles.inputsWrapper}>
-                {/*
-                 * Produksi membungkus keempat baris (Start / End / Apply /
-                 * timezone) dalam satu div `space-y-2`. Jaraknya lahir dari
-                 * margin-bottom tiap baris (kecuali timezone yang pakai mt-1),
-                 * bukan dari margin-top: lihat `.inputGroups` di CSS.
-                 */}
-                <div className={styles.inputGroups}>
+        /*
+         * Potongan-potongan isi kepala popover. Dipisah karena produksi
+         * menyusunnya dengan dua cara (sumber `rK`, dibaca 10 Nov 2026):
+         * menurun biasa, atau `horizontalLayout` di desktop, yang membagi
+         * isinya jadi dua blok (isian di atas, Apply + zona waktu di bawah)
+         * dan TIDAK membungkus baris End dalam div sendiri.
+         */
+        const startGroup: ReactNode = (
                 <div>
                     <div className={styles.inputGroupHeader}>
                         <label data-version="v1">
@@ -1337,8 +1585,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         ) : null}
                     </div>
                 </div>
+        );
 
-                <div>
+        const endHeader: ReactNode = (
                     <div className={styles.inputGroupHeader}>
                         <label data-version="v1">
                             <div className={styles.inputGroupLabel}>End</div>
@@ -1347,6 +1596,9 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             <div className={styles.inputError}>{endError}</div>
                         ) : null}
                     </div>
+        );
+
+        const endRow: ReactNode = (
                     <div className={styles.inputRow}>
                         <Input
                             size="small"
@@ -1386,20 +1638,20 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                             />
                         ) : null}
                     </div>
-                </div>
+        );
 
-                {/*
-                 * ---- Apply (commits typed time onto the range) ----
-                 * Evidenced in every one of the 32 Start/End popovers
-                 * surveyed in calendar-open.html (with time inputs, with
-                 * pinnedTimezone, and even the two `showTimeInput={false}`
-                 * horizontalLayout instances) — always directly below the
-                 * End row, always directly above the timezone row. Rendered
-                 * unconditionally here to match; the click/Enter → commit
-                 * wiring (not closing the popover) is a documented decision,
-                 * not something the static snapshot can prove.
-                 */}
-                <div>
+        /*
+         * ---- Apply (commits typed time onto the range) ----
+         * Evidenced in every one of the 32 Start/End popovers
+         * surveyed in calendar-open.html (with time inputs, with
+         * pinnedTimezone, and even the two `showTimeInput={false}`
+         * horizontalLayout instances) — always directly below the
+         * End row, always directly above the timezone row. Rendered
+         * unconditionally here to match; the click/Enter → commit
+         * wiring (not closing the popover) is a documented decision,
+         * not something the static snapshot can prove.
+         */
+        const applyButton: ReactNode = (
                     <Button
                         variant="secondary"
                         typeName="submit"
@@ -1411,39 +1663,32 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         Apply
                         <span className={styles.applyHint}>↵</span>
                     </Button>
-                </div>
+        );
 
-                {/*
-                 * Timezone row. Select variant: `mt-1 flex justify-center pl-4`
-                 * with a geist-GHOST select (no ring until hover, gray-800
-                 * text, sibling chevron) — NOT the bordered form Select.
-                 * Pinned variant: a bare `text-xs text-gray-800` span, no pl-4.
-                 */}
-                <div
-                    className={cn(
-                        styles.timezoneRow,
-                        !pinnedTimezone && styles.timezoneRowSelect,
-                    )}
-                >
+        /*
+         * Timezone row: `mt-1 flex justify-center`. Select variant: a
+         * geist-GHOST select (no ring until hover, gray-800 text,
+         * sibling chevron), not the bordered form Select. Pinned
+         * variant: a bare `text-xs text-gray-800` span.
+         */
+        const timezoneRow: ReactNode = (
+                <div className={styles.timezoneRow}>
                     {pinnedTimezone ? (
-                        <span
-                            className={styles.pinnedTimezone}
-                            data-testid="calendar/pinned-timezone"
-                        >
-                            {pinnedTimezone}
-                        </span>
+                        /* Span polos, tanpa data-testid (produksi tidak punya). */
+                        <span className={styles.pinnedTimezone}>{pinnedTimezone}</span>
                     ) : (
                         /*
                          * Produksi = komponen Geist Select varian ghost:
                          * <label for><div data-geist-select><select><span chevron>.
-                         * Select-nya TANPA aria-label (label pembungkus kosong),
-                         * jadi kita tiru persis: label -> div penanda -> select.
+                         * Sumbernya (dibaca 10 Nov 2026):
+                         *   <Select aria-label="Timezone" size="small"
+                         *           width="100%" type="ghost" .../>
+                         * Prop `width` itu mendarat sebagai gaya inline di
+                         * label, dan select-nya mengisi lebar penuh. Sampai Sep
+                         * 2026 lebarnya diukur lewat JS dan select-nya tanpa
+                         * aria-label; keduanya sudah tidak berlaku.
                          */
-                        <label
-                            className={styles.timezoneLabel}
-                            htmlFor={tzSelectId}
-                            data-version="v1"
-                        >
+                        <label htmlFor={tzSelectId} data-version="v1" style={{ width: '100%' }}>
                             <div
                                 className={styles.timezoneSelectWrapper}
                                 data-oxobz-select=""
@@ -1452,8 +1697,8 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                                 <select
                                     id={tzSelectId}
                                     aria-invalid="false"
+                                    aria-label="Timezone"
                                     className={styles.timezoneSelect}
-                                    style={{ '--tz-width': `${tzWidth}px` } as React.CSSProperties}
                                     value={tzValue}
                                     onChange={handleTimezoneChange}
                                 >
@@ -1479,7 +1724,44 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                         </label>
                     )}
                 </div>
-                </div>
+        );
+
+        /** `horizontalLayout` hanya berlaku di desktop (produksi: `mobile || !horizontal`). */
+        const inputsHorizontal = horizontalLayout && !isSmallScreen;
+
+        const inputsSection: ReactNode = (
+            <div className={styles.inputsWrapper}>
+                {/*
+                 * Produksi membungkus keempat baris (Start / End / Apply /
+                 * timezone) dalam satu div `space-y-2`. Jaraknya lahir dari
+                 * margin-bottom tiap baris (kecuali timezone yang pakai mt-1),
+                 * bukan dari margin-top: lihat `.inputGroups` di CSS.
+                 */}
+                {inputsHorizontal ? (
+                    <div className={styles.inputsColumns}>
+                        <div className={styles.inputGroups}>
+                            {startGroup}
+                            {endHeader}
+                            {endRow}
+                        </div>
+                        <div>
+                            <div className={styles.applyRow}>
+                                <div className={styles.applyCell}>{applyButton}</div>
+                            </div>
+                            {timezoneRow}
+                        </div>
+                    </div>
+                ) : (
+                    <div className={styles.inputGroups}>
+                        {startGroup}
+                        <div>
+                            {endHeader}
+                            {endRow}
+                        </div>
+                        <div>{applyButton}</div>
+                        {timezoneRow}
+                    </div>
+                )}
             </div>
         );
 
@@ -1506,6 +1788,7 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
                     weekStartsOn={weekStartsOn}
                     defaultFocusedMonth={range?.start}
                     autoFocus
+                    compact={compact}
                 />
             </div>
         );
@@ -1534,7 +1817,11 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          * produksi TIDAK memakai lapis ini — tombolnya anak langsung Skeleton.
          */
         const pemicuTerbungkus = (
-            <Skeleton show={skeleton} style={{ width: 'var(--width)' }}>
+            <Skeleton
+                show={skeleton}
+                /* Produksi melepas lebar pembungkus saat tombolnya diperkecil. */
+                style={triggerMinimized ? undefined : { width: 'var(--width)' }}
+            >
                 {isSmallScreen ? (
                     triggerButton
                 ) : (
@@ -1691,11 +1978,10 @@ const Calendar = forwardRef<HTMLDivElement, CalendarProps>(
          */
         return (
             <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
-                <Popover.Anchor asChild>{kontrol}</Popover.Anchor>
+                {kontrol}
                 <Popover.Portal>
                     <Popover.Content
                         id={dialogId}
-                        side="bottom"
                         align={popoverAlignment}
                         sideOffset={8}
                         collisionPadding={16}

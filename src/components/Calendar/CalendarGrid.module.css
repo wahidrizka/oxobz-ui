@@ -202,6 +202,20 @@
     margin-bottom: 0;
 }
 
+/* compact: rows `my-0.5`, body `!pt-[3px]` and no top margin. */
+.rowCompact {
+    margin: 2px 0;
+}
+
+.rowCompact:last-of-type {
+    margin-bottom: 0;
+}
+
+.tbodyCompact {
+    margin-top: 0;
+    padding-top: 3px;
+}
+
 /* ---- Weekday header cell (__table th) ---- */
 .weekday {
     flex: 1;
@@ -314,9 +328,10 @@
     color: var(--ds-gray-900);
 }
 
-.inRange {
-    color: var(--ds-gray-1000);
-}
+/* .inRange carries no colour. Production has no text class for a day in the
+   middle of a range, so it keeps whatever the rules above give it: a weekend
+   stays gray-900 and a day of the neighbouring month stays gray-700 (measured
+   10 Nov 2026 on Saturday Oct 31 inside a selected range: rgb(77, 77, 77)). */
 
 /* Hover preview on an eligible day (not disabled / selected / today). */
 .hovered:not(.disabled):not(.selected):not(.highlight) {
@@ -336,11 +351,9 @@
     color: var(--ds-background-100);
 }
 
-.highlight.focused {
-    box-shadow: var(--ds-focus-ring);
-}
-
-/* Roving keyboard focus ring. */
+/* The cell that currently holds the grid's roving focus:
+   shadow-[0_0_0_1px_var(--ds-background-100),_0_0_0_2.5px_var(--ds-gray-1000)].
+   Set from state, so it shows even while DOM focus sits elsewhere. */
 .focused {
     box-shadow:
         0 0 0 1px var(--ds-background-100),
@@ -349,15 +362,11 @@
 
 
 /*
- * Cincin fokus sel tanggal: dua lapis, putih 2px lalu warna fokus 4px.
- *
- * Memakai `:focus`, BUKAN `:focus-visible`. Saat popover terbuka, fokusnya
- * dipindahkan oleh program (bukan oleh papan ketik), dan peramban tidak
- * menyalakan `:focus-visible` untuk itu. Produksi menampilkan cincinnya sejak
- * popover dibuka, jadi `:focus` yang benar.
+ * Today only: `focus:!shadow-[var(--ds-focus-ring)]`. While today's cell has
+ * DOM focus the blue focus ring replaces the dark one above; every other day
+ * keeps the dark ring. `:focus`, not `:focus-visible`: opening the popover
+ * moves focus by script and the ring is there from the start in production.
  */
-.day:focus {
-    box-shadow:
-        0 0 0 2px var(--ds-background-100),
-        0 0 0 4px var(--ds-focus-color, rgb(0, 114, 245));
+.today:focus {
+    box-shadow: var(--ds-focus-ring) !important;
 }

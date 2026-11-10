@@ -227,7 +227,45 @@ describe('CalendarGrid', () => {
         expect(getRoot(container)).toHaveAttribute('data-disabled', 'true');
         expect(container.querySelector('[aria-label="Next"]')).toBeDisabled();
         expect(container.querySelector('[aria-label="Previous"]')).toBeDisabled();
+        // Production keeps tabindex="0" on the arrows even when disabled.
+        expect(container.querySelector('[aria-label="Next"]')).toHaveAttribute('tabindex', '0');
+        expect(container.querySelector('[aria-label="Previous"]')).toHaveAttribute('tabindex', '0');
         expect(day(container, '2026-07-15')?.className).toContain('disabled');
+    });
+
+    it('describes a selected range in the caption and points the table at it', () => {
+        const { container, rerender } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
+        const table = container.querySelector('table') as HTMLTableElement;
+        const caption = container.querySelector('caption') as HTMLElement;
+        // No range: empty caption, no description reference.
+        expect(caption.textContent).toBe('');
+        expect(table).not.toHaveAttribute('aria-describedby');
+        rerender(
+            <CalendarGrid
+                defaultFocusedMonth={JULY_2026}
+                value={{ start: new Date(2026, 6, 10), end: new Date(2026, 6, 14) }}
+            />,
+        );
+        expect(caption.textContent).toBe('Selected Range: July 10, 2026 to July 14, 2026');
+        expect(table).toHaveAttribute('aria-describedby', caption.id);
+        // One day: the single-date message, with the weekday.
+        rerender(
+            <CalendarGrid
+                defaultFocusedMonth={JULY_2026}
+                value={{ start: new Date(2026, 6, 10), end: new Date(2026, 6, 10) }}
+            />,
+        );
+        expect(caption.textContent).toBe('Selected Date: Friday, July 10, 2026');
+    });
+
+    it('tightens the rows with compact', () => {
+        const { container, rerender } = render(<CalendarGrid defaultFocusedMonth={JULY_2026} />);
+        expect(container.querySelector('tbody')?.className).not.toContain('tbodyCompact');
+        rerender(<CalendarGrid defaultFocusedMonth={JULY_2026} compact />);
+        expect(container.querySelector('tbody')?.className).toContain('tbodyCompact');
+        container.querySelectorAll('tr').forEach((row) => {
+            expect(row.className).toContain('rowCompact');
+        });
     });
 
     // ── Keyboard navigation ──
@@ -483,7 +521,7 @@ describe('Calendar', () => {
         for (const label of ['Last 3 Days', 'Last 7 Days', 'Last 14 Days', 'Last Month']) {
             expect(screen.getByText(label)).toBeInTheDocument();
         }
-        fireEvent.click(screen.getByTestId('calendar/preset/last-7-days'));
+        fireEvent.click(screen.getByRole('option', { name: 'Last 7 Days' }));
         expect(onChange).toHaveBeenCalledTimes(1);
         const arg = onChange.mock.calls[0][0] as { start: Date; end: Date };
         expect(arg).toEqual({
@@ -551,13 +589,16 @@ describe('Calendar', () => {
         expect(typeof sebelum).toBe('string');
     });
 
-    it('sizes the timezone select the way production does (character count)', () => {
+    it('labels the timezone select and stretches its label to the full row', () => {
         render(<Calendar />);
         fireEvent.click(trigger());
         const select = timezoneSelect();
-        fireEvent.change(select, { target: { value: 'UTC' } });
-        // "UTC" tepat 3 karakter, jadi produksi memberinya 54px.
-        expect(select.getAttribute('style')).toContain('--tz-width: 54px');
+        expect(select).toHaveAttribute('aria-label', 'Timezone');
+        // The width lives on the wrapping label, never on the select itself.
+        expect(select).not.toHaveAttribute('style');
+        const label = select.closest('label') as HTMLLabelElement;
+        expect(label.getAttribute('style')).toBe('width: 100%;');
+        expect(label).not.toHaveAttribute('class');
     });
 
     it('accepts 12-hour time text in the time inputs', () => {
@@ -728,9 +769,122 @@ describe('Calendar', () => {
     it('picking a preset writes its label into the combobox input', () => {
         render(<Calendar presets={PRESETS} />);
         fireEvent.click(screen.getByTestId('calendar/combobox-input'));
-        fireEvent.click(screen.getByTestId('calendar/preset/last-14-days'));
+        fireEvent.click(screen.getByRole('option', { name: 'Last 14 Days' }));
         const combo = screen.getByTestId('calendar/combobox-input') as HTMLInputElement;
         expect(combo.value).toBe('Last 14 Days');
+    });
+
+    it('renders the preset list in a Radix popover portaled to the body', () => {
+        const { container } = render(<Calendar presets={PRESETS} />);
+        const combo = screen.getByTestId('calendar/combobox-input');
+        // Closed: the trigger attributes are there, the list is not.
+        expect(combo).toHaveAttribute('aria-haspopup', 'dialog');
+        expect(combo).toHaveAttribute('data-state', 'closed');
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        fireEvent.click(combo);
+        expect(combo).toHaveAttribute('data-state', 'open');
+        const list = screen.getByRole('listbox');
+        // Portaled: the list is outside the component's own subtree.
+        expect(container.contains(list)).toBe(false);
+        const content = list.closest('[role="dialog"]') as HTMLElement;
+        expect(content).toHaveAttribute('data-state', 'open');
+        expect(content).toHaveAttribute('data-align', 'start');
+        expect(content.parentElement).toHaveAttribute('data-radix-popper-content-wrapper');
+        // Items carry no test id, exactly four cmdk attributes worth checking.
+        const first = screen.getByRole('option', { name: 'Last 3 Days' });
+        expect(first).not.toHaveAttribute('data-testid');
+        expect(first).toHaveAttribute('cmdk-item');
+        expect(first).toHaveAttribute('data-value', 'Last 3 Days');
+    });
+
+    it('shows the typing hints only when the layout is not compact', () => {
+        const { unmount } = render(<Calendar presets={PRESETS} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        expect(screen.getByText('Type relative times')).toBeInTheDocument();
+        unmount();
+        render(<Calendar compact presets={PRESETS} />);
+        fireEvent.click(screen.getByTestId('calendar/combobox-input'));
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
+        expect(screen.queryByText('Type relative times')).not.toBeInTheDocument();
+    });
+
+    it('empties the input while focused and shows the picked label as placeholder', () => {
+        render(<Calendar presets={PRESETS} presetIndex={2} />);
+        const combo = screen.getByTestId('calendar/combobox-input') as HTMLInputElement;
+        expect(combo.value).toBe('Last 14 Days');
+        fireEvent.focus(combo);
+        expect(combo.value).toBe('');
+        expect(combo).toHaveAttribute('placeholder', 'Last 14 Days');
+        fireEvent.blur(combo);
+        expect(combo.value).toBe('Last 14 Days');
+    });
+
+    it('filters the list by the typed text and falls back to one item with that text', () => {
+        render(<Calendar presets={PRESETS} />);
+        const combo = screen.getByTestId('calendar/combobox-input');
+        fireEvent.focus(combo);
+        fireEvent.change(combo, { target: { value: '14' } });
+        expect(screen.getAllByRole('option')).toHaveLength(1);
+        expect(screen.getByRole('option', { name: 'Last 14 Days' })).toBeInTheDocument();
+        // "7d" is not part of any label; the keyword table maps it to "Last 7 Days".
+        fireEvent.change(combo, { target: { value: '7d' } });
+        expect(screen.getAllByRole('option')).toHaveLength(1);
+        expect(screen.getByRole('option', { name: 'Last 7 Days' })).toBeInTheDocument();
+        // Nothing matches: a single item carrying the typed text itself.
+        fireEvent.change(combo, { target: { value: 'zzz' } });
+        expect(screen.getAllByRole('option')).toHaveLength(1);
+        expect(screen.getByRole('option', { name: 'zzz' })).toBeInTheDocument();
+    });
+
+    it('flags the combobox with data-error when the typed text is not a period', () => {
+        const onChange = vi.fn();
+        render(<Calendar presets={PRESETS} onChange={onChange} />);
+        const combo = screen.getByTestId('calendar/combobox-input');
+        expect(combo).toHaveAttribute('data-error', 'false');
+        fireEvent.focus(combo);
+        fireEvent.change(combo, { target: { value: 'zzz' } });
+        fireEvent.click(screen.getByRole('option', { name: 'zzz' }));
+        expect(onChange).not.toHaveBeenCalled();
+        expect(combo).toHaveAttribute('data-error', 'true');
+        // Typing again clears the flag.
+        fireEvent.change(combo, { target: { value: 'z' } });
+        expect(combo).toHaveAttribute('data-error', 'false');
+    });
+
+    it('compact: the combobox is minimized until it has focus or a preset is picked', () => {
+        render(<Calendar compact presets={PRESETS} />);
+        const combo = screen.getByTestId('calendar/combobox-input');
+        const button = trigger();
+        // Calendar mode: combobox is the small box, the date button is full.
+        expect(combo.getAttribute('style')).toContain('color: transparent');
+        expect(combo).toHaveAttribute('placeholder', '');
+        expect(button.className).not.toContain('triggerMinimized');
+        expect(button).toHaveTextContent('Select Date Range');
+        // Focus flips it: combobox expands, the date button keeps only its icon.
+        fireEvent.focus(combo);
+        // React clears the three properties but leaves an empty style attribute,
+        // which is also what the live page shows in this state.
+        expect(combo.style.color).toBe('');
+        expect(combo.style.width).toBe('');
+        expect(combo).toHaveAttribute('placeholder', 'Select Period');
+        expect(button.className).toContain('triggerMinimized');
+        expect(button).not.toHaveTextContent('Select Date Range');
+        expect(button).toHaveAttribute('title', 'Select Date Range');
+        // Blur without a preset: back to calendar mode.
+        fireEvent.blur(combo);
+        expect(combo.getAttribute('style')).toContain('color: transparent');
+        expect(button.className).not.toContain('triggerMinimized');
+    });
+
+    it('compact: stays in preset mode after a preset is picked', () => {
+        render(<Calendar compact presets={PRESETS} />);
+        const combo = screen.getByTestId('calendar/combobox-input') as HTMLInputElement;
+        fireEvent.click(combo);
+        fireEvent.click(screen.getByRole('option', { name: 'Last 7 Days' }));
+        fireEvent.blur(combo);
+        expect(combo.style.color).toBe('');
+        expect(combo.value).toBe('Last 7 Days');
+        expect(trigger().className).toContain('triggerMinimized');
     });
 
     it('applies a parsed range when a hint chip is clicked', () => {
@@ -930,10 +1084,24 @@ describe('Calendar', () => {
     it('renders pinnedTimezone as read-only text instead of the select', () => {
         render(<Calendar pinnedTimezone="America/Los_Angeles" />);
         fireEvent.click(trigger());
-        expect(screen.getByTestId('calendar/pinned-timezone')).toHaveTextContent(
-            'America/Los_Angeles',
-        );
+        // A bare span: production puts no test id (or any other attribute) on it.
+        const pinned = screen.getByText('America/Los_Angeles');
+        expect(pinned.tagName).toBe('SPAN');
+        expect(pinned).not.toHaveAttribute('data-testid');
         expect(timezoneSelect()).not.toBeInTheDocument();
+    });
+
+    it('shows the field defaults in the pinned zone, not in the viewer zone', () => {
+        // With no range the fields describe today's bounds in the viewer's
+        // zone, displayed in the pinned one. Los Angeles and Tokyo are 16 or
+        // 17 hours apart, so their start times can never be equal.
+        const { unmount } = render(<Calendar pinnedTimezone="America/Los_Angeles" />);
+        fireEvent.click(trigger());
+        const losAngeles = startTimeInput().value;
+        unmount();
+        render(<Calendar pinnedTimezone="Asia/Tokyo" />);
+        fireEvent.click(trigger());
+        expect(startTimeInput().value).not.toBe(losAngeles);
     });
 
     // ── allowClear ──
