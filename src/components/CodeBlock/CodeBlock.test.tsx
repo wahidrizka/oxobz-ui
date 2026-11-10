@@ -112,6 +112,45 @@ describe('CodeBlock', () => {
         expect(getRoot(container)).toHaveAttribute('data-agent-language', 'tailwind');
     });
 
+    it('adds the borderless class only when borderless is set', () => {
+        const { container, rerender } = render(<CodeBlock>{'const a = 1;'}</CodeBlock>);
+        expect(getRoot(container)?.className).not.toContain('borderless');
+        rerender(<CodeBlock borderless>{'const a = 1;'}</CodeBlock>);
+        expect(getRoot(container)?.className).toContain('borderless');
+    });
+
+    it('appends preClassName after the prism and module classes on the <pre>', () => {
+        const { container } = render(
+            <CodeBlock preClassName="custom-pre">{'const a = 1;'}</CodeBlock>,
+        );
+        const pre = container.querySelector('pre');
+        expect(pre?.className).toContain('language-jsx');
+        expect(pre?.className.endsWith('custom-pre')).toBe(true);
+    });
+
+    it('lets the library style through: inline-block on a blank "plain" line only', () => {
+        const { container } = render(<CodeBlock>{'const a = 1;\n\nconst b = 2;'}</CodeBlock>);
+        const lines = getLines(container);
+        expect(lines).toHaveLength(3);
+        const blank = lines[1].querySelectorAll('.token');
+        expect(blank).toHaveLength(1);
+        expect(blank[0].className).toBe('token plain');
+        expect(blank[0].getAttribute('style')).toBe('display: inline-block;');
+        lines[0].querySelectorAll('.token').forEach((token) => {
+            expect(token).not.toHaveAttribute('style');
+        });
+    });
+
+    it('adds no inline style to a blank line inside JSX text ("plain-text" token)', () => {
+        const { container } = render(<CodeBlock>{'<A>\n\n</A>'}</CodeBlock>);
+        const lines = getLines(container);
+        expect(lines).toHaveLength(3);
+        const blank = lines[1].querySelectorAll('.token');
+        expect(blank).toHaveLength(1);
+        expect(blank[0].className).toBe('token plain-text');
+        expect(blank[0]).not.toHaveAttribute('style');
+    });
+
     it('tokenizes code — keyword tokens get the prism token class', () => {
         const { container } = render(<CodeBlock>{'const a = 1;'}</CodeBlock>);
         const keyword = container.querySelector('.token.keyword');

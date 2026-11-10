@@ -155,6 +155,15 @@ export interface CodeBlockProps
     hideLineNumbers?: boolean;
 
     /**
+     * Drops the border around the code so the block can sit flush inside
+     * another frame. Mirrors the Geist API.
+     */
+    borderless?: boolean;
+
+    /** Extra class for the inner `<pre>`. Mirrors the Geist API. */
+    preClassName?: string;
+
+    /**
      * Select-based language switcher, rendered in the header.
      * Shape matches the official Geist `switcher` prop.
      */
@@ -318,6 +327,8 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
             addedLinesNumbers = [],
             removedLinesNumbers = [],
             hideLineNumbers = false,
+            borderless = false,
+            preClassName: preClassNameProp,
             switcher,
             tabs,
             v0,
@@ -368,6 +379,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                     styles.wrapper,
                     hasFileName && styles.hasFileName,
                     hideLineNumbers && styles.hideLineNumbers,
+                    borderless && styles.borderless,
                     className,
                 )}
                 /* Production labels every code block for agents (measured
@@ -416,7 +428,7 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                     theme={emptyTheme}
                 >
                     {({ className: preClassName, tokens, getLineProps, getTokenProps }) => (
-                        <pre className={cn(preClassName, styles.pre)}>
+                        <pre className={cn(preClassName, styles.pre, preClassNameProp)}>
                             <code
                                 className={styles.code}
                                 data-oxobz-code-block="true"
@@ -465,7 +477,16 @@ const CodeBlock = forwardRef<HTMLDivElement, CodeBlockProps>(
                                                         <span
                                                             key={j}
                                                             {...tokenProps}
-                                                            style={undefined}
+                                                            /* The style comes straight from
+                                                               prism-react-renderer, as in
+                                                               production. With an empty theme
+                                                               the only style it ever emits is
+                                                               `display: inline-block` on the
+                                                               empty token of a blank line, and
+                                                               only for some token types (it
+                                                               does for `plain`, it does not for
+                                                               `plain-text`). Both cases were
+                                                               measured on the live page. */
                                                         />
                                                     );
                                                 })}

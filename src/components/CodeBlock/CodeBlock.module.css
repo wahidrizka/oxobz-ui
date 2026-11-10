@@ -47,6 +47,13 @@
     border-radius: 0 0 8px 8px;
 }
 
+/* borderless: production swaps `border-gray-400 border-x border-b border-t`
+   for a bare `border-0`. Width goes to zero and, with no colour class left,
+   the colour falls back to the page default (gray-200). */
+.borderless .borderWrap {
+    border: 0 solid var(--ds-gray-200);
+}
+
 /* ── Copy button (shared base) ─────────────────────────── */
 /* geistcn Button chrome: rounded-md, gray-900 svg color, cubic-bezier(.4,0,.2,1)
    150ms transitions. Header variant is size-7 (28px), floating is size-8 (32px). */
