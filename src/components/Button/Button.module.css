@@ -195,6 +195,12 @@
 .secondary[data-hover]:not(:disabled):not([aria-disabled='true']) {
     background: var(--ds-gray-100);
     color: var(--themed-fg);
+    /* Production's secondary button only changes background and text on
+       hover (`data-hover:bg-[var(--ds-gray-100)] data-hover:text-[var(--themed-fg)]`);
+       its ring stays gray-400. Measured on the live copy button, 10 Nov 2026:
+       the ring is rgb(235, 235, 235) at rest and while hovered. Without this
+       line the generic hover rule above swaps the ring color. */
+    --themed-border: var(--ds-gray-400);
 }
 
 :global(.dark-theme) .secondary[data-hover]:not(:disabled):not([aria-disabled='true']) {
