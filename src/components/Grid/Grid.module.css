@@ -19,6 +19,15 @@
     overflow: visible;
 }
 
+/* Wrapper of a system that is not a size container (production:
+   .gridSystemContentWrapper, stylesheet fetched 10 Nov 2026). */
+.gridSystemContentWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ---- Grid System root ---- */
 .gridSystem {
     --light-dashed-png: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAACXBIWXMAAAsTAAALEwEAmpwYAAAANklEQVQokWN8/fr1fwY0ICoqyoguhk0dE7oAKYARZiI223ABmB6KbKZI8yggEQzReGYcsIwBALk3HxGhdtdwAAAAAElFTkSuQmCC);

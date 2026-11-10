@@ -50,14 +50,17 @@ export interface GridSystemProps extends HTMLAttributes<HTMLDivElement> {
     guideColor?: string;
     /** Colour of the crosshair markers (any CSS colour). Sets `--cross-color`. */
     crossColor?: string;
-    /** Use container queries instead of media queries */
+    /**
+     * Makes the wrapper a size container, so the system takes its width from
+     * the wrapper instead of the viewport. It does NOT switch the grids inside
+     * to container queries; that is each Grid's own `useContainer`.
+     */
     unstable_useContainer?: boolean;
     /**
-     * Content rendered INSIDE the `gridSystemLazyContent` div (only rendered
-     * with `unstable_useContainer`). Mirrors production Geist: on docs pages
-     * (e.g. /geist/colors) the header section is a direct child of the grid
-     * system while every remaining section lives inside the lazy-content
-     * wrapper (`contain: layout`). Omit to keep the previous empty-div DOM.
+     * Extra content for the `gridSystemLazyContent` div, after any children
+     * past the second. Production has no such prop: it keeps the first two
+     * children as direct children and moves the rest into that div. This prop
+     * is kept so a page can put content there without counting children.
      */
     lazyChildren?: ReactNode;
     /** Maximum width of the grid system */
@@ -77,6 +80,8 @@ export interface GridProps extends HTMLAttributes<HTMLElement> {
     height?: GridHeight;
     /** Hide specific guide lines */
     hideGuides?: HideGuides;
+    /** Lay this grid out by the width of its container instead of the viewport. */
+    useContainer?: boolean;
     /**
      * Crosshair (+) markers at grid line intersections. Each `{ row, column }`
      * is 1-based; negative values count from the end (e.g. `column: -1` = last
@@ -426,30 +431,36 @@ export const GridSystem = forwardRef<HTMLDivElement, GridSystemProps>(
 
         const systemClasses = cn(
             styles.gridSystem,
+            className,
             debug && styles.systemDebug,
             dashedGuides && styles.systemDashed,
-            unstable_useContainer && styles.useContainer,
-            className,
         );
 
-        const content = (
+        /*
+         * Structure as in production's own Grid.System (read from the live
+         * bundle, 10 Nov 2026): always a wrapper, the first two children
+         * directly inside the system, everything after them inside the
+         * lazy-content div, and no container class on the system itself.
+         */
+        const all = Children.toArray(children);
+        return (
             <div
-                ref={ref}
-                className={systemClasses}
-                style={systemStyle}
-                {...props}
+                className={
+                    unstable_useContainer
+                        ? styles.unstable_gridSystemWrapper
+                        : styles.gridSystemContentWrapper
+                }
             >
-                {children}
-                {unstable_useContainer && <div className={styles.gridSystemLazyContent}>{lazyChildren}</div>}
-                {debug && <div className={styles.systemDebugOverlay} />}
+                <div ref={ref} className={systemClasses} style={systemStyle} {...props}>
+                    {all.slice(0, 2)}
+                    <div className={styles.gridSystemLazyContent}>
+                        {all.slice(2)}
+                        {lazyChildren}
+                    </div>
+                    {debug && <div className={styles.systemDebugOverlay} />}
+                </div>
             </div>
         );
-
-        if (unstable_useContainer) {
-            return <div className={styles.unstable_gridSystemWrapper}>{content}</div>;
-        }
-
-        return content;
     },
 );
 
@@ -482,7 +493,7 @@ GridCell.displayName = 'Grid.Cell';
  * Grid — The grid section.
  */
 const GridRoot = forwardRef<HTMLElement, GridProps>(
-    ({ children, className, columns, rows, height = 'fit-content', hideGuides, crosses, style, ...props }, ref) => {
+    ({ children, className, columns, rows, height = 'fit-content', hideGuides, useContainer, crosses, style, ...props }, ref) => {
         const gridVars = buildGridVars(columns, rows, height);
 
         // Crosshair (+) markers — mirrors Geist's `data-grid-cross` elements.
@@ -550,7 +561,7 @@ const GridRoot = forwardRef<HTMLElement, GridProps>(
         return (
             <section
                 ref={ref}
-                className={cn(styles.grid, className)}
+                className={cn(styles.grid, useContainer && styles.useContainer, className)}
                 style={{ ...gridVars, ...style }}
                 data-grid=""
                 {...props}

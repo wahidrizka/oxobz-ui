@@ -382,7 +382,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.className).toMatch(/systemDebug/);
         });
 
@@ -415,7 +415,7 @@ describe('Grid', () => {
                     <Grid columns={1} rows={1} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.className).toMatch(/systemDashed/);
         });
 
@@ -425,7 +425,7 @@ describe('Grid', () => {
                     <Grid columns={1} rows={1} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.className).not.toMatch(/systemDashed/);
         });
     });
@@ -442,26 +442,58 @@ describe('Grid', () => {
             expect(wrapper).not.toBeNull();
         });
 
-        it('tidak render wrapper ketika unstable_useContainer=false', () => {
+        /* Production's Grid.System (live bundle, 10 Nov 2026) always renders a
+           wrapper: the container one, or gridSystemContentWrapper. */
+        it('renders gridSystemContentWrapper when unstable_useContainer is off', () => {
             const { container } = render(
                 <Grid.System>
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const wrapper = container.querySelector('[class*="unstable_gridSystemWrapper"]');
-            expect(wrapper).toBeNull();
+            expect(container.querySelector('[class*="unstable_gridSystemWrapper"]')).toBeNull();
+            expect(container.firstElementChild!.className).toBe('gridSystemContentWrapper');
+            expect(container.firstElementChild!.firstElementChild!.className).toBe('gridSystem');
         });
 
-        it('render useContainer class pada system', () => {
+        it('never puts the useContainer class on the system', () => {
             const { container } = render(
                 <Grid.System unstable_useContainer>
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            /* Dengan unstable_useContainer, anak pertama container adalah
-               pembungkusnya; system-nya ada satu tingkat di dalam. */
             const system = container.firstElementChild!.firstElementChild as HTMLElement;
-            expect(system.className).toMatch(/useContainer/);
+            expect(system.className).toBe('gridSystem');
+        });
+
+        it('puts the useContainer class on a Grid that asks for it', () => {
+            const { container } = render(
+                <Grid.System unstable_useContainer>
+                    <Grid columns={3} rows={2} />
+                    <Grid columns={3} rows={2} useContainer />
+                </Grid.System>,
+            );
+            const grids = container.querySelectorAll('[data-grid]');
+            expect(grids[0].className).toBe('grid');
+            expect(grids[1].className).toBe('grid useContainer');
+        });
+
+        it('keeps two children in the system and moves the rest into lazy content', () => {
+            const { container } = render(
+                <Grid.System lazyChildren={<i id="extra" />}>
+                    <b id="one" />
+                    <b id="two" />
+                    <b id="three" />
+                    <b id="four" />
+                </Grid.System>,
+            );
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
+            expect(Array.from(system.children).map((el) => el.id || el.className)).toEqual([
+                'one',
+                'two',
+                'gridSystemLazyContent',
+            ]);
+            const lazy = system.lastElementChild as HTMLElement;
+            expect(Array.from(lazy.children).map((el) => el.id)).toEqual(['three', 'four', 'extra']);
         });
 
         it('gridSystemLazyContent berada DI DALAM gridSystem (setelah children)', () => {
@@ -470,7 +502,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             const lazy = system.querySelector('[class*="gridSystemLazyContent"]');
             expect(lazy).not.toBeNull();
             // section (children) must come before lazyContent
@@ -484,19 +516,19 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             const lazy = system.querySelector('[class*="gridSystemLazyContent"]')!;
             const overlay = system.querySelector('[class*="systemDebugOverlay"]')!;
             expect(lazy.compareDocumentPosition(overlay) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         });
 
-        it('tidak render gridSystemLazyContent tanpa unstable_useContainer', () => {
+        it('renders gridSystemLazyContent without unstable_useContainer too', () => {
             const { container } = render(
                 <Grid.System>
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            expect(container.querySelector('[class*="gridSystemLazyContent"]')).toBeNull();
+            expect(container.querySelector('[class*="gridSystemLazyContent"]')).not.toBeNull();
         });
     });
 
@@ -504,7 +536,7 @@ describe('Grid', () => {
     describe('CSS variables', () => {
         it('sets --guide-color and --cross-color only when the props are given', () => {
             const { container, rerender } = render(<Grid.System>content</Grid.System>);
-            const system = container.firstChild as HTMLElement;
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.style.getPropertyValue('--guide-color')).toBe('');
             expect(system.style.getPropertyValue('--cross-color')).toBe('');
             rerender(
@@ -522,7 +554,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.style.getPropertyValue('--guide-width')).toBe('2px');
         });
 
@@ -578,7 +610,7 @@ describe('Grid', () => {
                     <Grid columns={3} rows={2} />
                 </Grid.System>,
             );
-            const system = (container.firstElementChild as HTMLElement);
+            const system = container.firstElementChild!.firstElementChild as HTMLElement;
             expect(system.className).toContain('custom-system');
         });
 
