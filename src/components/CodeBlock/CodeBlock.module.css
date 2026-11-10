@@ -98,6 +98,13 @@
     background: var(--ds-gray-100);
 }
 
+/* Tema gelap: tombol secondary produksi memakai gray-200 saat hover
+   (`dark-theme:data-hover:bg-[var(--ds-gray-200)]`). Terukur di halaman
+   Typography live, 10 Nov 2026: rgb(31, 31, 31). */
+:global(.dark-theme) .copyButton:hover {
+    background: var(--ds-gray-200);
+}
+
 .copyButton:focus-visible {
     box-shadow: var(--ds-focus-ring);
     outline: none;
