@@ -31,6 +31,13 @@ describe('ChoiceboxGroup — radio mode (default)', () => {
         expect(screen.getAllByRole('radio')).toHaveLength(2);
     });
 
+    it('wraps each radio in a literal "group" element, the class its hover rule keys on', () => {
+        render(<ChoiceboxGroup label="plan">{twoItems}</ChoiceboxGroup>);
+        for (const radio of screen.getAllByRole('radio')) {
+            expect(radio.parentElement?.className.split(' ')).toContain('group');
+        }
+    });
+
     it('all radio inputs share the same generated name', () => {
         const { container } = render(
             <ChoiceboxGroup label="plan">{twoItems}</ChoiceboxGroup>,

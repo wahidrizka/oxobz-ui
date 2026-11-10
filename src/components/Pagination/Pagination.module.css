@@ -109,11 +109,17 @@
 }
 
 /* hover: label + chevron rise to full foreground.
-   Gated on `@media (hover: hover)` (as Geist does) so touch devices don't get a
-   sticky hover state after tapping. */
+   Production writes this with Tailwind's `group` / `group-hover:`, whose rule is
+   `.group-hover:…:is(:where(.group):hover *)`. The link carries `group`, but so
+   can any ancestor: hovering ANY element with the class `group` above the link
+   lights it up. That is measurable on the live docs, where the demo frame is a
+   `group` and both links turn black while the pointer rests on "Show code".
+   The selector below is that rule verbatim, so the behaviour is the same.
+   Gated on `@media (hover: hover)` so touch devices don't get a sticky hover
+   state after tapping. */
 @media (hover: hover) {
-    .item:hover .label,
-    .item:hover .icon {
+    .label:is(:where(:global(.group)):hover *),
+    .icon:is(:where(:global(.group)):hover *) {
         color: var(--oxobz-foreground);
     }
 }

@@ -62,7 +62,7 @@ function PaginationSlot({
     return (
         <a
             aria-label={`Go to ${direction} page: ${link.title}`}
-            className={cn(styles.item, isNext && styles['align-right'])}
+            className={cn('group', styles.item, isNext && styles['align-right'])}
             href={link.href}
         >
             <span className={styles.label}>{isNext ? 'Next' : 'Previous'}</span>

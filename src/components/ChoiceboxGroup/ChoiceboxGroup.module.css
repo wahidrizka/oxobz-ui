@@ -232,6 +232,25 @@
     --radio-color: var(--ds-blue-900);
 }
 
+/*
+ * Hover on the embedded radio. Production:
+ *   group-hover:peer-not-checked:peer-not-active:peer-not-disabled:
+ *     [--radio-color:var(--ds-gray-700)]  and  bg-[var(--ds-background-100)]
+ *
+ * `group-hover` compiles to `:is(:where(.group):hover *)`. The wrapper span is
+ * a `group`, but so can any ancestor be, and hovering that ancestor lights the
+ * radio up too. Measured on the live docs (10 Nov 2026): with the pointer
+ * resting on the demo frame, which is a `group`, every enabled unchecked radio
+ * inside it turns from gray-500 (201,201,201) to gray-700 (143,143,143).
+ * The selector below is that rule, so the behaviour is the same.
+ */
+@media (hover: hover) {
+    .radio .input:not(:checked):not(:active):not(:disabled) + .icon:is(:where(:global(.group)):hover *) {
+        --radio-color: var(--ds-gray-700);
+        background-color: var(--ds-background-100);
+    }
+}
+
 /* ── Embedded checkbox control (type="checkbox") ──────── */
 /* Tanpa -m-0.5 p-0.5: pembungkus checkbox di choicebox berukuran 16x16 pas
    (terukur di halaman live), beda dari checkbox berdiri sendiri yang memakai

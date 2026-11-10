@@ -31,6 +31,8 @@ describe('Pagination', () => {
         });
         expect(link).toHaveAttribute('href', '/home');
         expect(link.className).toContain('item');
+        // The literal `group` class is what the hover rule keys on.
+        expect(link.className.split(' ')).toContain('group');
         expect(link).toHaveTextContent('Previous');
         expect(link).toHaveTextContent('Home');
     });

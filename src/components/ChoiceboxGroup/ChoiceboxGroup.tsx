@@ -215,7 +215,9 @@ const ChoiceboxGroupItem = forwardRef<HTMLLabelElement, ChoiceboxGroupItemProps>
                          * perang spesifisitas. Bentuk lingkaran + titik tetap dari
                          * radioStyles.icon lewat komposisi kelas .input/.icon.
                          */
-                        <span className={styles.radio}>
+                        /* The literal `group` class is what the hover rule keys on,
+                           exactly as in production (see the module CSS). */
+                        <span className={cn('group', styles.radio)}>
                             <input
                                 className={cn(
                                     radioStyles.input,
